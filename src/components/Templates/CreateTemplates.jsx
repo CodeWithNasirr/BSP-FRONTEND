@@ -748,7 +748,7 @@ function CreateTemplate() {
             </div>
           )}
  
-          <div className="w-[30%] mx-auto h-[50%] border rounded-xl shadow-md p-4 bg-cover bg-center" style={{ backgroundImage: "url('http://127.0.0.1:8000/media/FILES/whatsapp-bg-02.png')" }}>
+          <div className="w-[30%] mx-auto h-[50%] border rounded-xl shadow-md p-4 bg-cover bg-center" style={{ backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')` }}>
           <img
               src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
               alt="WhatsApp Logo"

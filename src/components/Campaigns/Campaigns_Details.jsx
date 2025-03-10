@@ -167,7 +167,7 @@ const CampaignDetails = () => {
                 </p>
               </div>
             </div>
-            <div className="w-full border pt-4 px-4 space-y-1 rounded-xl shadow-md bg-cover bg-center" style={{ backgroundImage: "url('http://127.0.0.1:8000/media/FILES/whatsapp-bg-02.png')" }}>
+            <div className="w-full border pt-4 px-4 space-y-1 rounded-xl shadow-md bg-cover bg-center" style={{ backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')` }}>
               <div className="flex justify-start">
               <div className="flex items-end">
                   <svg height="13" width="8">
