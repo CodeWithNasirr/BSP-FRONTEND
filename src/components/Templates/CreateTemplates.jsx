@@ -43,8 +43,10 @@ function CreateTemplate() {
       if (type === "file") {
         updatedData = { ...prevData, [name]: files[0] }; // ✅ Store file object
       } else {
-        updatedData = { ...prevData, [name]: value };
-      }
+        updatedData={
+        ...prevData,
+        [name]:name === 'template_name'?value.toLowerCase() : value
+      }}
 
       // Check if all required fields are filled
       const isFormComplete =
@@ -54,7 +56,7 @@ function CreateTemplate() {
         updatedData.body_text.trim() !== "";
 
       // Update isDisabled state
-      console.log(formData);
+      // console.log(formData);
       setIsDisabled(!isFormComplete);
       return updatedData;
     });
