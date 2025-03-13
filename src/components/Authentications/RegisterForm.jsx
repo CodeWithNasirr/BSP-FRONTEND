@@ -2,12 +2,14 @@ import axios from 'axios';
 import React,{useEffect,useState} from 'react';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../config";
+import { toast } from 'react-toastify'
+
 const RegisterForm = ({ isActive }) => {
 
   const navigate = useNavigate();
     const [errors,setErrors]=useState({});
 
-
+ 
     const [formData, setFormData] =useState({
         username: "",
         email: "",
@@ -27,19 +29,19 @@ const RegisterForm = ({ isActive }) => {
         e.preventDefault();
        try{
         const response = await axios.post(`${API_BASE_URL}/register/`,formData)
-        alert(`${response.data.Message}`);
-        console.log(response.data.Message)
+        toast.success(response.data.Message)
+        
         setFormData({
             username: "",
             email: "",
             password: "",
         })
-        setErrors({});
         navigate('/login')
        }
        catch (error) {
         if (error.response && error.response.data.errors) {
-            setErrors(error.response.data.errors);
+            toast.error(error.response.data.errors.username[0])
+            toast.error(error.response.data.errors.email[0])
             setFormData({
                 username: "",
                 email: "",
@@ -86,7 +88,7 @@ const RegisterForm = ({ isActive }) => {
           <button type='submit' className="rounded-2xl border cursor-pointer border-[#4bb6b7] bg-[#4bb6b7] text-white font-bold my-2 px-20 py-3 uppercase">
             Register
           </button>
-          <div className="mt-4 text-center">
+          {/* <div className="mt-4 text-center">
           {errors.username &&(
             <p style={{ color: "red" }}>{errors.username[0]}</p>
           )}
@@ -97,7 +99,7 @@ const RegisterForm = ({ isActive }) => {
           {errors.password &&(
               <p style={{ color: "red" }}>{errors.password[0]}</p>
             )}
-            </div>
+            </div> */}
           {/* <span className="text-sm mt-6">or use your account</span>
           <div className="flex mt-5">
             <a href="#" className="border rounded-full w-10 h-10 flex items-center justify-center mx-2 hover:border-[#4bb6b7]">

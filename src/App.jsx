@@ -14,7 +14,6 @@ import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
 
-
 import AuthSlider from './components/Authentications/AuthSlider'
 
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
@@ -29,9 +28,10 @@ import {
 } from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AppContent() {
-
   const [isDesktop, setIsDesktop] = useState(true);
 
     useEffect(() => {
@@ -84,6 +84,7 @@ function AppContent() {
       )}
 
       <div className={`flex-1 ${isLoginPage || isRegisterPage ? 'w-full' : ''}`}>
+        <ToastContainer />
         <Routes>
           {/* Public Routes */}
             <Route path="/login" element={<AuthSlider />} />
@@ -111,6 +112,7 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
+      
       <AppContent />
     </Router>
   );

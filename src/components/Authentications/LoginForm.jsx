@@ -2,7 +2,7 @@ import axios from 'axios';
 import React,{useEffect,useState} from 'react';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../config";
-
+import { toast } from 'react-toastify'
 
 const LoginForm = ({ isActive }) => {
 
@@ -29,7 +29,7 @@ const LoginForm = ({ isActive }) => {
 
     const handleChange = (e) =>{
         const {name, value} = e.target;
-        setFormData((prevData)=>({
+        setFormData((prevData)=>({ 
             ...prevData,
             [name]: value
         }))
@@ -40,14 +40,13 @@ const LoginForm = ({ isActive }) => {
         e.preventDefault();
        try{
         const response = await axios.post(`${API_BASE_URL}/login/`,formData)
-        // alert(`${response.data.Message}`);
-        // console.log(response.data.Message)
+        toast.success(response.data.Message)
         localStorage.setItem("authToken", response.data.Token);
         navigate('/dashboard')
        }
        catch (error) {
         if (error.response && error.response.data.errors) {
-            setErrors(error.response.data.errors);
+          toast.error(error.response.data.errors)
             setFormData({
                 username: "",
                 password: "",

@@ -1,6 +1,7 @@
 import axios from "axios";
 import React,{useState,useEffect} from "react";
 import API_BASE_URL from "../config";
+import { toast } from 'react-toastify'
 const Contacts = () => {
   const token = localStorage.getItem("authToken");
   const[activeTab,setActiveTab]=useState("contact")
@@ -23,8 +24,9 @@ const Contacts = () => {
       }
     })
     .catch((error)=>{
-      console.error("Error creating Contacts:", error.response.data);
-      alert("Failed to create Contacts");
+      // console.error("Error creating Contacts:", error.response.data);
+      // alert("Failed to create Contacts");
+      toast.error(error.response.data.error)
     })
     // console.log(contact.data[0].Group)
     // console.log(contact)
@@ -32,6 +34,23 @@ const Contacts = () => {
   },[]);
 
 
+  const delete_contact = async (contact_id) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/delete_contact/${contact_id}/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      toast.success(response.data.message)
+      // Update state instead of reloading
+      setActiveDropdownId(false)
+      window.location.reload()
+
+    } catch (error) {
+      alert("Error: " + (error.response?.data?.error || error.message));
+    }
+  };
 
   // Contact add logic
   const [showAddContactForm, setShowAddContactForm] = useState(false);
@@ -74,14 +93,16 @@ const Contacts = () => {
   );
   console.log(filteredData)
     try{
-      const response = await axios.post(`${API_BASE_URL}/get_contacts`,filteredData, {
+      const response = await axios.post(`${API_BASE_URL}/get_contacts/`,filteredData, {
         headers: {
            Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
         },
       })
-      alert(`${response.data.Message}`)
-      window.location.reload();
+      toast.success(response.data.Message)
+      // Update state instead of reloading
+      setContact((prevContacts) => [...prevContacts, response.data.data]);
+      // window.location.reload();
       setFormData({
         firstName: '',
         lastName: '',
@@ -91,7 +112,8 @@ const Contacts = () => {
       });
     }
     catch(error){
-      alert(`Error: ${error.response?.data?.error || "Something went wrong"}`);
+      console.log(error.response.data)
+      toast.error(error.response.data.error)
       setFormData({
         firstName: '',
         lastName: '',
@@ -369,7 +391,7 @@ const Contacts = () => {
                   </a>
                   <button
                     className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
-                    // onClick={() =>}
+                    onClick={() =>delete_contact(selectedContacts)}
                   >
                     Delete
                   </button>
