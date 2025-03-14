@@ -83,7 +83,7 @@ function AppContent() {
         </div>
       )}
 
-      <div className={`flex-1 ${isLoginPage || isRegisterPage ? 'w-full' : ''}`}>
+      <div className={`flex-1 overflow-hidden  ${isLoginPage || isRegisterPage ? 'w-full' : ''}`}>
         <ToastContainer />
         <Routes>
           {/* Public Routes */}

@@ -56,7 +56,7 @@ useEffect(()=>{
 
 
     const clientId = "1354428199237692";
-    const REDIRECT_URI = "https://9fe2-2402-3a80-18ae-9ce9-9062-bd11-4b6c-ba.ngrok-free.app/facebook/callback/";
+    const REDIRECT_URI = "https://whatsappx.up.railway.app/facebook/callback/";
     const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
 
     const handleFacebookLogin = () => {
