@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard'
 import CreateCampaigns from "./components/Campaigns/CreateCampaigns"
 import ProtectedRoute from "./components/Protected_Route"
 import whatsapp_details from "./components/whatsapp_details"
-
+import WhatsAppScraper from './components/scrap'
 import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
@@ -77,6 +77,7 @@ function AppContent() {
             <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
+            <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/>
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
 
           </Sidebar>
@@ -102,6 +103,7 @@ function AppContent() {
             <Route path="/whatsapp-setting" element={<ProtectedRoute element={whatsapp_details} />} />
             <Route path="/chats" element={<ProtectedRoute element={main_chat} />} />
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
+            <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} />
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
         </Routes>
       </div> 
