@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from "react";
 import axios from "axios";
 import API_BASE_URL from "../config";
+import { toast } from 'react-toastify'
 const WhatsAppSettings = () => {
 
   const [isConnected, setIsConnected] = useState(false);
@@ -18,7 +19,7 @@ const WhatsAppSettings = () => {
           setIsConnected(response.data.is_connected);
         })
         .catch((error)=>{
-          alert("Failed to fetch user info:", error.response?.data || error.message);
+          toast.error("Failed to fetch user info:", error.response?.data || error.message);
         })
       },[])
       // Ending
@@ -35,7 +36,7 @@ const WhatsAppSettings = () => {
           setWp_Details(response.data.Data)
         })
         .catch((error)=>{
-          alert("Failed to fetch user info:", error.response?.data || error.message);
+          toast.error("Failed to fetch user info:", error.response?.data || error.message);
         })
       },[])
       
@@ -114,8 +115,8 @@ const WhatsAppSettings = () => {
                  <div>
                    <div>Account status</div>
                    <div className={`py-1 px-2 rounded-md w-[fit-content] text-xs 
-                    ${wp_Details.number_status === "pending_submission" || "not_verified" ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}>
-                     {wp_Details.number_status=="pending_submission" || "not_verified" ?"PENDING":"CONNECTED"}
+                    ${wp_Details.number_status === "verified"? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+                     {wp_Details.number_status=="verified" ?"CONNECTED":"PENDING"}
                    </div>
                  </div>
                  {/* <button className="flex items-center absolute right-0 top-0 text-xs mr-1 space-x-2 p-1 px-2 bg-slate-50 rounded-xl">
@@ -126,7 +127,7 @@ const WhatsAppSettings = () => {
                      viewBox="0 0 24 24"
                    >
                      <path
-                       fill="currentColor"
+                       fill="currentColor" 
                        d="M12.079 2.25c-4.794 0-8.734 3.663-9.118 8.333H2a.75.75 0 0 0-.528 1.283l1.68 1.666a.75.75 0 0 0 1.056 0l1.68-1.666a.75.75 0 0 0-.528-1.283h-.893c.38-3.831 3.638-6.833 7.612-6.833a7.658 7.658 0 0 1 6.537 3.643a.75.75 0 1 0 1.277-.786A9.158 9.158 0 0 0 12.08 2.25m8.761 8.217a.75.75 0 0 0-1.054 0L18.1 12.133a.75.75 0 0 0 .527 1.284h.899c-.382 3.83-3.651 6.833-7.644 6.833a7.697 7.697 0 0 1-6.565-3.644a.75.75 0 1 0-1.277.788a9.197 9.197 0 0 0 7.842 4.356c4.808 0 8.765-3.66 9.15-8.333H22a.75.75 0 0 0 .527-1.284z"
                      />
                    </svg>

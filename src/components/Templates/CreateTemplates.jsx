@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
+import { toast } from "react-toastify";
 function CreateTemplate() {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState(null);
@@ -84,7 +85,7 @@ function CreateTemplate() {
           },
         }
       );
-      alert("Template Created Successfully!");
+      toast.success("Template Created Successfully!");
       setformData({
         template_name: "",
         template_language: "",
@@ -101,7 +102,7 @@ function CreateTemplate() {
       });
     } catch (error) {
       console.error("Error creating template:", error.response.data);
-      alert("Failed to create template");
+      toast.error("Failed to create template");
     }
   };
 
@@ -119,7 +120,7 @@ function CreateTemplate() {
         setIsConnected(response.data.is_connected);
       })
       .catch((error) => {
-        alert(
+        toast.error(
           "Failed to fetch user info:",
           error.response?.data || error.message
         );

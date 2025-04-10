@@ -32,8 +32,11 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function AppContent() {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login" || location.pathname === "/";
+  const isRegisterPage = location.pathname === "/register";
   const [isDesktop, setIsDesktop] = useState(true);
-
+  // Check if the user is on a mobile device
     useEffect(() => {
         const handleResize = () => {
             setIsDesktop(window.innerWidth >= 1024);
@@ -44,14 +47,6 @@ function AppContent() {
 
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-
-
-
-  const location = useLocation();
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/";
-  const isRegisterPage = location.pathname === "/register";
-
-
   if (!isDesktop) {
     return (
         <div className="mobile-warning text-center p-8 bg-red-100 min-h-screen flex items-center justify-center">
@@ -114,7 +109,6 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      
       <AppContent />
     </Router>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
+import { toast } from "react-toastify";
 function Templates() {
   const token = localStorage.getItem("authToken");
   const navigate = useNavigate();
@@ -25,10 +26,10 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      alert(`${response.data.message}`);
+      toast.error(`${response.data.message}`);
       window.location.reload();
     } catch (error) {
-      alert("Error: " + (error.response?.data?.error || error.message));
+      toast.error("Error: " + (error.response?.data?.error || error.message));
     }
   };
 
@@ -41,10 +42,10 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      // alert("Sync Successful: " + response.data.message);
-      window.location.reload();
+      // window.location.reload();
+      toast.success(response.data.message);
     } catch (error) {
-      // alert("Error: " + (error.response?.data?.error || error.message));
+      toast.error("Error: " + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }

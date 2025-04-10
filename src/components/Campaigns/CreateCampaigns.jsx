@@ -2,6 +2,7 @@ import React,{useState,useEffect}from 'react';
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import API_BASE_URL from "../../config";
+import { toast } from 'react-toastify'
 function CreateTemplate() {
   const navigate=useNavigate();
   const [activeButton, setActiveButton] = useState(null);
@@ -86,7 +87,7 @@ function CreateTemplate() {
             "Content-Type": "application/json",
           },
         });
-        alert("Campaign Created Successfully!");
+        toast.success("Campaign Created Successfully!");
         console.log(response.data)
         setformData({
           template_name:"",
@@ -95,7 +96,7 @@ function CreateTemplate() {
         })
       } catch (error) {
           console.error("Error creating template:", error.response.data);
-          alert("Failed to create Campaigns");
+          toast.error("Failed to create Campaigns");
       }
       
 
@@ -115,7 +116,7 @@ useEffect(()=>{
         setIsConnected(response.data.is_connected);
       })
       .catch((error)=>{
-        alert("Failed to fetch user info:", error.response?.data || error.message);
+        toast.error("Failed to fetch user info:", error.response?.data || error.message);
       })
     },[])
 
