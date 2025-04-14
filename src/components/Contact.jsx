@@ -42,10 +42,14 @@ const Contacts = () => {
           'Content-Type': 'application/json',
         },
       });
-      toast.success(response.data.message)
-      // Update state instead of reloading
+      toast.success(response.data.message, {
+              onClose: () => {
+                window.location.reload();
+              },
+              autoClose: 2000 // Close toast after 2 seconds
+            });
       setActiveDropdownId(false)
-      window.location.reload()
+      
 
     } catch (error) {
       alert("Error: " + (error.response?.data?.error || error.message));

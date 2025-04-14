@@ -26,8 +26,12 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      window.location.reload();
-      toast.success(`${response.data.message}`);
+      toast.success(response.data.message, {
+        onClose: () => {
+          window.location.reload();
+        },
+        autoClose: 2000 // Close toast after 2 seconds
+      });
     } catch (error) {
       toast.error("Error: " + (error.response?.data?.error || error.message));
     }
@@ -42,8 +46,12 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      window.location.reload();
-      toast.success(response.data.message);
+      toast.success(response.data.message, {
+        onClose: () => {
+          window.location.reload();
+        },
+        autoClose: 2000 // Close toast after 2 seconds
+      });
     } catch (error) {
       toast.error((error.response?.data?.error || error.message));
     } finally {
@@ -63,10 +71,11 @@ function Templates() {
       .then((response) => {
         setTemplates(response.data);
         setLoading(false);
-        console.log(templates.Data);
+        // console.log(templates.Data);
       })
       .catch((error) => {
-        console.error("Error fetching templates:", error);
+        toast.error(error)
+        // console.error("Error fetching templates:", error);
         setLoading(false);
       });
   }, []);
