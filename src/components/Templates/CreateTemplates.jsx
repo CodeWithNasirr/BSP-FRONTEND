@@ -102,7 +102,15 @@ function CreateTemplate() {
       });
     } catch (error) {
       console.error("Error creating template:", error.response.data);
-      toast.error("Failed to create template");
+      try {
+        // Parse the nested error JSON string
+        const errorData = JSON.parse(error.response.data.error);
+        // Show the user-friendly message if available, otherwise fallback
+        toast.error(errorData.error.error_user_msg || "Failed to create template");
+      } catch (parseError) {
+        // If parsing fails, show generic error
+        toast.error("Failed to create template");
+      }
     }
   };
 

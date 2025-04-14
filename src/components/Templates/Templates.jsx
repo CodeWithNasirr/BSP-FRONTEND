@@ -26,8 +26,8 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      toast.error(`${response.data.message}`);
       window.location.reload();
+      toast.success(`${response.data.message}`);
     } catch (error) {
       toast.error("Error: " + (error.response?.data?.error || error.message));
     }
@@ -45,7 +45,7 @@ function Templates() {
       window.location.reload();
       toast.success(response.data.message);
     } catch (error) {
-      toast.error("Error: " + (error.response?.data?.error || error.message));
+      toast.error((error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
