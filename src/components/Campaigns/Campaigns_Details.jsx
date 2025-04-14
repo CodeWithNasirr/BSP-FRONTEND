@@ -22,6 +22,7 @@ const CampaignDetails = () => {
         );
         setCampaigns(filtered_camp);
         setTemplate(filtered_camp.Templates)
+        console.log(Campaign)
 
       })
       .catch((error) => {
@@ -112,7 +113,7 @@ const CampaignDetails = () => {
                         className="hover:bg-slate-50 md:border-b-0 md:border-t border-[#d1d5db] text-sm"
                       >
                         <td className="pl-4 py-4 hidden sm:table-cell">
-                          Nasir
+                          {item.user_name=="null"?"unknown":item.user_name}
                         </td>
                         <td>+{item.recipient_id}</td>
                         <td className="hidden sm:table-cell">

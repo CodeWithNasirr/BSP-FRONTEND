@@ -42,7 +42,7 @@ function Templates() {
           'Content-Type': 'application/json',
         },
       });
-      // window.location.reload();
+      window.location.reload();
       toast.success(response.data.message);
     } catch (error) {
       toast.error("Error: " + (error.response?.data?.error || error.message));
