@@ -19,9 +19,11 @@ const Contacts = () => {
     })
     .then((response)=>{
       setContact(response.data.data)
-      if (response.data.data > 0){
-        setGroup(response.data.data[0].Group)
+      if (response.data.data.length > 0){
+        // setGroup(response.data.data[0].Group)
       }
+      // console.log(response.data)
+
     })
     .catch((error)=>{
       // console.error("Error creating Contacts:", error.response.data);
@@ -76,58 +78,58 @@ const Contacts = () => {
     setFormData((prevState) => ({...prevState,[name]: value,}));
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Generate full_name from firstName and lastName
-  const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
 
-  // Prepare only the required fields for the API request
-  const requestData = {
-    full_name: fullName,
-    phone_number: formData.phone_number,
-    email: formData.email,
-    group_name: formData.group_name,
-  };
-  // Filter out empty fields
-  const filteredData = Object.fromEntries(
-    Object.entries(requestData).filter(([_, value]) => 
-      typeof value === "string" ? value.trim() !== "" : value // Keep files
-    )
-  );
-  console.log(filteredData)
-    try{
-      const response = await axios.post(`${API_BASE_URL}/get_contacts/`,filteredData, {
-        headers: {
-           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      toast.success(response.data.Message)
-      // Update state instead of reloading
-      setContact((prevContacts) => [...prevContacts, response.data.data]);
-      // window.location.reload();
-      setFormData({
-        firstName: '',
-        lastName: '',
-        phone_number: '',
-        email: '',
-        group_name: '',
-      });
-    }
-    catch(error){
-      console.log(error.response.data)
-      toast.error(error.response.data.error)
-      setFormData({
-        firstName: '',
-        lastName: '',
-        phone_number: '',
-        email: '',
-        group_name: '',
-      });
-    }
-   
-  };
+      // Prepare only the required fields for the API request
+      const requestData = {
+        full_name: fullName,
+        phone_number: formData.phone_number,
+        email: formData.email,
+        group_name: formData.group_name,
+      };
+      // Filter out empty fields
+      const filteredData = Object.fromEntries(
+        Object.entries(requestData).filter(([_, value]) => 
+          typeof value === "string" ? value.trim() !== "" : value // Keep files
+        )
+      );
+      console.log(filteredData)
+        try{
+          const response = await axios.post(`${API_BASE_URL}/get_contacts/`,filteredData, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          })
+          toast.success(response.data.Message)
+          // Update state instead of reloading
+          setContact((prevContacts) => [...prevContacts, response.data.data]);
+          // window.location.reload();
+          setFormData({
+            firstName: '',
+            lastName: '',
+            phone_number: '',
+            email: '',
+            group_name: '',
+          });
+        }
+        catch(error){
+          console.log(error.response.data)
+          toast.error(error.response.data.error)
+          setFormData({
+            firstName: '',
+            lastName: '',
+            phone_number: '',
+            email: '',
+            group_name: '',
+          });
+        }
+      
+      };
 
 
 
@@ -156,6 +158,76 @@ const Contacts = () => {
   };
 
   // Group Logic Here
+
+  useEffect(()=>{
+    axios
+    .get(`${API_BASE_URL}/add_group`, {
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((response)=>{
+      setGroup(response.data.data) 
+      
+      // console.log(response.data.data)
+
+    })
+    .catch((error)=>{
+
+      toast.error(error.response.data.error)
+    })
+   
+  },[]);
+
+
+const [FormgrpData, setgrpFormData] = useState({
+  group_name: "",
+});
+
+const grphandleChange = (e) => {
+  setgrpFormData({ ...FormgrpData, [e.target.name]: e.target.value });
+};
+const GrphandleSubmit = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/add_group/`,
+        FormgrpData, // sending data here
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+  
+      toast.success(response.data.Message);
+
+       // Update state instead of reloading
+      setGroup((prevgroups) => [...prevgroups, response.data.data]);
+  
+      // Reset form data if needed
+      setgrpFormData({
+        group_name: "",
+        // any other fields you want to reset
+      });
+    } catch (error) {
+      console.log(error.response?.data);
+      toast.error(error.response?.data?.error || "Something went wrong");
+      
+      setgrpFormData({
+        group_name: "", // same reset as above
+      });
+    }
+  };
+  
+
+
+
+
+  const [showAddGroupForm, setShowAddGroupForm] = useState(false);
   const [isGrpSelected,setGroupSelected]=useState(false);
   const [selectedGroup,setSelectedGroup]=useState([]);
 
@@ -244,6 +316,7 @@ const Contacts = () => {
                     href=""
                     onClick={(e) => {
                       e.preventDefault();
+                      setShowAddGroupForm(!showAddGroupForm);
                     }}
                   >
                     <svg
@@ -426,6 +499,7 @@ const Contacts = () => {
             <div className="flex justify-between text-sm border-b border-slate-200">
               <button
                 onClick={() => {
+                  setShowAddGroupForm(false);
                   setActiveTab("contact");
                   setSelectedGroup([]);
                   setGroupSelected(false);
@@ -440,6 +514,7 @@ const Contacts = () => {
               </button>
               <button
                 onClick={() => {
+                  
                   setActiveTab("group");
                   setSelectedContacts([]);
                   setContAllSelected(false);
@@ -530,43 +605,44 @@ const Contacts = () => {
             </div>
           )}
         </div>
-        {!showAddContactForm && (
-          <div className="md:w-[70%]  bg-zinc-100 md:h-[100vh] md:overflow-y-hidden flex justify-center items-center">
-            {/* Contact Content */}
-            {activeTab === "contact" && (
-              <div className="border border-slate-200 pt-20 py-10 w-[30em] rounded-xl bg-white">
-                <h2 className="text-center text-2xl text-slate-500 mb-6">
-                  Select Contact
-                </h2>
-                <div className="flex justify-center">
-                  <div className="border-r border-slate-500 h-10"></div>
-                </div>
-                <h2 className="text-center text-slate-600">OR</h2>
-                <div className="flex justify-center">
-                  <div className="border-r border-slate-500 h-10"></div>
-                </div>
-                <div className="flex justify-center space-x-4 mt-6">
-                  <a
-                    className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
-                    href=""
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowAddContactForm(!showAddContactForm);
-                    }}
-                  >
-                    Add Contact
-                  </a>
-                  <a
-                    className="rounded-md bg-indigo-600 hover:bg-indigo-500 cursor-not-allowed px-3 py-2 text-sm font-semibold text-white shadow-sm"
-                    // href="#"
-                  >
-                    Bulk Upload
-                  </a>
-                </div>
-              </div>
-            )}
 
-            {activeTab === "group" && (
+
+          {!showAddContactForm && !showAddGroupForm &&  (
+            <div className="md:w-[70%]  bg-zinc-100 md:h-[100vh] md:overflow-y-hidden flex justify-center items-center">
+              {/* Contact Content */}
+              {activeTab === "contact" && (
+                <div className="border border-slate-200 pt-20 py-10 w-[30em] rounded-xl bg-white">
+                  <h2 className="text-center text-2xl text-slate-500 mb-6">
+                    Select Contact
+                  </h2>
+                  <div className="flex justify-center">
+                    <div className="border-r border-slate-500 h-10"></div>
+                  </div>
+                  <h2 className="text-center text-slate-600">OR</h2>
+                  <div className="flex justify-center">
+                    <div className="border-r border-slate-500 h-10"></div>
+                  </div>
+                  <div className="flex justify-center space-x-4 mt-6">
+                    <a
+                      className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                      href=""
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowAddContactForm(!showAddContactForm);
+                      }}
+                    >
+                      Add Contact
+                    </a>
+                    <a
+                      className="rounded-md bg-indigo-600 hover:bg-indigo-500 cursor-not-allowed px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                      // href="#"
+                    >
+                      Bulk Upload
+                    </a>
+                  </div>
+                </div>
+              )}
+                {activeTab === "group" && (
               <div className="border border-slate-200 pt-20 py-10 w-[30em] rounded-xl bg-white">
                 <h2 className="text-center text-2xl text-slate-500 mb-6">
                   Select Group
@@ -582,6 +658,10 @@ const Contacts = () => {
                   <a
                     className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
                     // href=""
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowAddGroupForm(!showAddGroupForm);
+                    }}
                   >
                     Add Group
                   </a>
@@ -595,9 +675,10 @@ const Contacts = () => {
               </div>
             )}
           </div>
-        )}
+          )}
 
-        {/* Add Contact */}
+        
+        {/* Add Contact Page */}
         {showAddContactForm && (
           <div className="md:w-[70%] bg-zinc-100 md:h-[100vh] md:overflow-y-hidden">
             <div>
@@ -606,7 +687,7 @@ const Contacts = () => {
                   <h1 className="text-xl">Add Contact</h1>
                   <a
                     className="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4"
-                    href=""
+                    // href=""
                     onClick={(e) => {
                       e.preventDefault();
                       setShowAddContactForm(!showAddContactForm);
@@ -750,7 +831,7 @@ const Contacts = () => {
                     <div className="mt-4 mb-10 pb-10 flex space-x-4">
                       <a
                         className="rounded-full bg-indigo-600 hover:bg-indigo-500 cursor-pointer px-5 py-2 text-white text-sm font-semibold flex items-center"
-                        href=""
+                        // href=""
                         onClick={(e) => {
                           e.preventDefault();
                           setShowAddContactForm(!showAddContactForm);
@@ -770,6 +851,60 @@ const Contacts = () => {
               </div>
             </div>
           </div>
+        )}
+        {/* Add Group Page */}
+        {showAddGroupForm && (
+        <div className="md:w-[70%] bg-zinc-100 md:h-[100vh] md:overflow-y-hidden">
+        <div className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10">
+          <h1 className="text-xl font-semibold">Add Group</h1>
+        </div>
+  
+        <div className="flex flex-1 justify-center items-start py-10 overflow-y-auto">
+          <form
+            className="w-full max-w-lg bg-white p-8 rounded-xl shadow-md"
+            onSubmit={GrphandleSubmit}
+          >
+            <div className="mb-6">
+              <label
+                htmlFor="group_name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Group Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="group_name"
+                name="group_name"
+                type="text"
+                required
+                value={FormgrpData.group_name}
+                onChange={grphandleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                placeholder="e.g. VIP Customers"
+              />
+            </div>
+  
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                // onClick={() => setGroupName("")}
+                className="rounded-full px-5 py-2 text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowAddGroupForm(!showAddGroupForm);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-full px-5 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-500"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div> 
         )}
       </div>
     </div>

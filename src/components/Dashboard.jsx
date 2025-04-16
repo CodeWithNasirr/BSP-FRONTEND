@@ -3,6 +3,7 @@ import { User } from 'lucide-react';
 import React,{useState,useEffect} from 'react';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from '../config';
+import { toast } from 'react-toastify'
 const Dashboard = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
@@ -32,7 +33,7 @@ const Dashboard = () => {
       
       })
       .catch((error) => {
-        alert("Failed to fetch user info:", error.response?.data || error.message);
+        toast.error("Failed to fetch user info:", error.response?.data || error.message);
       });
   }, []);
 // Ending
@@ -50,7 +51,7 @@ useEffect(()=>{
     setIsConnected(response.data.is_connected);
   })
   .catch((error)=>{
-    alert("Failed to fetch user info:", error.response?.data || error.message);
+    toast.error("Failed to fetch user info:", error.response?.data || error.message);
   })
 },[])
 

@@ -2,6 +2,7 @@ import axios from "axios";
 import { MoreVertical, ChevronLast,ContactRound, ChevronFirst } from "lucide-react";
 import { useContext, createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify'
 const SidebarContext = createContext();
 import API_BASE_URL from "../config";
 export default function Sidebar({ children }) {
@@ -37,7 +38,7 @@ export default function Sidebar({ children }) {
         // console.log(userInfo);
       })
       .catch((error) => {
-        alert("Failed to fetch user info:", error.response?.data || error.message);
+        toast.error("Failed to fetch user info:", error.response?.data || error.message);
       });
   }, []);
   

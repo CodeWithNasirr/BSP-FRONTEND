@@ -9,25 +9,27 @@ const ChatWindow = ({conversationId}) => {
   const chatContainerRef=useRef(null);
 
   useEffect(() => {
+    let interval;
     if (conversationId) {
-      axios.get(`${API_BASE_URL}/get_chathistroy/${conversationId}/`,{
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
+      interval = setInterval(() => {
+        axios.get(`${API_BASE_URL}/get_chathistroy/${conversationId}/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
         .then(response => {
-          setMessages(response.data.Data.messages);
-          setUserName(response.data.Data)
-          setRecipient(response.data.Data.phone_number)
-          console.log(messages)
-        
-          // console.log(messages)
+          setMessages(response.data.Data.messages || []);
+          setUserName(response.data.Data);
+          setRecipient(response.data.Data.phone_number);
         })
         .catch(error => {
-          console.error("Error fetching conversation details:", error);
+          console.error("Polling failed:", error);
         });
+      }, 3000); // Poll every 3 seconds
     }
+  
+    return () => clearInterval(interval);
   }, [conversationId]);
 
   // Auto Scroll 
@@ -63,12 +65,13 @@ const ChatWindow = ({conversationId}) => {
           'Content-Type': 'application/json',
         },
       });
+      // console.log(response)
       setFormData({
         message_text:"",
         recipient:""
       })
     
-      window.location.reload()
+      // window.location.reload()
       // console.log("Message sent successfully:", response.data);
     } catch (error) {
       console.error("Error sending message:", error);

@@ -31,21 +31,26 @@ function CreateTemplate() {
     });
   },[])
 
-  const [contact,setContact]=useState([]);
+  const [group,setGroup]=useState([]);
   useEffect(()=>{
     axios
-    .get(`${API_BASE_URL}/get_contacts/`, {
+    .get(`${API_BASE_URL}/add_group`, {
       headers: {
         Authorization: `Token ${token}`,
         'Content-Type': 'application/json',
       },
     })
     .then((response)=>{
-      setContact(response.data.data[0].Group)
+      setGroup(response.data.data) 
+      
+      // console.log(response.data.data)
+
     })
-    .catch((error) => {
-      console.error("Error fetching templates:", error);
-    });
+    .catch((error)=>{
+
+      toast.error(error.response.data.error)
+    })
+   
   },[]);
 
   const [formData,setformData]=useState({
@@ -228,8 +233,8 @@ useEffect(()=>{
                <select  className='rounded-md ring-gray-300 bg-white border-0 shadow-sm outline-none ring-1 ring-inset py-1.5 px-5 text-sm' value={formData.recipients} onChange={handleChange} name="recipients" id="recipients">
                    <option value="" disabled>Select Contacts</option>
                    <option value="all_contacts">All-Contacts</option>
-                   {contact.map((contact,index)=>(
-                     <option key={index}>{contact.group_name}</option>
+                   {group.map((group,index)=>(
+                     <option key={index}>{group.group_name}</option>
                    ))}
                  </select>
                </div>
