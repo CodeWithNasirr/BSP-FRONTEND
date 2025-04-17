@@ -18,7 +18,7 @@ function Campaigns() {
     })
     .then((response)=>{
       setCampaigns(response.data)
-      console.log(Campaigns.Data)
+      // console.log(Campaigns.Data)
     })
     .catch((error) => {
       console.error("Error fetching templates:", error);

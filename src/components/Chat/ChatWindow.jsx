@@ -3,6 +3,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 const ChatWindow = ({conversationId}) => {
   const [messages, setMessages] = useState([]);
+  console.log(messages)
   const [userName,setUserName]= useState([]);
   const [recipient,setRecipient]=useState([])
   const token = localStorage.getItem("authToken");
@@ -95,7 +96,25 @@ const ChatWindow = ({conversationId}) => {
                 (<> 
                   <div className='flex justify-end mb-1'>
                  <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[60%]">
-                  <h1 className='font-semibold'>{msg.header_text}</h1>
+                 {msg.header_text && <h1 className='font-semibold'>{msg.header_text}</h1>}
+                
+                  {/* Media Content */}
+                  {msg.media_type === 'image' && msg.media_url ? (
+                    <div className="mb-2">
+                       <img 
+                        src={`http://127.0.0.1:8000/media/${msg.media_url}`}  // now points to a saved file!
+                        crossOrigin="anonymous"
+                        alt="Sent media"
+                        className="max-w-full h-auto rounded-lg max-h-60 object-contain"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder-image.png';
+                          e.target.className += ' opacity-50 grayscale';
+                        }}
+                        loading="lazy"
+                      />
+                     </div>
+                  ) : null}
                   <span>{msg.text_content}</span>
                   <div className="text-xs text-gray-500 mt-1">
                     <span className='font-light   '>{msg.footer_text}</span><br />
@@ -118,15 +137,44 @@ const ChatWindow = ({conversationId}) => {
                   </>
                 
                 
-                )
-                :(
-                  <div className='flex justify-start'>
+                ):(
+                  // Inbound Message (received from contact)
+                <div className='flex justify-start'>
                 <div className="flex items-end">
                   <svg height="13" width="8">
                     <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
                   </svg>
                 </div>
                 <div className="bg-white p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
+                {/* Media Content for received messages */}
+                {msg.media_type === 'image' && msg.media_url ? (
+                   <div className="mb-2 relative">
+                   <img 
+                      src={`http://127.0.0.1:8000/media/${msg.media_url}`}
+                      crossOrigin="anonymous"
+                      alt="Sent media"
+                      className="max-w-full h-auto rounded-lg max-h-60 object-contain"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/placeholder-image.png';
+                        // e.target.className += ' opacity-50 grayscale';
+                      }}
+                      loading="lazy"
+                    />
+                   {/* Optional: Add download button */}
+                   {/* <a 
+                     href={`http://127.0.0.1:8000/api/media/${msg.media_url}/`} 
+                     download
+                     className="absolute bottom-2 right-2 bg-black/50 text-white p-1 rounded-full hover:bg-black/70"
+                     title="Download image"
+                   >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                     </svg>
+                   </a> */}
+                 </div>
+               ) : null}
+
                 <span>{msg.text_content}</span>
                 <div className="text-xs text-gray-500 mt-1">
                   {new Date(msg.timestamp).toLocaleTimeString()} &middot; {msg.status}

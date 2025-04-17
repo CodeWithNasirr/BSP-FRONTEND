@@ -98,7 +98,7 @@ function AppContent() {
             <Route path="/whatsapp-setting" element={<ProtectedRoute element={whatsapp_details} />} />
             <Route path="/chats" element={<ProtectedRoute element={main_chat} />} />
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
-            <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} />
+            {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
         </Routes>
       </div> 

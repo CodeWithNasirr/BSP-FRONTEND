@@ -81,7 +81,7 @@ useEffect(()=>{
           <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/contacts'))}>Add Contact</a>
           <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/campaigns'))}>Create Campaign</a>
           <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/templates/create'))}>Create Template</a>
-          <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/scraper'))}>Scraper</a>
+          {/* <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/scraper'))}>Scraper</a> */}
 
           <button onClick={handleFacebookLogin} className={`rounded-md cursor-pointer ${isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
             } px-3 py-2 text-sm font-semibold text-white shadow-sm`}

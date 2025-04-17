@@ -19,7 +19,7 @@ function CreateTemplate() {
     footer_text: "",
     button_type: "",
     button_text: "",
-    button_url: "",
+    button_url: "", 
     button_number: "",
   });
 
@@ -48,6 +48,8 @@ function CreateTemplate() {
         ...prevData,
         [name]:name === 'template_name'?value.toLowerCase() : value
       }}
+      console.log(updatedData)
+
 
       // Check if all required fields are filled
       const isFormComplete =
@@ -759,7 +761,7 @@ function CreateTemplate() {
             </div>
           )}
  
-          <div className="w-[30%] mx-auto h-[50%] border rounded-xl shadow-md p-4 bg-cover bg-center" style={{ backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')` }}>
+          <div className="w-[30%] mx-auto h-[50%] border overflow-auto rounded-xl shadow-md p-4 bg-cover bg-center" style={{ backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')` }}>
           <img
               src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
               alt="WhatsApp Logo"
@@ -772,6 +774,11 @@ function CreateTemplate() {
                   </svg>
                 </div>
               <div className="rounded-r-lg rounded-tl-lg bg-white py-2 px-2">
+              {/* <img 
+                src="https://whatsappx.up.railway.app/media/static_media/WhatsApp_Image_2025-04-08_at_23.17.35_778df306.jpg" 
+                alt="" 
+                className="w-screen h-[30vh] object-cover"
+              /> */}
                 <h1 className="font-semibold">{formData.header_text}</h1>
                 <span className="text-sm">{formData.body_text}</span>
                 <div className="text-xs text-gray-500 mt-1">
@@ -786,11 +793,7 @@ function CreateTemplate() {
                    {formData.button_text}
                   </span>
               </div>
-              {/* <p className="text-xs  text-gray-500">
-              Disclaimer: This is just a graphical representation of the message
-              that will be delivered. Actual message will consist of media
-              selected and may appear different.
-            </p> */}
+           
           </div>
           
         </div>
