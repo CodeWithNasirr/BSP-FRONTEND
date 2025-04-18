@@ -13,7 +13,7 @@ import WhatsAppScraper from './components/scrap'
 import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
-
+import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
@@ -36,6 +36,11 @@ function AppContent() {
   const isLoginPage = location.pathname === "/login" || location.pathname === "/";
   const isRegisterPage = location.pathname === "/register";
   const [isDesktop, setIsDesktop] = useState(true);
+  const notFoundPage = location.pathname !== "/login" && location.pathname !== "/register" &&
+    ![
+      '/', '/dashboard', '/templates', '/templates/create', '/campaigns', '/campaigns/create',
+      '/contacts', '/campaigns/:id', '/whatsapp-setting', '/chats', '/chats/:id', '/subscriptions'
+    ].some(path => location.pathname.startsWith(path.split(':')[0])); // handles dynamic routes
   // Check if the user is on a mobile device
     useEffect(() => {
         const handleResize = () => {
@@ -62,8 +67,8 @@ function AppContent() {
     
 
   return (
-    <main className={`flex ${isLoginPage && isRegisterPage ? 'w-full h-screen' : 'h-screen'}`}>
-      {!isLoginPage && !isRegisterPage && (
+    <main className={`flex ${isLoginPage && isRegisterPage && !notFoundPage ? 'w-full h-screen' : 'h-screen'}`}>
+      {!isLoginPage && !isRegisterPage && !notFoundPage && (
         <div className="text-black">
           <Sidebar>
             <SidebarItem icon={<MessagesSquare size={20} />} text="Dashboard" to="/dashboard" />
@@ -79,7 +84,7 @@ function AppContent() {
         </div>
       )}
 
-      <div className={`flex-1 overflow-hidden  ${isLoginPage || isRegisterPage ? 'w-full' : ''}`}>
+      <div className={`flex-1 overflow-hidden  ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full' : ''}`}>
         <ToastContainer />
         <Routes>
           {/* Public Routes */}
@@ -100,6 +105,8 @@ function AppContent() {
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
             {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
+            {/* Not Found */}
+            <Route path="*" element={<NotFound />} />
         </Routes>
       </div> 
     </main>
