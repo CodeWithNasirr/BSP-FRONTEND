@@ -102,7 +102,7 @@ const ChatWindow = ({conversationId}) => {
                   {msg.media_type === 'image' && msg.media_url ? (
                     <div className="mb-2">
                        <img 
-                        src={`http://127.0.0.1:8000/media/${msg.media_url}`}  // now points to a saved file!
+                        src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}  // now points to a saved file!
                         crossOrigin="anonymous"
                         alt="Sent media"
                         className="max-w-full h-auto rounded-lg max-h-60 object-contain"
@@ -150,7 +150,7 @@ const ChatWindow = ({conversationId}) => {
                 {msg.media_type === 'image' && msg.media_url ? (
                    <div className="mb-2 relative">
                    <img 
-                      src={`http://127.0.0.1:8000/media/${msg.media_url}`}
+                      src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
                       crossOrigin="anonymous"
                       alt="Sent media"
                       className="max-w-full h-auto rounded-lg max-h-60 object-contain"
