@@ -72,7 +72,7 @@ function AppContent() {
             <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
-            <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/>
+            {/* <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/> */}
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
 
           </Sidebar>

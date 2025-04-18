@@ -107,7 +107,7 @@ useEffect(()=>{
               </div>
             </div>
             <div className="text-sm space-x-1 md:block hidden">
-              <a className="flex items-center space-x-1 underline" href="" onClick={(e)=>(e.preventDefault(),navigate('/Contact'))}  >
+              <a className="flex items-center space-x-1 underline" href="" onClick={(e)=>(e.preventDefault(),navigate('/contact'))}  >
                 <span>View Contacts</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                   <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 16l8-8m0 0h-6m6 0v6"></path>
