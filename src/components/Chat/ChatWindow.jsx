@@ -27,7 +27,7 @@ const ChatWindow = ({conversationId}) => {
         .catch(error => {
           console.error("Polling failed:", error);
         });
-      }, 3000); // Poll every 3 seconds
+      }, 300); // Poll every 3 seconds
     }
   
     return () => clearInterval(interval);
