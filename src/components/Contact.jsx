@@ -5,35 +5,52 @@ import { toast } from 'react-toastify'
 const Contacts = () => {
   const token = localStorage.getItem("authToken");
   const[activeTab,setActiveTab]=useState("contact")
+  const [loading, setLoading] = useState(false);
+  const [contact, setContact] = useState([]);
+const [group, setGroup] = useState([]);
 
-  const[contact,setContact]=useState([]);
-  const[group,setGroup]=useState([]);
+const updateLocalStorageUserInfo = (key, value) => {
+  const storedUserInfo = localStorage.getItem("userInfo");
+  if (!storedUserInfo) return;
 
-  useEffect(()=>{
-    axios
-    .get(`${API_BASE_URL}/get_contacts`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((response)=>{
-      setContact(response.data.data)
-      if (response.data.data.length > 0){
-        // setGroup(response.data.data[0].Group)
-      }
-      // console.log(response.data)
+  const parsed = JSON.parse(storedUserInfo);
+  parsed[key] = value;
+  localStorage.setItem("userInfo", JSON.stringify(parsed));
+};
 
-    })
-    .catch((error)=>{
-      // console.error("Error creating Contacts:", error.response.data);
-      // alert("Failed to create Contacts");
-      toast.error(error.response.data.error)
-    })
-    // console.log(contact.data[0].Group)
-    // console.log(contact)
-    // console.log(group)
-  },[]);
+// 🌟 Load from localStorage first
+useEffect(() => {
+  const storedUserInfo = localStorage.getItem("userInfo");
+  if (storedUserInfo) {
+    const parsed = JSON.parse(storedUserInfo);
+    if (parsed.contacts) {
+      setContact(parsed.contacts); // 👈 load full data, not just length
+    }
+  }
+
+  const fetchContactsAndGroups = async () => {
+    setLoading(true);
+    try {
+      const [contactsRes, groupsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/get_contacts`, { headers: { Authorization: `Token ${token}` } }),
+        axios.get(`${API_BASE_URL}/add_group`, { headers: { Authorization: `Token ${token}` } })
+      ]);
+
+      setContact(contactsRes.data.data);
+      setGroup(groupsRes.data.data);
+
+      // 🪄 Update localStorage with full contact data
+      updateLocalStorageUserInfo("contacts", contactsRes.data.data);
+
+    } catch (error) {
+      toast.error("Failed to fetch contacts or groups");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchContactsAndGroups();
+}, []);
 
 
   const delete_contact = async (contact_id) => {
@@ -50,6 +67,13 @@ const Contacts = () => {
               },
               autoClose: 2000 // Close toast after 2 seconds
             });
+      // setContact((prevContacts) => {
+      //   const updated = prevContacts.filter((c) => c.id !== contact_id);
+      //   updateLocalStorageUserInfo("contacts", updated);
+      //   return updated;
+      // });
+     
+        
       setActiveDropdownId(false)
       
 
@@ -107,7 +131,11 @@ const handleSubmit = async (e) => {
           })
           toast.success(response.data.Message)
           // Update state instead of reloading
-          setContact((prevContacts) => [...prevContacts, response.data.data]);
+          setContact((prevContacts) => {
+            const updated = [...prevContacts, response.data.data];
+            updateLocalStorageUserInfo("contacts", updated.length);
+            return updated;
+          });
           // window.location.reload();
           setFormData({
             firstName: '',
@@ -159,28 +187,6 @@ const handleSubmit = async (e) => {
 
   // Group Logic Here
 
-  useEffect(()=>{
-    axios
-    .get(`${API_BASE_URL}/add_group`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((response)=>{
-      setGroup(response.data.data) 
-      
-      // console.log(response.data.data)
-
-    })
-    .catch((error)=>{
-
-      toast.error(error.response.data.error)
-    })
-   
-  },[]);
-
-
 const [FormgrpData, setgrpFormData] = useState({
   group_name: "",
 });
@@ -188,6 +194,7 @@ const [FormgrpData, setgrpFormData] = useState({
 const grphandleChange = (e) => {
   setgrpFormData({ ...FormgrpData, [e.target.name]: e.target.value });
 };
+
 const GrphandleSubmit = async (e) => {
     e.preventDefault();
   
@@ -532,41 +539,44 @@ const GrphandleSubmit = async (e) => {
 
           {/* Contacts List */}
           {activeTab === "contact" && (
-            <div className="flex-grow overflow-y-auto h-[65vh]">
+            loading ? <div className="text-center my-50">Loading contacts...</div> :(
+              <div className="flex-grow overflow-y-auto h-[65vh]">
               {contact.map((contact, index) => (
                 <div
-                  key={index}
-                  className="flex space-x-2 hover:bg-gray-50 cursor-pointer items-center px-4 py-3 border-b border-slate-200"
-                >
-                  <div className="flex items-center justify-center mt-1">
-                    <label
-                      htmlFor={`contact_${contact.id}`}
-                      className="cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        id={`contact_${contact.id}`}
-                        checked={selectedContacts.includes(contact.id)}
-                        onChange={() => handleSelectContact(contact.id)}
-                        className="w-4 h-4 rounded-full"
-                      />
-                    </label>
-                  </div>
+                key={index}
+                className="flex space-x-2 hover:bg-gray-50 cursor-pointer items-center px-4 py-3 border-b border-slate-200"
+              >
+                <div className="flex items-center justify-center mt-1">
+                  <label
+                    htmlFor={`contact_${contact.id}`}
+                    className="cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      id={`contact_${contact.id}`}
+                      checked={selectedContacts.includes(contact.id)}
+                      onChange={() => handleSelectContact(contact.id)}
+                      className="w-4 h-4 rounded-full"
+                    />
+                  </label>
+                </div>
 
-                  <div className="w-[15%]">
-                    <div className="rounded-full bg-blue-600/10 text-blue-600 flex justify-center items-center h-12 w-12">
-                      {contact.initial_name}
-                    </div>
-                  </div>
-                  <div className="w-[75%]">
-                    <h3>{contact.full_name}</h3>
-                    <p className="text-slate-500 text-xs truncate">
-                      {contact.phone_number}
-                    </p>
+                <div className="w-[15%]">
+                  <div className="rounded-full bg-blue-600/10 text-blue-600 flex justify-center items-center h-12 w-12">
+                    {contact.initial_name}
                   </div>
                 </div>
+                <div className="w-[75%]">
+                  <h3>{contact.full_name}</h3>
+                  <p className="text-slate-500 text-xs truncate">
+                    {contact.phone_number}
+                  </p>
+                </div>
+              </div>
               ))}
             </div>
+            )
+            
           )}
 
           {/* Group List */}

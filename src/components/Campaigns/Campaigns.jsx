@@ -8,22 +8,51 @@ function Campaigns() {
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("authToken");
 
-   useEffect(()=>{
-    axios
-    .get(`${API_BASE_URL}/get_Camp/`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((response)=>{
-      setCampaigns(response.data)
-      // console.log(Campaigns.Data)
-    })
-    .catch((error) => {
-      console.error("Error fetching templates:", error);
-    });
-   },[]);
+
+  const updateLocalStorageUserInfo = (key, value) => {
+    const storedUserInfo = localStorage.getItem("userInfo");
+    if (!storedUserInfo) return;
+  
+    const parsed = JSON.parse(storedUserInfo);
+    parsed[key] = value;
+    localStorage.setItem("userInfo", JSON.stringify(parsed));
+  };
+
+
+  useEffect(() => {
+    // ⏱️ Load campaigns instantly from localStorage if available
+    const storedUserInfo = localStorage.getItem("userInfo");
+    if (storedUserInfo) {
+      const parsed = JSON.parse(storedUserInfo);
+      if (parsed.campaigns) {
+        setCampaigns(parsed.campaigns);
+      }
+    }
+  
+    // 🔄 Fetch fresh data in background
+    const fetchCampaigns = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/get_Camp/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        setCampaigns(response.data);
+        updateLocalStorageUserInfo("campaigns", response.data);
+  
+      } catch (error) {
+        console.error("Error fetching campaigns:", error);
+        toast.error("Failed to fetch campaigns");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchCampaigns();
+  }, []);
  
 
   return (

@@ -3,7 +3,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 const ChatWindow = ({conversationId}) => {
   const [messages, setMessages] = useState([]);
-  console.log(messages)
+  console.log(messages) 
   const [userName,setUserName]= useState([]);
   const [recipient,setRecipient]=useState([])
   const token = localStorage.getItem("authToken");
@@ -11,27 +11,36 @@ const ChatWindow = ({conversationId}) => {
 
   useEffect(() => {
     let interval;
-    if (conversationId) {
-      interval = setInterval(() => {
-        axios.get(`${API_BASE_URL}/get_chathistroy/${conversationId}/`, {
+  
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/get_chathistroy/${conversationId}/`, {
           headers: {
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
           },
-        })
-        .then(response => {
-          setMessages(response.data.Data.messages || []);
-          setUserName(response.data.Data);
-          setRecipient(response.data.Data.phone_number);
-        })
-        .catch(error => {
-          console.error("Polling failed:", error);
         });
-      }, 300); // Poll every 3 seconds
+  
+        setMessages(response.data.Data.messages || []);
+        setUserName(response.data.Data);
+        setRecipient(response.data.Data.phone_number);
+  
+      } catch (error) {
+        console.error("Initial chat fetch failed:", error);
+      }
+    };
+  
+    if (conversationId) {
+      // 👇 Fetch chat history immediately on selection
+      fetchMessages();
+  
+      // 🔁 Then setup polling for every 30 seconds
+      interval = setInterval(fetchMessages, 30000);
     }
   
     return () => clearInterval(interval);
   }, [conversationId]);
+  
 
   // Auto Scroll 
   useEffect(() => {

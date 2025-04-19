@@ -5,110 +5,92 @@ import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
 function CreateTemplate() {
   const navigate=useNavigate();
-  const [activeButton, setActiveButton] = useState(null);
+ 
   const [isDisabled, setIsDisabled] = useState(true);
 
   const [template,setTemplates]=useState([])
 
   const token = localStorage.getItem("authToken");
-
-
-
-  useEffect(()=>{
-    axios
-    .get(`${API_BASE_URL}/get_temp/`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((response)=>{
-      setTemplates(response.data.Data)
-      // console.log(template)
-    })
-    .catch((error) => {
-      console.error("Error fetching templates:", error);
-    });
-  },[])
-
   const [group,setGroup]=useState([]);
-  useEffect(()=>{
-    axios
-    .get(`${API_BASE_URL}/add_group`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((response)=>{
-      setGroup(response.data.data) 
-      
-      // console.log(response.data.data)
-
-    })
-    .catch((error)=>{
-
-      toast.error(error.response.data.error)
-    })
-   
-  },[]);
-
   const [formData,setformData]=useState({
     template_name:"",
     campaigns_name:"",
     recipients:"",
     })
+    
+// Load from localStorage (quick) + Fetch fresh data (accurate)
+  useEffect(() => {
+  const fetchTemplatesAndGroups = async () => {
+    try {
+      const [templateRes, groupRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/get_temp/`, {
+          headers: { Authorization: `Token ${token}` },
+        }),
+        axios.get(`${API_BASE_URL}/add_group`, {
+          headers: { Authorization: `Token ${token}` },
+        }),
+      ]);
+      setTemplates(templateRes.data.Data);
+      setGroup(groupRes.data.data);
+    } catch (err) {
+      toast.error("Failed to fetch templates or groups");
+    }
+  };
+
+  fetchTemplatesAndGroups();
+}, []);
 
 
-    const handleChange = (e) => {
+  const handleChange = (e) => {
 
-      const { name,value} = e.target
+    const { name,value} = e.target
 
-      setformData((prevData) => {
-          let updatedData={...prevData};
-          updatedData[name]=value
+    setformData((prevData) => {
+        let updatedData={...prevData};
+        updatedData[name]=value
 
-          // Check if all required fields are filled
-          const isFormComplete =
-              updatedData.template_name.trim() !== "" &&
-              updatedData.campaigns_name.trim() !== "" &&
-              updatedData.recipients.trim()!==""
+        // Check if all required fields are filled
+        const isFormComplete =
+            updatedData.template_name.trim() !== "" &&
+            updatedData.campaigns_name.trim() !== "" &&
+            updatedData.recipients.trim()!==""
 
-          // Update isDisabled state
-          console.log(formData)
-          setIsDisabled(!isFormComplete);
-          return updatedData;
-          
-      });
+        // Update isDisabled state
+        console.log(formData)
+        setIsDisabled(!isFormComplete);
+        return updatedData;
+        
+    });
   };
  
-    const handleSubmit= async (e)=>{
-      e.preventDefault();
+  const handleSubmit= async (e)=>{
+    e.preventDefault();
 
-      try {
-        const response = await axios.post(`${API_BASE_URL}/Send_Campaigns/`,JSON.stringify(formData),{
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        toast.success("Campaign Created Successfully!");
-        console.log(response.data)
-        setformData({
-          template_name:"",
-          campaigns_name:"",
-          recipients:"",
-        })
-      } catch (error) {
-          console.error("Error creating template:", error.response.data);
-          toast.error("Failed to create Campaigns");
-      }
-      
+    try {
+      const response = await axios.post(`${API_BASE_URL}/Send_Campaigns/`,JSON.stringify(formData),{
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      toast.success("Campaign Created Successfully!");
+      console.log(response.data)
+      setformData({
+        template_name:"",
+        campaigns_name:"",
+        recipients:"",
+      })
+    } catch (error) {
+        console.error("Error creating template:", error.response.data);
+        toast.error("Failed to create Campaigns");
+    }
+    
 
-    };
+  };
 
-    const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
+  
 useEffect(()=>{
       axios
       .get(`${API_BASE_URL}/check-whatsapp-status`, {

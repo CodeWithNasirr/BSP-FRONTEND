@@ -13,7 +13,7 @@ const MainChat = () => {
   const queryParams = new URLSearchParams(location.search);
   const conversationId = queryParams.get("conversationId");
 
-  useEffect(() => {
+  useEffect(() => { 
     if (conversationId) {
       axios.get(`${API_BASE_URL}/api/mark_messages_as_read/${conversationId}/`, {
         headers: {

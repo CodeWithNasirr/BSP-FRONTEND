@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { User } from 'lucide-react';
 import React,{useState,useEffect} from 'react';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from '../config';
@@ -9,7 +8,7 @@ const Dashboard = () => {
   const token = localStorage.getItem("authToken");
   const [isConnected, setIsConnected] = useState(false);
 
-// Starting 
+  const [loading, setLoading] = useState(true);
   const [userInfo,setUserInfo]=useState(
     {
       username:"",
@@ -17,44 +16,55 @@ const Dashboard = () => {
     }
   )
   useEffect(() => {
-    if (!token) {
-      // alert("No auth token found! 💔");
-      return;
+    const cachedUserInfo = localStorage.getItem("userInfo");
+    const cachedStatus = localStorage.getItem("waStatus");
+  
+    if (cachedUserInfo) {
+      setUserInfo(JSON.parse(cachedUserInfo));
+      // console.log("CachedUserinfo called.....")
     }
-    axios
-      .get(`${API_BASE_URL}/dash-details/`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      .then((response) => {
-        setUserInfo(response.data);
-      
-      })
-      .catch((error) => {
-        toast.error("Failed to fetch user info:", error.response?.data || error.message);
-      });
-  }, []);
-// Ending
-
-// Starting
-useEffect(()=>{
-  axios
-  .get(`${API_BASE_URL}/check-whatsapp-status`, {
-    headers: {
-      Authorization: `Token ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-  .then((response)=>{
-    setIsConnected(response.data.is_connected);
-  })
-  .catch((error)=>{
-    toast.error("Failed to fetch user info:", error.response?.data || error.message);
-  })
-},[])
-
+    if (cachedStatus) {
+      setIsConnected(JSON.parse(cachedStatus));
+    }
+  
+    if (!token) return;
+  
+    const fetchDashboard = async () => {
+      try {
+        const [userRes, statusRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/dash-details/`, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }),
+          axios.get(`${API_BASE_URL}/check-whatsapp-status`, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }),
+        ]);
+  
+        setUserInfo(userRes.data);
+        // console.log("API called...")
+        setIsConnected(statusRes.data.is_connected);
+        localStorage.setItem("userInfo", JSON.stringify({
+          username: userRes.data.username,
+          email: userRes.data.email
+        }));
+        localStorage.setItem("waStatus", JSON.stringify(statusRes.data.is_connected));
+        console.log(localStorage)
+      } catch (error) {
+        toast.error("Failed to refresh dashboard data 🥲");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchDashboard();
+  }, [token]);
+  
 
     const clientId = "1354428199237692";
     const REDIRECT_URI = "https://whatsappx.up.railway.app/facebook/callback/";
@@ -67,6 +77,10 @@ useEffect(()=>{
 
     
   return (
+    <>
+    {loading ? (
+      <div className="animate-pulse text-center text-2xl text-gray-400 my-50">Loading dashboard...</div>
+    ) : (
     <div className="md:min-h-screen flex flex-col w-full min-w-0">
       <div className="bg-white md:bg-inherit p-4 md:p-8 rounded-[5px] text-[#000] h-full overflow-y-auto capitalize">
         <div className="flex justify-between mt-3 md:mt-0">
@@ -197,8 +211,11 @@ useEffect(()=>{
         </div>
       </div>
     </div>
+          ) 
+      }
+      </>
   );
-};
+}
 
 export default Dashboard;
 
