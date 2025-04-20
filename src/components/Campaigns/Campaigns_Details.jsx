@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { data, useParams } from "react-router-dom";
+import { data, Link, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
+import { NavLink } from "react-router-dom";
 const CampaignDetails = () => {
   const { id } = useParams();
   const [Campaign, setCampaigns] = useState({ Data: [] });
@@ -41,18 +42,18 @@ const CampaignDetails = () => {
             </p>
           </div>
           <div className="space-x-2">
-            <a
+            <Link
               href={``}
               className="rounded-md cursor-not-allowed bg-gray-400 bg-secondary px-3 py-2 text-sm font-semibold text-white shadow-sm"
             >
               Export as CSV
-            </a>
-            <a
+            </Link>
+            <Link
               className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
-              href="/campaigns"
+              to="/campaigns"
             >
               Back
-            </a>
+            </Link>
           </div>
         </div>
         <div className="md:flex md:space-x-4">

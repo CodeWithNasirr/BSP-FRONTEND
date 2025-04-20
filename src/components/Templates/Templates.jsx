@@ -111,7 +111,7 @@ function Templates() {
             disabled={loading}
             className={`rounded-full px-5 py-2 text-white text-sm font-semibold flex items-center ${
               loading
-                ? "bg-gray-400 cursor-not-allowed"
+                ? "bg-gray-400 cursor-not-allowed animate-pulse"
                 : "bg-indigo-600 hover:bg-indigo-500 cursor-pointer"
             }`}
           >
@@ -143,7 +143,7 @@ function Templates() {
 
         {/* Templates List */}
         {loading ? (
-          <p className="text-center py-30 text-2xl text-gray-600">
+          <p className=" animate-pulse text-center py-30 text-2xl text-gray-600">
             Loading templates...
           </p>
         ) : templates.Data.length > 0 ? (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
+import { Link } from "react-router-dom";
 function Campaigns() {
   const navigate = useNavigate();
   const [Campaigns, setCampaigns] = useState({Data: []});
@@ -105,7 +106,7 @@ function Campaigns() {
 
       {/* Campaigns List */}
       {loading ? (
-        <p className="text-center py-30 text-2xl text-gray-600">
+        <p className="animate-pulse text-center py-30 text-2xl text-gray-600">
           Loading Campaings...
         </p>
       ) : Campaigns.Data.length !== 0 ? (
@@ -115,7 +116,7 @@ function Campaigns() {
               key={index}
               className="border-b last:border-none py-2"
             >
-              <a href={`/campaigns/${campaigns.campaign_id}`} className="flex items-center">
+              <Link  to={`/campaigns/${campaigns.campaign_id}`} className="flex items-center">
               <p className="w-1/4 text-center text-gray-700">
                 {campaigns.campaigns_name}
               </p>
@@ -137,7 +138,7 @@ function Campaigns() {
               <p className={`w-1/4 text-center px-2 py-1 text-xs rounded-md ${campaigns.is_sent?"bg-green-700":"bg-red-700"} text-white`}>
                 {campaigns.is_sent ?"Completed" :"Pending"} 
               </p>
-              </a>
+              </Link>
             </div>
           ))}
         </div>
