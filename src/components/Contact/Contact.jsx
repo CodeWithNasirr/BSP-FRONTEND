@@ -1,7 +1,10 @@
 import axios from "axios";
 import React,{useState,useEffect} from "react";
-import API_BASE_URL from "../config";
+import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
+import { Link } from "react-router-dom";
+import DownloadCSVTemplate from "./Sample_csv";
+import ExportContactsButton from "./Export_Contact";
 const Contacts = () => {
   const token = localStorage.getItem("authToken");
   const[activeTab,setActiveTab]=useState("contact")
@@ -54,12 +57,14 @@ useEffect(() => {
 
 
   const delete_contact = async (contact_id) => {
+
     try {
-      const response = await axios.delete(`${API_BASE_URL}/delete_contact/${contact_id}/`, {
+      const response = await axios.delete(`${API_BASE_URL}/delete_contact/`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
         },
+        data: { contact_id }, // pass body in DELETE
       });
       toast.success(response.data.message, {
               onClose: () => {
@@ -67,12 +72,6 @@ useEffect(() => {
               },
               autoClose: 2000 // Close toast after 2 seconds
             });
-      // setContact((prevContacts) => {
-      //   const updated = prevContacts.filter((c) => c.id !== contact_id);
-      //   updateLocalStorageUserInfo("contacts", updated);
-      //   return updated;
-      // });
-     
         
       setActiveDropdownId(false)
       
@@ -229,10 +228,6 @@ const GrphandleSubmit = async (e) => {
       });
     }
   };
-  
-
-
-
 
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
   const [isGrpSelected,setGroupSelected]=useState(false);
@@ -467,12 +462,12 @@ const GrphandleSubmit = async (e) => {
               {/* Dropdown Menu */}
               {activeTab === 'contact' && activeDropdownId && (<div className="absolute right-0 origin-top-right z-10 mt-2 w-32 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-opacity-5 focus:outline-none">
                 <div className="px-1 py-1" role="none">
-                  <a
+                  <Link
                     href={``}
                     className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
                   >
                     View
-                  </a>
+                  </Link>
                   <button
                     className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
                     onClick={() =>delete_contact(selectedContacts)}
@@ -483,12 +478,12 @@ const GrphandleSubmit = async (e) => {
               </div>) }
               {activeTab === "group" && activeDropdownId && (<div className="absolute right-0 origin-top-right z-10 mt-2 w-32 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-opacity-5 focus:outline-none">
                 <div className="px-1 py-1" role="none">
-                  <a
-                    href={``}
+                  <Link
+                    to=''
                     className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
                   >
                     View
-                  </a>
+                  </Link>
                   <button
                     className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
                     // onClick={() =>}
@@ -632,8 +627,8 @@ const GrphandleSubmit = async (e) => {
                   <div className="flex justify-center">
                     <div className="border-r border-slate-500 h-10"></div>
                   </div>
-                  <div className="flex justify-center space-x-4 mt-6">
-                    <a
+                  <div className="grid grid-cols-2 gap-5 text-center px-10">
+                    <Link
                       className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
                       href=""
                       onClick={(e) => {
@@ -642,14 +637,18 @@ const GrphandleSubmit = async (e) => {
                       }}
                     >
                       Add Contact
-                    </a>
-                    <a
-                      className="rounded-md bg-indigo-600 hover:bg-indigo-500 cursor-not-allowed px-3 py-2 text-sm font-semibold text-white shadow-sm"
-                      // href="#"
+                    </Link>
+                    <Link
+                      className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                      to={"/bulk-upload"}
                     >
                       Bulk Upload
-                    </a>
+                    </Link>
+                  
+                    <DownloadCSVTemplate/>
+                    <ExportContactsButton/>
                   </div>
+
                 </div>
               )}
                 {activeTab === "group" && (
