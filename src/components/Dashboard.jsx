@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React,{useState,useEffect} from 'react';
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API_BASE_URL from '../config';
 import { toast } from 'react-toastify'
 const Dashboard = () => {
@@ -66,14 +66,14 @@ const Dashboard = () => {
   }, [token]);
   
 
-    const clientId = "1354428199237692";
-    const REDIRECT_URI = "https://whatsappx.up.railway.app/facebook/callback/";
-    const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
+    // const clientId = "1354428199237692";
+    // const REDIRECT_URI = "https://whatsappx.up.railway.app/facebook/callback/";
+    // const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
 
-    const handleFacebookLogin = () => {
-      const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
-      window.open(url, 'fbPopup','width=500,height=600');
-    };
+    // const handleFacebookLogin = () => {
+    //   const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
+    //   window.open(url, 'fbPopup','width=500,height=600');
+    // };
 
     
   return (
@@ -97,9 +97,9 @@ const Dashboard = () => {
           <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/templates/create'))}>Create Template</a>
           {/* <a className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm" href="" onClick={(e)=>(e.preventDefault(),navigate('/scraper'))}>Scraper</a> */}
 
-          <button onClick={handleFacebookLogin} className={`rounded-md cursor-pointer ${isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
+          <Link  to={isConnected ? "#" : "/connect-form"} onClick={(e) => isConnected && e.preventDefault()} className={`rounded-md cursor-pointer ${isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
             } px-3 py-2 text-sm font-semibold text-white shadow-sm`}
-            disabled={isConnected}>{isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}</button>
+            disabled={isConnected}>{isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}</Link>
 
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-4 md:space-y-0">

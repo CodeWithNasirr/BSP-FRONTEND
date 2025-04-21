@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
+import { Link } from 'react-router-dom';
 function CreateTemplate() {
   const navigate=useNavigate();
  
@@ -108,14 +109,14 @@ useEffect(()=>{
     },[])
 
 
-    const clientId = "1354428199237692";
-    const REDIRECT_URI = "https://9fe2-2402-3a80-18ae-9ce9-9062-bd11-4b6c-ba.ngrok-free.app/facebook/callback/";
-    const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
+    // const clientId = "1354428199237692";
+    // const REDIRECT_URI = "https://9fe2-2402-3a80-18ae-9ce9-9062-bd11-4b6c-ba.ngrok-free.app/facebook/callback/";
+    // const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
 
-    const handleFacebookLogin = () => {
-      const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
-      window.open(url, 'fbPopup','width=500,height=600');
-    };
+    // const handleFacebookLogin = () => {
+    //   const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
+    //   window.open(url, 'fbPopup','width=500,height=600');
+    // };
 
 
 
@@ -175,9 +176,9 @@ useEffect(()=>{
 
           {/* Button Link */}
           <div className="flex justify-center">
-          <button type='button' onClick={handleFacebookLogin} className={`rounded-md cursor-pointer ${isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
-            } px-3 py-2 text-sm font-semibold text-white shadow-sm`}
-            disabled={isConnected}>{isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}</button>
+        <Link  to={isConnected ? "#" : "/connect-form"} onClick={(e) => isConnected && e.preventDefault()} className={`rounded-md cursor-pointer ${isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
+        } px-3 py-2 text-sm font-semibold text-white shadow-sm mx-10`}
+        disabled={isConnected}>{isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}</Link>
           </div>
         </div>
       </div>
