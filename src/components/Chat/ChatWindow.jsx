@@ -35,7 +35,7 @@ const ChatWindow = ({conversationId}) => {
       fetchMessages();
   
       // 🔁 Then setup polling for every 30 seconds
-      interval = setInterval(fetchMessages, 30000);
+      interval = setInterval(fetchMessages, 300);
     }
   
     return () => clearInterval(interval);
