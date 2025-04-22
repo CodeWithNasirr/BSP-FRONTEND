@@ -35,7 +35,7 @@ const ChatWindow = ({conversationId}) => {
       fetchMessages();
   
       // 🔁 Then setup polling for every 30 seconds
-      interval = setInterval(fetchMessages, 300);
+      interval = setInterval(fetchMessages, 30000);
     }
   
     return () => clearInterval(interval);
@@ -98,103 +98,86 @@ const ChatWindow = ({conversationId}) => {
 
         {/* Chat Content */}
         <div id='chat_container' ref={chatContainerRef} className="overflow-y-auto grow">
-          <ul id='chat_messages' className="flex flex-col justify-end gap-2 p-4">
-            {messages.map(msg=>( 
-              <li key={msg.id}>
-                {msg.direction === "OUTBOUND"?
-                (<> 
-                  <div className='flex justify-end mb-1'>
-                 <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[60%]">
-                 {msg.header_text && <h1 className='font-semibold'>{msg.header_text}</h1>}
-                
-                  {/* Media Content */}
-                  {msg.media_type === 'image' && msg.media_url ? (
-                    <div className="mb-2">
-                       <img 
-                        src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}  // now points to a saved file!
-                        crossOrigin="anonymous"
-                        alt="Sent media"
-                        className="max-w-full h-auto rounded-lg max-h-60 object-contain"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          // e.target.src = '/placeholder-image.png';
-                          // e.target.className += ' opacity-50 grayscale';
-                        }}
-                        loading="lazy"
-                      />
-                     </div>
-                  ) : null}
-                  <span>{msg.text_content}</span>
-                  <div className="text-xs text-gray-500 mt-1">
-                    <span className='font-light   '>{msg.footer_text}</span><br />
-                  {new Date(msg.timestamp).toLocaleTimeString()} &middot; {msg.status}
-                </div>
-                
-                 </div> 
-                
-                <div className="flex items-end">
-                  <svg height="13" width="8">
-                    <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
-                  </svg>
-                </div>
-                  </div>
-                  <div className="flex justify-end items-center ">
-                  <span className="bg-zinc-100 rounded-l-lg rounded-tr-lg max-w-[61%] w-full text-center text-blue-500">
-                    {msg.button_text}
-                  </span>
-                  </div>
-                  </>
-                
-                
-                ):(
-                  // Inbound Message (received from contact)
-                <div className='flex justify-start'>
-                <div className="flex items-end">
-                  <svg height="13" width="8">
-                    <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
-                  </svg>
-                </div>
-                <div className="bg-white p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
-                {/* Media Content for received messages */}
-                {msg.media_type === 'image' && msg.media_url ? (
-                   <div className="mb-2 relative">
-                   <img 
-                      src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
-                      crossOrigin="anonymous"
-                      alt="Sent media"
-                      className="max-w-full h-auto rounded-lg max-h-60 object-contain"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        // e.target.src = '/placeholder-image.png';
-                        // e.target.className += ' opacity-50 grayscale';
-                      }}
-                      loading="lazy"
-                    />
-                   {/* Optional: Add download button */}
-                   {/* <a 
-                     href={`http://127.0.0.1:8000/api/media/${msg.media_url}/`} 
-                     download
-                     className="absolute bottom-2 right-2 bg-black/50 text-white p-1 rounded-full hover:bg-black/70"
-                     title="Download image"
-                   >
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                     </svg>
-                   </a> */}
-                 </div>
-               ) : null}
+        <ul id='chat_messages' className="flex flex-col justify-end gap-2 p-4">
+            {[...messages]
+              .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+              .map(msg => (
+                <li key={msg.id}>
+                  {msg.direction === "OUTBOUND" ? (
+                    <>
+                      <div className='flex justify-end mb-1'>
+                        <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[60%]">
+                          {msg.header_text && <h1 className='font-semibold'>{msg.header_text}</h1>}
+                          
+                          {/* Media Content */}
+                          {msg.media_type === 'image' && msg.media_url && (
+                            <div className="mb-2">
+                              <img 
+                                src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
+                                crossOrigin="anonymous"
+                                alt="Sent media"
+                                className="max-w-full h-auto rounded-lg max-h-60 object-contain"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  // e.target.src = '/placeholder-image.png';
+                                }}
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+                          
+                          <span>{msg.text_content}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <span className='font-light'>{msg.footer_text}</span><br />
+                            {new Date(msg.timestamp).toLocaleTimeString()} &middot; {msg.status}
+                          </div>
+                        </div> 
+                        
+                        <div className="flex items-end">
+                          <svg height="13" width="8">
+                            <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
+                          </svg>
+                        </div>
+                      </div>
 
-                <span>{msg.text_content}</span>
-                <div className="text-xs text-gray-500 mt-1">
-                  {new Date(msg.timestamp).toLocaleTimeString()} &middot; {msg.status}
-                </div>
-                
-               </div>
-               </div>
-              )}
-              
-              </li>
-              
+                      <div className="flex justify-end items-center">
+                        <span className="bg-zinc-100 rounded-l-lg rounded-tr-lg max-w-[61%] w-full text-center text-blue-500">
+                          {msg.button_text}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    // Inbound Message (received from contact)
+                    <div className='flex justify-start'>
+                      <div className="flex items-end">
+                        <svg height="13" width="8">
+                          <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
+                        </svg>
+                      </div>
+                      <div className="bg-white p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
+                        {msg.media_type === 'image' && msg.media_url && (
+                          <div className="mb-2 relative">
+                            <img 
+                              src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
+                              crossOrigin="anonymous"
+                              alt="Sent media"
+                              className="max-w-full h-auto rounded-lg max-h-60 object-contain"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                              }}
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+
+                        <span>{msg.text_content}</span>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {new Date(msg.timestamp).toLocaleTimeString()} &middot; {msg.status}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </li>
             ))}
           </ul>
         
