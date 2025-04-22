@@ -21,7 +21,7 @@ const BulkImportContacts = () => {
 
     try {
       setIsUploading(true);
-      const response = await axios.post(`http://127.0.0.1:8000/api/import-contacts`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/import-contacts`, formData, {
               headers: {
                 Authorization: `Token ${token}`,
                 'Content-Type': 'multipart/form-data',
