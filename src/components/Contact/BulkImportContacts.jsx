@@ -36,7 +36,7 @@ const BulkImportContacts = () => {
       setIsUploading(false);
     }
   };
-
+  
   return (
     <div className="max-w-md mx-auto  bg-white p-6 rounded-2xl shadow-xl">
       <h2 className="text-xl font-semibold mb-4 text-center">📥 Bulk Import Contacts</h2>

@@ -117,8 +117,8 @@ const ChatWindow = ({conversationId}) => {
                         className="max-w-full h-auto rounded-lg max-h-60 object-contain"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = '/placeholder-image.png';
-                          e.target.className += ' opacity-50 grayscale';
+                          // e.target.src = '/placeholder-image.png';
+                          // e.target.className += ' opacity-50 grayscale';
                         }}
                         loading="lazy"
                       />
@@ -165,7 +165,7 @@ const ChatWindow = ({conversationId}) => {
                       className="max-w-full h-auto rounded-lg max-h-60 object-contain"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '/placeholder-image.png';
+                        // e.target.src = '/placeholder-image.png';
                         // e.target.className += ' opacity-50 grayscale';
                       }}
                       loading="lazy"
