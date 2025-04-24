@@ -1,36 +1,34 @@
 import React, { useState,useRef, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
-const ChatWindow = ({conversationId}) => {
+const ChatWindow = ({recipient}) => {
   const [messages, setMessages] = useState([]);
   console.log(messages) 
-  const [userName,setUserName]= useState([]);
-  const [recipient,setRecipient]=useState([])
+  const [recipients,setRecipient]=useState([])
   const token = localStorage.getItem("authToken");
-  const chatContainerRef=useRef(null);
+  const chatContainerRef=useRef(null); 
 
   useEffect(() => {
     let interval;
   
     const fetchMessages = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/get_chathistroy/${conversationId}/`, {
+        const response = await axios.get(`${API_BASE_URL}/get_chathistroy/${recipient}/`, {
           headers: {
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
           },
         });
-  
-        setMessages(response.data.Data.messages || []);
-        setUserName(response.data.Data);
-        setRecipient(response.data.Data.phone_number);
+        setMessages(response.data.Data || []);
+        setRecipient(response.data.Data.recipient)
+
   
       } catch (error) {
         console.error("Initial chat fetch failed:", error);
       }
     };
   
-    if (conversationId) {
+    if (recipient) {
       // 👇 Fetch chat history immediately on selection
       fetchMessages();
   
@@ -39,7 +37,7 @@ const ChatWindow = ({conversationId}) => {
     }
   
     return () => clearInterval(interval);
-  }, [conversationId]);
+  }, [recipient]);
   
 
   // Auto Scroll 
@@ -93,7 +91,7 @@ const ChatWindow = ({conversationId}) => {
          {/* Chat Header */}
         <div className="flex justify-center text-emerald-600  p-2 sticky top-0 z-10">
           {/* <span id="online-count" className="pr-1">3</span>online */}
-          <span className='border-b border-gray-200'>{userName.user_name}</span>
+          <span className='border-b border-gray-200'>{messages.user_name}</span>
         </div>
 
         {/* Chat Content */}

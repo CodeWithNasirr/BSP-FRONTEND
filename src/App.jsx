@@ -17,7 +17,7 @@ import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
-
+import BillingDashboard from './components/BillingDashboard'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
 import {
   MessageSquareMore,
@@ -109,6 +109,7 @@ function AppContent() {
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
             {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
+            <Route path="/billing" element={<ProtectedRoute element={BillingDashboard} />} />
             {/* Not Found */}
             <Route path="*" element={<NotFound />} />
         </Routes>

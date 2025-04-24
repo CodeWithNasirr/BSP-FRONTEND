@@ -202,7 +202,7 @@ const GrphandleSubmit = async (e) => {
         `${API_BASE_URL}/add_group/`,
         FormgrpData, // sending data here
         {
-          headers: {
+          headers: { 
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
           },
