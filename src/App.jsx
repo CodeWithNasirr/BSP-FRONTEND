@@ -18,6 +18,7 @@ import subscriptions from "./components/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 import BillingDashboard from './components/BillingDashboard'
+import MyUsagePanel from './components/MyUsagePanel'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
 import {
   MessageSquareMore,
@@ -81,6 +82,7 @@ function AppContent() {
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
             {/* <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/> */}
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
+            <SidebarItem icon={<CircleDollarSign size={20} />} text="my-usage" to="/my-usage-panel" />
 
           </Sidebar>
         </div>
@@ -109,7 +111,8 @@ function AppContent() {
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
             {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
-            <Route path="/billing" element={<ProtectedRoute element={BillingDashboard} />} />
+            <Route path="/billingzz" element={<ProtectedRoute element={BillingDashboard} />} />
+            <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
             {/* Not Found */}
             <Route path="*" element={<NotFound />} />
         </Routes>
