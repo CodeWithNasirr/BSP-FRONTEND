@@ -19,16 +19,9 @@ import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 import BillingDashboard from './components/BillingDashboard'
 import MyUsagePanel from './components/MyUsagePanel'
+import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
-import {
-  MessageSquareMore,
-  MessagesSquare,
-  ContactRound, 
-  MessageCircleMore,
-  House,
-  CircleDollarSign,
-  
-} from "lucide-react" 
+import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
 
 import { ToastContainer } from 'react-toastify';
@@ -82,7 +75,8 @@ function AppContent() {
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
             {/* <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/> */}
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
-            <SidebarItem icon={<CircleDollarSign size={20} />} text="my-usage" to="/my-usage-panel" />
+            <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
+            <SidebarItem icon={<NotebookTabs size={20} />} text="Flows" to="/chat-flow" />
 
           </Sidebar>
         </div>
@@ -113,6 +107,7 @@ function AppContent() {
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
             <Route path="/billingzz" element={<ProtectedRoute element={BillingDashboard} />} />
             <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
+            <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
             {/* Not Found */}
             <Route path="*" element={<NotFound />} />
         </Routes>

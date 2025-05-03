@@ -1,0 +1,267 @@
+import React, { useState, useCallback, useRef } from 'react';
+import ReactFlow, { 
+  ReactFlowProvider, 
+  Background, 
+  Controls,
+  Panel,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  MiniMap
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+import { Save, Trash2, Download, Upload, RotateCw, Play } from 'lucide-react';
+import NodePanel from './NodePanel';
+import PropertyPanel from './PropertyPanel';
+import FlowSimulator from './FlowSimulator';
+import { nodeTypes } from './nodes';
+import useFlowStore from '../../store/flowStore';
+import { exportFlow, importFlow } from '../../utils/flowUtils';
+
+const FlowBuilder = () => {
+  const reactFlowWrapper = useRef(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [propertiesOpen, setPropertiesOpen] = useState(true);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+
+  const { setCurrentFlow, saveFlow } = useFlowStore();
+
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+  
+      const type = event.dataTransfer.getData('application/reactflow');
+  
+      if (typeof type === 'undefined' || !type) {
+        return;
+      }
+  
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+  
+      const newNode = {
+        id: `${type}-${Date.now()}`,
+        type,
+        position,
+        data: { label: `${type} node`, ...getDefaultDataForType(type) },
+      };
+  
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [reactFlowInstance, setNodes]
+  );
+
+  const getDefaultDataForType = (type) => {
+    switch (type) {
+      case 'messageNode':
+        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '' };
+      case 'waitNode':
+        return { timeout: 60, variable: 'userResponse' };
+      case 'conditionalNode':
+        return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
+      case 'apiNode':
+        return { url: 'https://api.example.com/endpoint', method: 'GET', headers: {} };
+      case 'endNode':
+        return { endMessage: 'Flow completed' };
+      case 'textButtonsNode':
+        return { 
+          message: 'Please select an option:',
+          buttons: [
+            { text: 'Option 1', value: '1' },
+            { text: 'Option 2', value: '2' }
+          ],
+          // variable: 'userChoice'  // ← Add this line
+        };
+      default:
+        return {};
+    }
+  };
+
+  const onNodeClick = useCallback((_, node) => {
+    setSelectedNode(node);
+    setPropertiesOpen(true);
+  }, []);
+
+  const updateNodeData = useCallback((nodeId, newData) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return { ...node, data: { ...node.data, ...newData } };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
+
+  
+  const handleSaveFlow = useCallback(() => {
+    if (reactFlowInstance) {
+      const flow = reactFlowInstance.toObject();
+      saveFlow(flow);
+      alert('Flow saved successfully!');
+    }
+  }, [reactFlowInstance, saveFlow]);
+
+  const handleExportFlow = useCallback(() => {
+    if (reactFlowInstance) {
+      const flow = reactFlowInstance.toObject();
+      exportFlow(flow);
+    }
+  }, [reactFlowInstance]);
+
+  const handleImportFlow = useCallback(() => {
+    importFlow().then((flow) => {
+      if (flow) {
+        setNodes(flow.nodes || []);
+        setEdges(flow.edges || []);
+        setCurrentFlow(flow);
+      }
+    });
+  }, [setNodes, setEdges, setCurrentFlow]);
+
+  const handleDeleteSelectedNodes = useCallback(() => {
+    setNodes((nds) => nds.filter((node) => !node.selected));
+    setEdges((eds) => eds.filter((edge) => !edge.selected));
+  }, [setNodes, setEdges]);
+
+  const handleSimulateFlow = useCallback(() => {
+    if (reactFlowInstance) {
+      const flow = reactFlowInstance.toObject();
+      setSimulatorOpen(true);
+    }
+  }, [reactFlowInstance]);
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex-grow flex">
+        {sidebarOpen && (
+          <div className="w-64 sidebar-panel">
+            <NodePanel onClose={() => setSidebarOpen(false)} />
+          </div>
+        )}
+        
+        <div className="flex-grow relative">
+          <ReactFlowProvider>
+            <div className="h-full" ref={reactFlowWrapper}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onNodeClick={onNodeClick}
+                nodeTypes={nodeTypes}
+                fitView
+                snapToGrid
+                snapGrid={[15, 15]}
+              >
+                <Controls />
+                <MiniMap 
+                  nodeStrokeColor={(n) => {
+                    if (n.selected) return '#25D366';
+                    return '#ddd';
+                  }}
+                  nodeColor={(n) => {
+                    switch (n.type) {
+                      case 'messageNode': return '#E0F2FE';
+                      case 'waitNode': return '#FEF3C7';
+                      case 'conditionalNode': return '#E0E7FF';
+                      case 'apiNode': return '#F3E8FF';
+                      case 'endNode': return '#FFE2E2';
+                      default: return '#ffffff';
+                    }
+                  }}
+                />
+                <Background color="#aaa" gap={16} />
+                
+                <Panel position="top-center">
+                  <div className="bg-white shadow-md rounded-md p-2 flex items-center space-x-2">
+                    <button 
+                      onClick={() => setSidebarOpen(!sidebarOpen)} 
+                      className="flow-button flow-button-secondary py-1 flex items-center"
+                    >
+                      {sidebarOpen ? 'Hide Nodes' : 'Show Nodes'}
+                    </button>
+                    <button 
+                      onClick={handleSaveFlow} 
+                      className="flow-button flow-button-primary py-1 flex items-center"
+                      title="Save Flow"
+                    >
+                      <Save size={18} className="mr-1" />
+                      Save
+                    </button>
+                    <button 
+                      onClick={handleExportFlow} 
+                      className="flow-button flow-button-secondary py-1"
+                      title="Export Flow"
+                    >
+                      <Download size={18} />
+                    </button>
+                    <button 
+                      onClick={handleImportFlow} 
+                      className="flow-button flow-button-secondary py-1"
+                      title="Import Flow"
+                    >
+                      <Upload size={18} />
+                    </button>
+                    <button 
+                      onClick={handleDeleteSelectedNodes} 
+                      className="flow-button flow-button-danger py-1"
+                      title="Delete Selected"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <button 
+                      onClick={handleSimulateFlow} 
+                      className="flow-button flow-button-secondary py-1 flex items-center"
+                      title="Simulate Flow"
+                    >
+                      <Play size={18} className="mr-1" />
+                      Simulate
+                    </button>
+                  </div>
+                </Panel>
+              </ReactFlow>
+            </div>
+          </ReactFlowProvider>
+        </div>
+
+        {propertiesOpen && selectedNode && (
+          <div className="w-80 sidebar-panel">
+            <PropertyPanel 
+              node={selectedNode} 
+              onChange={updateNodeData} 
+              onClose={() => setPropertiesOpen(false)} 
+            />
+          </div>
+        )}
+      </div>
+
+      {simulatorOpen && (
+        <FlowSimulator
+          flow={reactFlowInstance?.toObject()}
+          onClose={() => setSimulatorOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default FlowBuilder;
