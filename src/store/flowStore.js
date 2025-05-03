@@ -1,67 +1,133 @@
 import { create } from 'zustand';
+import axios from 'axios';
+import API_BASE_URL from '../config';
+const URL = `${API_BASE_URL}/api/chatbot-flows/`;
+
 
 const useFlowStore = create((set) => ({
   // Current flow data
   flow: null,
-  
-  // All saved flows 
+  // Single saved flow (array with at most one item)
   savedFlows: [],
-  
+
   // Set the current flow
   setCurrentFlow: (flow) => set({ flow }),
-  
-  // Save the current flow
-  saveFlow: (flow) => set((state) => {
-    // Give the flow a unique ID if it doesn't have one
-    const flowToSave = {
-      ...flow,
-      id: flow.id || `flow-${Date.now()}`,
-      name: flow.name || `Flow ${state.savedFlows.length + 1}`,
-      createdAt: flow.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Check if this flow already exists by ID
-    const existingFlowIndex = state.savedFlows.findIndex(f => f.id === flowToSave.id);
-    
-    if (existingFlowIndex >= 0) {
-      // Update existing flow
-      const updatedFlows = [...state.savedFlows];
-      updatedFlows[existingFlowIndex] = flowToSave;
-      return { savedFlows: updatedFlows, flow: flowToSave };
-    } else {
-      // Add new flow
-      return { 
-        savedFlows: [...state.savedFlows, flowToSave],
-        flow: flowToSave
-      };
+
+  // Fetch the single flow from the backend
+  fetchFlows: async () => {
+    try {
+      const token = localStorage.getItem('authToken'); // Adjust based on your auth setup
+      const response = await axios.get(URL, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Keep only the most recent flow (if multiple exist)
+      const flows = response.data
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+        .slice(0, 1)
+        .map((flow) => ({
+          id: flow.id,
+          name: flow.name,
+          ...flow.flow_data, // Spread nodes and edges
+          createdAt: flow.created_at,
+          updatedAt: flow.updated_at,
+        }));
+
+      set({ savedFlows: flows, flow: flows[0] || null });
+      return flows;
+    } catch (error) {
+      console.error('Error fetching flows:', error);
+      return [];
     }
+  },
+
+  // Save or update the single flow
+  saveFlow: async (flow) => {
+    try {
+      const token = localStorage.getItem('authToken'); // Adjust based on your auth setup
+      const state = useFlowStore.getState();
+      const existingFlow = state.savedFlows[0]; // Only one flow allowed
+
+      const flowToSave = {
+        ...flow,
+        id: existingFlow ? existingFlow.id : `flow-${Date.now()}`, // Temp ID for new flow
+        name: flow.name || existingFlow?.name || 'Flow 1',
+        createdAt: existingFlow ? existingFlow.createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Prepare payload for backend
+      const payload = {
+        name: flowToSave.name,
+        flow_data: {
+          nodes: flowToSave.nodes || [],
+          edges: flowToSave.edges || [],
+        },
+        language: 'en', // Adjust as needed
+      };
+
+      let response;
+      if (existingFlow && String(existingFlow.id).startsWith('flow-') === false) {
+        try {
+          response = await axios.put(`${URL}${existingFlow.id}/`, payload, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (error) {
+          if (error.response?.status === 404) {
+            // Flow not found, clear savedFlows and create new
+            set({ savedFlows: [], flow: null });
+            response = await axios.post(URL, payload, {
+              headers: {
+                Authorization: `Token ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        if (state.savedFlows.length > 0) {
+          throw new Error('Cannot create new flow: only one flow is allowed.');
+        }
+        response = await axios.post(URL, payload, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
+
+      const savedFlow = {
+        id: response.data.id,
+        name: response.data.name,
+        ...response.data.flow_data,
+        createdAt: response.data.created_at,
+        updatedAt: response.data.updated_at,
+      };
+
+      return set({
+        savedFlows: [savedFlow], // Always keep only one flow
+        flow: savedFlow,
+      });
+    } catch (error) {
+      console.error('Error saving flow:', error);
+      throw error;
+    }
+  },
+
+  // Delete the single flow
+  deleteFlow: () => set({
+    savedFlows: [],
+    flow: null,
   }),
-  
-  // Delete a flow
-  deleteFlow: (flowId) => set((state) => ({
-    savedFlows: state.savedFlows.filter(flow => flow.id !== flowId),
-    flow: state.flow && state.flow.id === flowId ? null : state.flow
-  })),
-  
-  // Duplicate a flow
-  duplicateFlow: (flowId) => set((state) => {
-    const flowToDuplicate = state.savedFlows.find(flow => flow.id === flowId);
-    
-    if (!flowToDuplicate) return state;
-    
-    const duplicatedFlow = {
-      ...flowToDuplicate,
-      id: `flow-${Date.now()}`,
-      name: `${flowToDuplicate.name} (Copy)`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    return {
-      savedFlows: [...state.savedFlows, duplicatedFlow]
-    };
-  })
 }));
 
 export default useFlowStore;

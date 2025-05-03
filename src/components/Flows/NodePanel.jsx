@@ -11,10 +11,13 @@ import {
 } from 'lucide-react';
 
 const NodePanel = ({ onClose }) => {
+  
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
   };
+
+
 
   return (
     <div className="flex flex-col h-full">
@@ -31,6 +34,7 @@ const NodePanel = ({ onClose }) => {
       <p className="text-sm text-gray-500 mb-4">
         Drag and drop nodes onto the canvas to build your WhatsApp flow
       </p>
+     
 
       <div className="space-y-3">
         <div 

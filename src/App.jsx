@@ -17,7 +17,7 @@ import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
-import BillingDashboard from './components/BillingDashboard'
+// import BillingDashboard from './components/BillingDashboard'
 import MyUsagePanel from './components/MyUsagePanel'
 import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
@@ -105,7 +105,7 @@ function AppContent() {
             <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
             {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
             <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
-            <Route path="/billingzz" element={<ProtectedRoute element={BillingDashboard} />} />
+            {/* <Route path="/billingzz" element={<ProtectedRoute element={BillingDashboard} />} /> */}
             <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
             <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
             {/* Not Found */}

@@ -1,17 +1,16 @@
-import React, { useState, useCallback, useRef } from 'react';
-import ReactFlow, { 
-  ReactFlowProvider, 
-  Background, 
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactFlow, {
+  ReactFlowProvider,
+  Background,
   Controls,
   Panel,
   useNodesState,
   useEdgesState,
   addEdge,
-  MiniMap
+  MiniMap,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-
-import { Save, Trash2, Download, Upload, RotateCw, Play } from 'lucide-react';
+import { Save, Trash2, Download, Upload, Play } from 'lucide-react';
 import NodePanel from './NodePanel';
 import PropertyPanel from './PropertyPanel';
 import FlowSimulator from './FlowSimulator';
@@ -28,10 +27,29 @@ const FlowBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [flowName, setFlowName] = useState('Flow 1');
 
-  const { setCurrentFlow, saveFlow } = useFlowStore();
+  const { setCurrentFlow, saveFlow, fetchFlows } = useFlowStore();
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  // Fetch flows on component mount
+  useEffect(() => {
+    const loadFlows = async () => {
+      const flows = await fetchFlows();
+      const existingFlow = flows[0];
+      if (existingFlow) {
+        setNodes(existingFlow.nodes || []);
+        setEdges(existingFlow.edges || []);
+        setCurrentFlow(existingFlow);
+        setFlowName(existingFlow.name);
+      }
+    };
+    loadFlows();
+  }, [fetchFlows, setNodes, setEdges, setCurrentFlow]);
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -41,25 +59,25 @@ const FlowBuilder = () => {
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-  
+
       const type = event.dataTransfer.getData('application/reactflow');
-  
+
       if (typeof type === 'undefined' || !type) {
         return;
       }
-  
+
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
-  
+
       const newNode = {
         id: `${type}-${Date.now()}`,
         type,
         position,
         data: { label: `${type} node`, ...getDefaultDataForType(type) },
       };
-  
+
       setNodes((nds) => nds.concat(newNode));
     },
     [reactFlowInstance, setNodes]
@@ -78,13 +96,12 @@ const FlowBuilder = () => {
       case 'endNode':
         return { endMessage: 'Flow completed' };
       case 'textButtonsNode':
-        return { 
+        return {
           message: 'Please select an option:',
           buttons: [
             { text: 'Option 1', value: '1' },
-            { text: 'Option 2', value: '2' }
+            { text: 'Option 2', value: '2' },
           ],
-          // variable: 'userChoice'  // ← Add this line
         };
       default:
         return {};
@@ -96,25 +113,34 @@ const FlowBuilder = () => {
     setPropertiesOpen(true);
   }, []);
 
-  const updateNodeData = useCallback((nodeId, newData) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === nodeId) {
-          return { ...node, data: { ...node.data, ...newData } };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
+  const updateNodeData = useCallback(
+    (nodeId, newData) => {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === nodeId) {
+            return { ...node, data: { ...node.data, ...newData } };
+          }
+          return node;
+        })
+      );
+    },
+    [setNodes]
+  );
 
-  
-  const handleSaveFlow = useCallback(() => {
+  const handleSaveFlow = useCallback(async () => {
     if (reactFlowInstance) {
       const flow = reactFlowInstance.toObject();
-      saveFlow(flow);
-      alert('Flow saved successfully!');
+      try {
+        await saveFlow({
+          ...flow,
+          name: flowName,
+        });
+        alert('Flow saved successfully!');
+      } catch (error) {
+        alert(`Failed to save flow: ${error.message}`);
+      }
     }
-  }, [reactFlowInstance, saveFlow]);
+  }, [reactFlowInstance, saveFlow, flowName]);
 
   const handleExportFlow = useCallback(() => {
     if (reactFlowInstance) {
@@ -124,11 +150,15 @@ const FlowBuilder = () => {
   }, [reactFlowInstance]);
 
   const handleImportFlow = useCallback(() => {
+    const { savedFlows } = useFlowStore.getState();
     importFlow().then((flow) => {
-      if (flow) {
+      if (flow && savedFlows.length === 0) {
         setNodes(flow.nodes || []);
         setEdges(flow.edges || []);
         setCurrentFlow(flow);
+        setFlowName(flow.name || 'Flow 1');
+      } else {
+        alert('Cannot import: only one flow is allowed.');
       }
     });
   }, [setNodes, setEdges, setCurrentFlow]);
@@ -153,7 +183,7 @@ const FlowBuilder = () => {
             <NodePanel onClose={() => setSidebarOpen(false)} />
           </div>
         )}
-        
+
         <div className="flex-grow relative">
           <ReactFlowProvider>
             <div className="h-full" ref={reactFlowWrapper}>
@@ -173,63 +203,76 @@ const FlowBuilder = () => {
                 snapGrid={[15, 15]}
               >
                 <Controls />
-                <MiniMap 
+                <MiniMap
                   nodeStrokeColor={(n) => {
                     if (n.selected) return '#25D366';
                     return '#ddd';
                   }}
                   nodeColor={(n) => {
                     switch (n.type) {
-                      case 'messageNode': return '#E0F2FE';
-                      case 'waitNode': return '#FEF3C7';
-                      case 'conditionalNode': return '#E0E7FF';
-                      case 'apiNode': return '#F3E8FF';
-                      case 'endNode': return '#FFE2E2';
-                      default: return '#ffffff';
+                      case 'messageNode':
+                        return '#E0F2FE';
+                      case 'waitNode':
+                        return '#FEF3C7';
+                      case 'conditionalNode':
+                        return '#E0E7FF';
+                      case 'apiNode':
+                        return '#F3E8FF';
+                      case 'endNode':
+                        return '#FFE2E2';
+                      default:
+                        return '#ffffff';
                     }
                   }}
                 />
                 <Background color="#aaa" gap={16} />
-                
+
                 <Panel position="top-center">
                   <div className="bg-white shadow-md rounded-md p-2 flex items-center space-x-2">
-                    <button 
-                      onClick={() => setSidebarOpen(!sidebarOpen)} 
+                    <input
+                      type="text"
+                      value={flowName}
+                      onChange={(e) => setFlowName(e.target.value)}
+                      placeholder="Flow Name"
+                      className="border rounded px-2 py-1 text-sm"
+                    />
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
                       className="flow-button flow-button-secondary py-1 flex items-center"
                     >
                       {sidebarOpen ? 'Hide Nodes' : 'Show Nodes'}
                     </button>
-                    <button 
-                      onClick={handleSaveFlow} 
+                    <button
+                      onClick={handleSaveFlow}
                       className="flow-button flow-button-primary py-1 flex items-center"
                       title="Save Flow"
                     >
                       <Save size={18} className="mr-1" />
                       Save
                     </button>
-                    <button 
-                      onClick={handleExportFlow} 
+                    <button
+                      onClick={handleExportFlow}
                       className="flow-button flow-button-secondary py-1"
                       title="Export Flow"
                     >
                       <Download size={18} />
                     </button>
-                    <button 
-                      onClick={handleImportFlow} 
+                    <button
+                      onClick={handleImportFlow}
                       className="flow-button flow-button-secondary py-1"
                       title="Import Flow"
                     >
                       <Upload size={18} />
                     </button>
-                    <button 
-                      onClick={handleDeleteSelectedNodes} 
+                    <button
+                      onClick={handleDeleteSelectedNodes}
                       className="flow-button flow-button-danger py-1"
                       title="Delete Selected"
                     >
                       <Trash2 size={18} />
                     </button>
-                    <button 
-                      onClick={handleSimulateFlow} 
+                    <button
+                      onClick={handleSimulateFlow}
                       className="flow-button flow-button-secondary py-1 flex items-center"
                       title="Simulate Flow"
                     >
@@ -245,10 +288,10 @@ const FlowBuilder = () => {
 
         {propertiesOpen && selectedNode && (
           <div className="w-80 sidebar-panel">
-            <PropertyPanel 
-              node={selectedNode} 
-              onChange={updateNodeData} 
-              onClose={() => setPropertiesOpen(false)} 
+            <PropertyPanel
+              node={selectedNode}
+              onChange={updateNodeData}
+              onClose={() => setPropertiesOpen(false)}
             />
           </div>
         )}
