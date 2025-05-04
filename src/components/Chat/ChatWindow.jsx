@@ -48,10 +48,34 @@ const ChatWindow = ({recipient}) => {
   }, [messages]);
   
 
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const cancelImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const confirmImageSend = (e) => {
+    // You could also call handleSubmit here if image needs form submission
+    handleSubmit(e);
+    cancelImage(); // Reset after sending
+  };
+
   const [formData,setFormData]=useState({
+    url:"",
     message_text:"",
     recipient:""
   })
+
   const handleChange=(e)=>{
     const {name,value}=e.target;
     setFormData((prevent)=>({
@@ -61,30 +85,65 @@ const ChatWindow = ({recipient}) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-   
-    const updatedFormData = {
-      ...formData,
-      recipient: recipient, 
-    };
+  
     try {
-      const response = await axios.post(`${API_BASE_URL}/send-message/`, updatedFormData, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      // console.log(response)
-      setFormData({
-        message_text:"",
-        recipient:""
-      })
-    
-      // window.location.reload()
-      // console.log("Message sent successfully:", response.data);
+      if (selectedImage) {
+        // Build multipart/form-data for image message
+        const imageFormData = new FormData();
+        imageFormData.append("recipient", recipient);
+        imageFormData.append("message_text", formData.message_text);
+        imageFormData.append("url", selectedImage); // backend should expect 'url' field
+  
+        const response = await axios.post(
+          `${API_BASE_URL}/send-message/`,
+          imageFormData,
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+  
+        // Reset everything after success
+        setFormData({
+          url: "",
+          message_text: "",
+          recipient: "",
+        });
+        cancelImage(); // clears preview and selected file
+      } else {
+        // Send normal text message
+        const updatedFormData = {
+          ...formData,
+          recipient: recipient,
+        };
+  
+        const response = await axios.post(
+          `${API_BASE_URL}/send-message/`,
+          updatedFormData,
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+  
+        setFormData({
+          url: "",
+          message_text: "",
+          recipient: "",
+        });
+      }
+  
+      // Optionally reload or trigger a refresh state
+      // window.location.reload();
+  
     } catch (error) {
       console.error("Error sending message:", error);
     }
-  }
+  };
   return( 
     <div className="flex flex-col">
        <div className="h-[40rem] flex flex-col " > 
@@ -108,10 +167,10 @@ const ChatWindow = ({recipient}) => {
                           {msg.header_text && <h1 className='font-semibold'>{msg.header_text}</h1>}
                           
                           {/* Media Content */}
-                          {msg.media_type === 'image' && msg.media_url && (
+                          {msg.media_url && (
                             <div className="mb-2">
                               <img 
-                                src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
+                                src={`${msg.media_url}`}
                                 crossOrigin="anonymous"
                                 alt="Sent media"
                                 className="max-w-full h-auto rounded-lg max-h-60 object-contain"
@@ -121,6 +180,7 @@ const ChatWindow = ({recipient}) => {
                                 }}
                                 loading="lazy"
                               />
+                      
                             </div>
                           )}
                           
@@ -159,7 +219,7 @@ const ChatWindow = ({recipient}) => {
                               src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
                               crossOrigin="anonymous"
                               alt="Sent media"
-                              className="max-w-full h-auto rounded-lg max-h-60 object-contain"
+                              className="max-w-full h-auto rounded-lg max-h-60 object-cover"
                               onError={(e) => {
                                 e.target.onerror = null;
                               }}
@@ -182,26 +242,88 @@ const ChatWindow = ({recipient}) => {
         </div>
 
 
-        {/* Chat Input */}
       {/* Chat Input */}
-      <div className="sticky bottom-0 z-10 py-5">
-        <form id="chat_message_form"  className="w-full flex" onSubmit={handleSubmit}>
-          <input required
-            value={formData.message_text}
-            onChange={handleChange}
-            type="text"
-            name="message_text"
-            placeholder="Add message ..."
-            maxLength="150"
-            className="flex-1 p-2 bg-zinc-100 text-black rounded-lg outline-none"
-          />
-          <input type="hidden" name='recipient' value={recipient}
-            onChange={handleChange} />
-          <button type="submit" className="ml-2 px-4 py-2 hover:cursor-pointer bg-blue-500 text-white rounded-lg">
-            Send
-          </button>
-        </form>
-      </div>
+      <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-sm px-4 py-3">
+      <form
+        id="chat_message_form"
+        className="w-full flex items-center gap-2"
+        onSubmit={handleSubmit}
+      >
+        {/* Upload Icon Button */}
+        <label
+          htmlFor="file-upload"
+          className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition"
+          title="Upload Image"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v6m0 0l-3-3m3 3l3-3M12 6v6"
+            />
+          </svg>
+        </label>
+        <input
+          onChange={handleImageChange}
+          type="file"
+          className="sr-only"
+          accept=".jpg, .png"
+          id="file-upload"
+          name="url"
+        />
+
+        {/* Text Input */}
+        <input
+          
+          value={formData.message_text}
+          onChange={handleChange}
+          type="text"
+          name="message_text"
+          placeholder="Type your message..."
+          maxLength="150"
+          className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input type="hidden" name="recipient" value={recipient} onChange={handleChange} />
+
+        <button
+          type="submit"
+          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition"
+        >
+          Send
+        </button>
+      </form>
+
+      {/* Image Preview Modal */}
+      {imagePreview && (
+        <div className="mt-4 bg-gray-50 border rounded-lg p-3">
+          <p className="text-sm font-medium text-gray-700 mb-2">Preview Selected Image:</p>
+          <img src={imagePreview} alt="Preview" className="w-full h-auto rounded-lg mb-3" />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={cancelImage}
+              type="button"
+              className="px-3 py-1 text-sm text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmImageSend}
+              type="button"
+              className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
+              Send Image
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
       </div>
   )

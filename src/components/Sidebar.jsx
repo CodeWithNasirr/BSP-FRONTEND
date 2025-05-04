@@ -1,7 +1,7 @@
 import axios from "axios";
 import { MoreVertical, ChevronLast,ContactRound, ChevronFirst } from "lucide-react";
 import { useContext, createContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import { toast } from 'react-toastify'
 const SidebarContext = createContext();
 import API_BASE_URL from "../config";
@@ -47,13 +47,16 @@ export default function Sidebar({ children }) {
     <aside className="h-screen ">
       <nav className="h-full flex flex-col bg-zinc-50 text-indigo-600 border-r border-slate-200 shadow-sm">
         <div className="p-4 pb-2 flex justify-between items-center">
-          <img
+         <Link to='/' className={`overflow-hidden transition-all font-extrabold text-center mx-5 ${
+              expanded ? "w-32" : "w-0"
+            }`}>WhatsGptx❤️</Link>
+          {/* <img
             src="https://img.logoipsum.com/243.svg"
             className={`overflow-hidden transition-all ${
               expanded ? "w-32" : "w-0"
             }`}
             alt=""
-          />
+          /> */}
           <button
             onClick={() => setExpanded((curr) => !curr)}
             className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100"

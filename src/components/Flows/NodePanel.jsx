@@ -72,8 +72,8 @@ const NodePanel = ({ onClose }) => {
             <p className="text-xs text-gray-500">Wait for user response</p>
           </div>
         </div>
-
-        <div 
+ 
+        {/* <div 
           className="p-3 bg-node-condition rounded-lg border border-indigo-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'conditionalNode')}
           draggable
@@ -83,7 +83,7 @@ const NodePanel = ({ onClose }) => {
             <h4 className="font-medium">Conditional Split</h4>
             <p className="text-xs text-gray-500">Branch based on conditions</p>
           </div>
-        </div>
+        </div> */}
 
         {/* <div 
           className="p-3 bg-node-api rounded-lg border border-purple-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"

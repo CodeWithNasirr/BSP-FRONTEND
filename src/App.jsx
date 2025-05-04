@@ -21,7 +21,7 @@ import AuthSlider from './components/Authentications/AuthSlider'
 import MyUsagePanel from './components/MyUsagePanel'
 import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
-import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,} from "lucide-react" 
+import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
 
 import { ToastContainer } from 'react-toastify';
@@ -72,11 +72,11 @@ function AppContent() {
             <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
             <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
-            <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
+            <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
             {/* <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/> */}
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
             <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
-            <SidebarItem icon={<NotebookTabs size={20} />} text="Flows" to="/chat-flow" />
+            <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
 
           </Sidebar>
         </div>
