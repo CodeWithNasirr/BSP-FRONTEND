@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from "react-toastify";
+import TemplateViewModal from "./TemplateViewModal.jsx";
+
 function Templates() {
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  const handleViewTemplate = (template) => {
+    setSelectedTemplate(template);
+    setViewModalOpen(true);
+  };
   const token = localStorage.getItem("authToken");
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
@@ -79,6 +88,13 @@ function Templates() {
         setLoading(false);
       });
   }, []);
+    <TemplateViewModal
+    isOpen={viewModalOpen}
+    onClose={() => setViewModalOpen(false)}
+    template={selectedTemplate}
+  />
+
+
 
   return (
     <div className="Main w-full h-screen bg-slate-100 px-15">
@@ -198,13 +214,13 @@ function Templates() {
                   {activeDropdownId === index && (
                     <div className="absolute right-0 origin-top-right z-10 mt-2 w-32 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-opacity-5 focus:outline-none">
                       <div className="px-1 py-1" role="none">
-                        <a
-                          href={``}
+                        <Link
+                          to="#"
+                          onClick={() => handleViewTemplate(template)}
                           className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
-                        
                         >
                           View
-                        </a>
+                        </Link>
                         <button
                           className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
               
@@ -251,8 +267,16 @@ function Templates() {
           </div>
         )}
       </div>
+      <TemplateViewModal
+      isOpen={viewModalOpen}
+      onClose={() => setViewModalOpen(false)}
+      template={selectedTemplate}
+    />
     </div>
+    
+    
   );
+  
 }
 
 export default Templates;

@@ -47,9 +47,9 @@ export default function Sidebar({ children }) {
     <aside className="h-screen ">
       <nav className="h-full flex flex-col bg-zinc-50 text-indigo-600 border-r border-slate-200 shadow-sm">
         <div className="p-4 pb-2 flex justify-between items-center">
-         <Link to='/' className={`overflow-hidden transition-all font-extrabold text-center mx-5 ${
+         <h1 className={`overflow-hidden transition-all font-extrabold text-center mx-5 ${
               expanded ? "w-32" : "w-0"
-            }`}>WhatsGptx❤️</Link>
+            }`}>WhatsGptx❤️</h1>
           {/* <img
             src="https://img.logoipsum.com/243.svg"
             className={`overflow-hidden transition-all ${
