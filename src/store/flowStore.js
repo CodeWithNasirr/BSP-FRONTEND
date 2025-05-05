@@ -3,7 +3,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config';
 const URL = `${API_BASE_URL}/api/chatbot-flows/`;
 
-
+ 
 const useFlowStore = create((set) => ({
   // Current flow data
   flow: null,
@@ -81,7 +81,7 @@ const useFlowStore = create((set) => ({
         } catch (error) {
           if (error.response?.status === 404) {
             // Flow not found, clear savedFlows and create new
-            set({ savedFlows: [], flow: null });
+            // set({ savedFlows: [], flow: null });
             response = await axios.post(URL, payload, {
               headers: {
                 Authorization: `Token ${token}`,
@@ -93,9 +93,6 @@ const useFlowStore = create((set) => ({
           }
         }
       } else {
-        if (state.savedFlows.length > 0) {
-          throw new Error('Cannot create new flow: only one flow is allowed.');
-        }
         response = await axios.post(URL, payload, {
           headers: {
             Authorization: `Token ${token}`,

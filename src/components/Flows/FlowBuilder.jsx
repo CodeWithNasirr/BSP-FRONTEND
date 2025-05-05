@@ -125,7 +125,7 @@ const FlowBuilder = () => {
       );
     },
     [setNodes]
-  );
+  ); 
 
   const handleSaveFlow = useCallback(async () => {
     if (reactFlowInstance) {
@@ -150,18 +150,25 @@ const FlowBuilder = () => {
   }, [reactFlowInstance]);
 
   const handleImportFlow = useCallback(() => {
-    const { savedFlows } = useFlowStore.getState();
-    importFlow().then((flow) => {
-      if (flow && savedFlows.length === 0) {
-        setNodes(flow.nodes || []);
-        setEdges(flow.edges || []);
-        setCurrentFlow(flow);
-        setFlowName(flow.name || 'Flow 1');
-      } else {
-        alert('Cannot import: only one flow is allowed.');
+    importFlow().then(async (flow) => {
+      if (flow) {
+        try {
+          // Replace the existing flow with the imported one
+          await saveFlow({
+            ...flow,
+            name: flow.name || 'Imported Flow',
+          });
+          setNodes(flow.nodes || []);
+          setEdges(flow.edges || []);
+          setCurrentFlow(flow);
+          setFlowName(flow.name || 'Imported Flow');
+          alert('Flow imported successfully!');
+        } catch (error) {
+          alert(`Failed to import flow: ${error.message}`);
+        }
       }
     });
-  }, [setNodes, setEdges, setCurrentFlow]);
+  }, [setNodes, setEdges, setCurrentFlow, saveFlow]);
 
   const handleDeleteSelectedNodes = useCallback(() => {
     setNodes((nds) => nds.filter((node) => !node.selected));

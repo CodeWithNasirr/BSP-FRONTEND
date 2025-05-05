@@ -9,7 +9,7 @@ const FlowSimulator = ({ flow, onClose }) => {
   const [currentNode, setCurrentNode] = useState(null);
   const [variables, setVariables] = useState({});
   const [isWaiting, setIsWaiting] = useState(false);
-
+ 
   useEffect(() => {
     if (flow?.nodes) {
       // Find the starting node (usually the first node)

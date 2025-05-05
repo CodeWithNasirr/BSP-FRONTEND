@@ -60,7 +60,7 @@ const NodePanel = ({ onClose }) => {
             <p className="text-xs text-gray-500">Message with button options</p>
           </div>
         </div>
-
+ 
         <div 
           className="p-3 bg-node-wait rounded-lg border border-amber-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'waitNode')}
