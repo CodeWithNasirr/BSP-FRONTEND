@@ -7,7 +7,8 @@ import {
   Square, 
   X, 
   MessageCircle,
-  ListPlus 
+  ListPlus,
+  SquarePower
 } from 'lucide-react';
 
 const NodePanel = ({ onClose }) => {
@@ -37,6 +38,18 @@ const NodePanel = ({ onClose }) => {
      
 
       <div className="space-y-3">
+      <div 
+          className="p-3 bg-node-end rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          onDragStart={(e) => onDragStart(e, 'start')}
+          draggable
+        >
+          <SquarePower className="mr-3 text-blue-500" size={24} />
+          <div>
+            <h4 className="font-medium">Start Flow</h4>
+            <p className="text-xs text-gray-500">Entry point of the flow</p>
+          </div>
+        </div>
+
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'messageNode')}

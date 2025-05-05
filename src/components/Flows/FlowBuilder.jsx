@@ -66,6 +66,12 @@ const FlowBuilder = () => {
         return;
       }
 
+      // Enforce single start node
+      if (type === 'start' && nodes.some((node) => node.type === 'start')) {
+        alert('Only one Start Flow node is allowed.');
+        return;
+      }
+
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
@@ -80,11 +86,13 @@ const FlowBuilder = () => {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, nodes]
   );
 
   const getDefaultDataForType = (type) => {
     switch (type) {
+      case 'start':
+        return { label: 'Start Flow' };
       case 'messageNode':
         return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '' };
       case 'waitNode':
@@ -125,10 +133,17 @@ const FlowBuilder = () => {
       );
     },
     [setNodes]
-  ); 
+  );
 
   const handleSaveFlow = useCallback(async () => {
     if (reactFlowInstance) {
+      // Validate: Ensure exactly one start node
+      const startNodes = nodes.filter((node) => node.type === 'start');
+      if (startNodes.length !== 1) {
+        alert('Flow must have exactly one Start Flow node.');
+        return;
+      }
+
       const flow = reactFlowInstance.toObject();
       try {
         await saveFlow({
@@ -140,7 +155,7 @@ const FlowBuilder = () => {
         alert(`Failed to save flow: ${error.message}`);
       }
     }
-  }, [reactFlowInstance, saveFlow, flowName]);
+  }, [reactFlowInstance, saveFlow, flowName, nodes]);
 
   const handleExportFlow = useCallback(() => {
     if (reactFlowInstance) {
@@ -152,8 +167,14 @@ const FlowBuilder = () => {
   const handleImportFlow = useCallback(() => {
     importFlow().then(async (flow) => {
       if (flow) {
+        // Validate imported flow: Ensure exactly one start node
+        const startNodes = (flow.nodes || []).filter((node) => node.type === 'start');
+        if (startNodes.length !== 1) {
+          alert('Imported flow must have exactly one Start Flow node.');
+          return;
+        }
+
         try {
-          // Replace the existing flow with the imported one
           await saveFlow({
             ...flow,
             name: flow.name || 'Imported Flow',
@@ -217,6 +238,8 @@ const FlowBuilder = () => {
                   }}
                   nodeColor={(n) => {
                     switch (n.type) {
+                      case 'start':
+                        return '#CCFBF1';
                       case 'messageNode':
                         return '#E0F2FE';
                       case 'waitNode':
