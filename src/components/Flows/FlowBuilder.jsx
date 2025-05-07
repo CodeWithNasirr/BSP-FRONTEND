@@ -95,6 +95,16 @@ const FlowBuilder = () => {
         return { label: 'Start Flow' };
       case 'messageNode':
         return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '' };
+      case 'imageTextButtonsNode':
+        return {
+          message: 'Choose an option:',
+          image: '',
+          footerText: '',
+          buttons: [
+            { text: 'Option 1', value: '1' },
+            { text: 'Option 2', value: '2' },
+          ],
+        };
       case 'waitNode':
         return { timeout: 60, variable: 'userResponse' };
       case 'conditionalNode':
@@ -192,9 +202,24 @@ const FlowBuilder = () => {
   }, [setNodes, setEdges, setCurrentFlow, saveFlow]);
 
   const handleDeleteSelectedNodes = useCallback(() => {
+    // Get IDs of nodes to be deleted
+    const deletedNodeIds = nodes
+      .filter((node) => node.selected)
+      .map((node) => node.id);
+
+    // Remove edges connected to deleted nodes or selected edges
+    setEdges((eds) =>
+      eds.filter(
+        (edge) =>
+          !edge.selected &&
+          !deletedNodeIds.includes(edge.source) &&
+          !deletedNodeIds.includes(edge.target)
+      )
+    );
+
+    // Remove selected nodes
     setNodes((nds) => nds.filter((node) => !node.selected));
-    setEdges((eds) => eds.filter((edge) => !edge.selected));
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, nodes]);
 
   const handleSimulateFlow = useCallback(() => {
     if (reactFlowInstance) {
@@ -242,6 +267,8 @@ const FlowBuilder = () => {
                         return '#CCFBF1';
                       case 'messageNode':
                         return '#E0F2FE';
+                      case 'imageTextButtonsNode':
+                        return '#EEF2FF';
                       case 'waitNode':
                         return '#FEF3C7';
                       case 'conditionalNode':

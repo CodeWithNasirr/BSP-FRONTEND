@@ -8,7 +8,7 @@ import {
   X, 
   MessageCircle,
   ListPlus,
-  SquarePower
+  SquarePower,Image
 } from 'lucide-react';
 
 const NodePanel = ({ onClose }) => {
@@ -73,7 +73,19 @@ const NodePanel = ({ onClose }) => {
             <p className="text-xs text-gray-500">Message with button options</p>
           </div>
         </div>
- 
+
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          onDragStart={(e) => onDragStart(e, 'imageTextButtonsNode')}
+          draggable
+        >
+          <Image className="mr-3 text-blue-500" size={24} />
+          <div>
+            <h4 className="font-medium">Image + Text + Buttons</h4>
+            <p className="text-xs text-gray-500">Message with image and buttons</p>
+          </div>
+        </div> 
+
         <div 
           className="p-3 bg-node-wait rounded-lg border border-amber-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'waitNode')}
@@ -84,7 +96,7 @@ const NodePanel = ({ onClose }) => {
             <h4 className="font-medium">Wait for Reply</h4>
             <p className="text-xs text-gray-500">Wait for user response</p>
           </div>
-        </div>
+        </div> 
  
         {/* <div 
           className="p-3 bg-node-condition rounded-lg border border-indigo-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"

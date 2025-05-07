@@ -1,21 +1,17 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import { MessageSquare, Plus, Pencil, Trash2 } from 'lucide-react';
+import { MessageSquare, Plus, Pencil, Trash2,Image } from 'lucide-react';
 
 const TextButtonsNode = ({ data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(data.message || '');
-  const [buttons, setButtons] = useState(
-    data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false }]
-  );
-
+  const [footer, setFooter] = useState(data.footerText || '');
+  const [buttons, setButtons] = useState(data.buttons || []);
+  const [mediaUrl, setMediaUrl] = useState(data.image || '');
+  
+ 
   const handleAddButton = () => {
-    const newButton = {
-      text: `Button ${buttons.length + 1}`,
-      value: `${buttons.length + 1}`,
-      collect_cart: false,
-      collect_payment_method: false
-    };
+    const newButton = { text: `Button ${buttons.length + 1}` };
     const updatedButtons = [...buttons, newButton];
     setButtons(updatedButtons);
     data.buttons = updatedButtons;
@@ -28,16 +24,11 @@ const TextButtonsNode = ({ data, selected }) => {
     data.buttons = updatedButtons;
   };
 
-  const handleButtonChange = (index, field, value) => {
-    const updatedButtons = [...buttons];
-    updatedButtons[index] = { ...updatedButtons[index], [field]: value };
-    setButtons(updatedButtons);
-    data.buttons = updatedButtons;
-  };
-
   const handleSave = () => {
     data.message = message;
     data.buttons = buttons;
+    data.image = mediaUrl;
+    data.footerText = footer;
     setEditing(false);
   };
 
@@ -48,7 +39,7 @@ const TextButtonsNode = ({ data, selected }) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center">
           <MessageSquare className="mr-2 text-blue-500" size={16} />
-          <div className="text-sm font-medium text-blue-800">Text + Buttons</div>
+          <div className="text-sm font-medium text-blue-800">Image + Text + Buttons</div>
         </div>
         <button onClick={() => setEditing(!editing)} className="text-blue-500 hover:text-blue-700">
           <Pencil size={14} />
@@ -57,6 +48,14 @@ const TextButtonsNode = ({ data, selected }) => {
 
       {editing ? (
         <div className="space-y-2 mb-2">
+
+            <input
+            type="text"
+            className="w-full text-xs px-2 py-1 border border-blue-200 rounded"
+            placeholder="Image URL "
+            value={mediaUrl}
+            onChange={(e) => setMediaUrl(e.target.value)}
+          />
           <textarea
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}
@@ -64,46 +63,29 @@ const TextButtonsNode = ({ data, selected }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
+           <textarea
+            className="w-full text-xs p-2 border border-blue-200 rounded"
+            rows={3}
+            placeholder="Enter footer message"
+            value={footer}
+            onChange={(e) => setFooter(e.target.value)}
+          />
 
           {buttons.map((btn, index) => (
-            <div key={index} className="space-y-1 border p-2 rounded">
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  value={btn.text}
-                  onChange={(e) => handleButtonChange(index, 'text', e.target.value)}
-                  className="w-full text-xs p-1 border border-blue-200 rounded mr-1"
-                  placeholder="Button text"
-                />
-                <button onClick={() => handleDeleteButton(index)} className="text-red-500 hover:text-red-700">
-                  <Trash2 size={14} />
-                </button>
-              </div>
+            <div key={index} className="flex items-center text-xs">
               <input
                 type="text"
-                value={btn.value}
-                onChange={(e) => handleButtonChange(index, 'value', e.target.value)}
-                className="w-full text-xs p-1 border border-blue-200 rounded"
-                placeholder="Button value"
+                value={btn.text}
+                onChange={(e) => {
+                  const updated = [...buttons];
+                  updated[index].text = e.target.value;
+                  setButtons(updated);
+                }}
+                className="w-full p-1 border border-blue-200 rounded mr-1"
               />
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={btn.collect_cart || false}
-                  onChange={(e) => handleButtonChange(index, 'collect_cart', e.target.checked)}
-                  className="mr-1"
-                />
-                <span className="text-xs">Add to Cart</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={btn.collect_payment_method || false}
-                  onChange={(e) => handleButtonChange(index, 'collect_payment_method', e.target.checked)}
-                  className="mr-1"
-                />
-                <span className="text-xs">Collect Payment Method</span>
-              </label>
+              <button onClick={() => handleDeleteButton(index)} className="text-red-500 hover:text-red-700">
+                <Trash2 size={14} />
+              </button>
             </div>
           ))}
 
@@ -124,23 +106,24 @@ const TextButtonsNode = ({ data, selected }) => {
         </div>
       ) : (
         <>
+          {mediaUrl && (
+            <div className="flex items-center mt-2 p-1 bg-blue-50 rounded text-xs">
+              <Image size={12} className="mr-1 text-blue-500" />
+              <span className="truncate w-full">{mediaUrl}</span>
+            </div>
+          )}
           <div className="text-xs bg-white p-2 rounded border border-blue-100 text-gray-700 max-h-[80px] overflow-y-auto mb-2">
             {message || 'Empty message'}
+          </div>
+          <div className="text-xs bg-white p-2 rounded border border-blue-100 text-gray-700 max-h-[80px] overflow-y-auto mb-2">
+            {footer || 'Empty footer message'}
           </div>
 
           <div className="space-y-1">
             {buttons.length > 0 ? (
               buttons.map((button, index) => (
                 <div key={index} className="bg-blue-50 text-xs p-1.5 rounded border border-blue-100 text-blue-700 flex items-center justify-between">
-                  <span>{button.text}</span>
-                  <div className="flex space-x-1">
-                    {button.collect_cart && (
-                      <span className="text-xs bg-blue-200 px-1 rounded">Cart</span>
-                    )}
-                    {button.collect_payment_method && (
-                      <span className="text-xs bg-green-200 px-1 rounded">Payment</span>
-                    )}
-                  </div>
+                  {button.text}
                 </div>
               ))
             ) : (

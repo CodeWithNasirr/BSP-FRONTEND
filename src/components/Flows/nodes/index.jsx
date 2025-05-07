@@ -4,7 +4,7 @@ import ConditionalNode from './ConditionalNode';
 import ApiNode from './ApiNode';
 import EndNode from './EndNode';
 import TextButtonsNode from './TextButtonsNode';
-import React from 'react';
+import TextImageNode from './TextImageNode';
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
 
@@ -29,4 +29,5 @@ export const nodeTypes = {
   apiNode: ApiNode,
   endNode: EndNode,
   textButtonsNode: TextButtonsNode,
+  imageTextButtonsNode:TextImageNode,
 };
