@@ -7,6 +7,7 @@ const MessageNode = ({ data, selected }) => {
   const [message, setMessage] = useState(data.message || '');
   const [mediaUrl, setMediaUrl] = useState(data.mediaUrl || '');
   const [collectAddress, setCollectAddress] = useState(data.collect_address || false);
+  const [collectLocation, setCollectLocation] = useState(data.collect_location || false);
   const [collectInput, setCollectInput] = useState(data.collect_input || false);
   const [inputKey, setInputKey] = useState(data.input_key || '');
 
@@ -14,10 +15,11 @@ const MessageNode = ({ data, selected }) => {
     data.message = message;
     data.mediaUrl = mediaUrl;
     data.collect_address = collectAddress;
+    data.collect_location = collectLocation;
     data.collect_input = collectInput;
     data.input_key = collectInput ? inputKey : '';
     setEditing(false);
-  };
+  }; 
 
   return (
     <div className={`px-4 py-3 rounded-lg bg-node-message border ${selected ? 'border-blue-400' : 'border-blue-200'} min-w-[200px] max-w-[300px]`}>
@@ -59,6 +61,15 @@ const MessageNode = ({ data, selected }) => {
             <span className="text-xs">Collect Address</span>
           </label>
           <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={collectLocation}
+            onChange={(e) => setCollectLocation(e.target.checked)}
+            className="mr-2"
+          />
+          <span className="text-xs">Collect Location</span>
+        </label>
+          <label className="flex items-center">
             <input
               type="checkbox"
               checked={collectInput}
@@ -97,6 +108,11 @@ const MessageNode = ({ data, selected }) => {
           {data.collect_address && (
             <div className="text-xs mt-2 p-1 bg-blue-50 rounded">
               Collects: Address
+            </div>
+          )}
+          {data.collect_location && (
+            <div className="text-xs mt-2 p-1 bg-blue-50 rounded">
+              Collects: Location
             </div>
           )}
           {data.collect_input && (
