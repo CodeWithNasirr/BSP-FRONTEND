@@ -103,7 +103,7 @@ const TextButtonsNode = ({ data, selected }) => {
                   className="mr-1"
                 />
                 <span className="text-xs">Collect Payment Method</span>
-              </label>
+              </label> 
             </div>
           ))}
 

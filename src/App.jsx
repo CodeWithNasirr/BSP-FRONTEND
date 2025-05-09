@@ -40,7 +40,7 @@ function AppContent() {
   // Check if the user is on a mobile device
     useEffect(() => {
         const handleResize = () => {
-            setIsDesktop(window.innerWidth >= 1024);
+            setIsDesktop(window.innerWidth >= 800);
         };
 
         handleResize(); // Check on initial load
@@ -54,7 +54,7 @@ function AppContent() {
             <div>
                 <h2 className="text-2xl font-semibold text-red-600 mb-2">Desktop & Laptop Only!</h2>
                 <p className="text-lg text-red-500">
-                    im Sorry buddy, this site is only accessible on desktop devices Please open it on desktop devices.
+                    im Sorry buddy, Our application requires a larger screen for optimal experience.
                 </p>
             </div>
         </div>

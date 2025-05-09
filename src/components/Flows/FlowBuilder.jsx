@@ -32,7 +32,7 @@ const FlowBuilder = () => {
   const { setCurrentFlow, saveFlow, fetchFlows } = useFlowStore();
 
   // Fetch flows on component mount
-  useEffect(() => {
+  useEffect(() => { 
     const loadFlows = async () => {
       const flows = await fetchFlows();
       const existingFlow = flows[0];
