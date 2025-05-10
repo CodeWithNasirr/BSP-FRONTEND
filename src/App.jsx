@@ -23,98 +23,118 @@ import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
 import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
-
+import LandingPage from './components/LandingPage/LandingPage'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { useRoutes, matchRoutes } from "react-router-dom";
+
+// Define your route list to match
+const validRoutes = [
+  "/",
+  "/login",
+  "/register",
+  "/dashboard",
+  "/templates",
+  "/templates/create",
+  "/campaigns",
+  "/campaigns/create",
+  "/campaigns/:id",
+  "/contacts",
+  "/bulk-upload",
+  "/connect-form",
+  "/whatsapp-setting",
+  "/chats",
+  "/chats/:id",
+  "/subscriptions",
+  "/my-usage-panel",
+  "/chat-flow"
+];
+
 function AppContent() {
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/";
+  const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
-  const [isDesktop, setIsDesktop] = useState(true);
-  const notFoundPage = location.pathname !== "/login" && location.pathname !== "/register" &&
-    ![
-      '/', '/dashboard', '/templates', '/templates/create', '/campaigns', '/campaigns/create',
-      '/contacts', '/campaigns/:id', '/whatsapp-setting', '/chats', '/chats/:id', '/subscriptions'
-    ].some(path => location.pathname.startsWith(path.split(':')[0])); // handles dynamic routes
-  // Check if the user is on a mobile device
-    useEffect(() => {
-        const handleResize = () => {
-            setIsDesktop(window.innerWidth >= 800);
-        };
+  const isLandingPage = location.pathname === "/";
 
-        handleResize(); // Check on initial load
-        window.addEventListener("resize", handleResize);
+  const match = matchRoutes(
+    validRoutes.map((path) => ({ path })),
+    location
+  );
+  const isValidRoute = !!match;
 
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-  if (!isDesktop) {
-    return (
-        <div className="mobile-warning text-center p-8 bg-red-100 min-h-screen flex items-center justify-center">
-            <div>
-                <h2 className="text-2xl font-semibold text-red-600 mb-2">Desktop & Laptop Only!</h2>
-                <p className="text-lg text-red-500">
-                    im Sorry buddy, Our application requires a larger screen for optimal experience.
-                </p>
-            </div>
-        </div>
-    );
-}
-    
+  const notFoundPage = !isLoginPage && !isRegisterPage && !isValidRoute;
+
+  // const [isDesktop, setIsDesktop] = useState(true);
+
+  // useEffect(() => {
+  //   const handleResize = () => setIsDesktop(window.innerWidth >= 800);
+  //   handleResize();
+  //   window.addEventListener("resize", handleResize);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, []);
+
+  // if (!isDesktop) {
+  //   return (
+  //     <div className="mobile-warning text-center p-8 bg-red-100 min-h-screen flex items-center justify-center">
+  //       <div>
+  //         <h2 className="text-2xl font-semibold text-red-600 mb-2">Desktop & Laptop Only!</h2>
+  //         <p className="text-lg text-red-500">
+  //           I'm sorry buddy, our application requires a larger screen for optimal experience.
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <main className={`flex ${isLoginPage && isRegisterPage && !notFoundPage ? 'w-full h-screen' : 'h-screen'}`}>
-      {!isLoginPage && !isRegisterPage && !notFoundPage && (
+    <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full h-screen' : 'min-h-screen'}`}>
+      {!isLoginPage && !isRegisterPage && !notFoundPage && !isLandingPage &&(
         <div className="text-black">
           <Sidebar>
+            {/* Sidebar items */}
             <SidebarItem icon={<MessagesSquare size={20} />} text="Dashboard" to="/dashboard" />
             <SidebarItem icon={<ContactRound size={20} />} text="Contacts" to="/contacts" />
             <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
             <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
             <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
-            {/* <SidebarItem icon={<SiWhatsapp size={20} />} text="Scraper" to="/scraper"/> */}
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
             <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
-
           </Sidebar>
         </div>
       )}
 
-      <div className={`flex-1 overflow-hidden  ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full' : ''}`}>
+      <div className={`flex-1 overflow-auto ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full' : ''}`}>
         <ToastContainer />
         <Routes>
-          {/* Public Routes */}
-            <Route path="/login" element={<AuthSlider />} />
-            <Route path="/" element={<AuthSlider />} />
-            <Route path="/register" element={<AuthSlider />} />
-  
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />
-            <Route path="/templates" element={<ProtectedRoute element={Templates} />} />
-            <Route path="/templates/create" element={<ProtectedRoute element={CreateTemplates} />} />
-            <Route path="/campaigns" element={<ProtectedRoute element={Campaigns} />} />
-            <Route path="/campaigns/create" element={<ProtectedRoute element={CreateCampaigns} />} />
-            <Route path="/campaigns/:id" element={<ProtectedRoute element={Campaigns_Details} />} />
-            <Route path="/contacts" element={<ProtectedRoute element={Contacts} />} />
-            <Route path="/bulk-upload" element={<ProtectedRoute element={BulkImportContacts} />} />
-            <Route path="/connect-form" element={<ProtectedRoute element={ConnectWhatsAppForm} />} />
-            <Route path="/whatsapp-setting" element={<ProtectedRoute element={whatsapp_details} />} />
-            <Route path="/chats" element={<ProtectedRoute element={main_chat} />} />
-            <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
-            {/* <Route path="/scraper" element={<ProtectedRoute element={WhatsAppScraper} />} /> */}
-            <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
-            {/* <Route path="/billingzz" element={<ProtectedRoute element={BillingDashboard} />} /> */}
-            <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
-            <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
-            {/* Not Found */}
-            <Route path="*" element={<NotFound />} />
+          {/* All routes here */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<AuthSlider />} />
+          <Route path="/register" element={<AuthSlider />} />
+          <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />
+          <Route path="/templates" element={<ProtectedRoute element={Templates} />} />
+          <Route path="/templates/create" element={<ProtectedRoute element={CreateTemplates} />} />
+          <Route path="/campaigns" element={<ProtectedRoute element={Campaigns} />} />
+          <Route path="/campaigns/create" element={<ProtectedRoute element={CreateCampaigns} />} />
+          <Route path="/campaigns/:id" element={<ProtectedRoute element={Campaigns_Details} />} />
+          <Route path="/contacts" element={<ProtectedRoute element={Contacts} />} />
+          <Route path="/bulk-upload" element={<ProtectedRoute element={BulkImportContacts} />} />
+          <Route path="/connect-form" element={<ProtectedRoute element={ConnectWhatsAppForm} />} />
+          <Route path="/whatsapp-setting" element={<ProtectedRoute element={whatsapp_details} />} />
+          <Route path="/chats" element={<ProtectedRoute element={main_chat} />} />
+          <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
+          <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
+          <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
+          <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
-      </div> 
+      </div>
     </main>
   );
 }
+
 
 export default function App() {
   return (
