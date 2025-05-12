@@ -79,8 +79,9 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex flex-col xl:flex-row items-center justify-between">
             <div className="flex items-center justify-between w-full xl:w-auto mb-2 xl:mb-0">
-              <a className="flex items-center" href="/">
-                <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsAppGPTX</span>
+              <a className="flex items-center w-[7rem] h-5 sm:w-[12rem]" href="/">
+              <img src={assest.logo} alt="" />
+                {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsAppGPTX</span> */}
               </a>
               <div className="flex xl:hidden items-center gap-2">
                 <button 
@@ -443,8 +444,11 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 flex flex-col items-center">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 w-full max-w-6xl">
               <div className="space-y-6">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsAppGPTX</span>
+                <div className="flex items-center w-[7rem] h-5 sm:w-[12rem]">
+                 
+                  <img src={assest.logo} alt="" />
+                    {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsAppGPTX</span> */} 
+                 
                 </div>
                 <p className="text-gray-600">WhatsApp Business Solution Provider</p>
                 <div className="flex space-x-4">
