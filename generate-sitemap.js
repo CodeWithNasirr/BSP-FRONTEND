@@ -20,8 +20,6 @@ sitemap.pipe(writeStream);
   '/bulk-upload',
   '/connect-form',
   '/whatsapp-setting',
-  '/Acer-laptop-service',
-  '/Assus-laptop-service',
   '/chats',
   '/chats/:id',
   '/subscriptions',
