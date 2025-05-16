@@ -12,12 +12,14 @@ import CreateCampaigns from "./components/Campaigns/CreateCampaigns"
 import ProtectedRoute from "./components/Protected_Route"
 import whatsapp_details from "./components/whatsapp_details"
 import WhatsAppScraper from './components/scrap'
+import PrivacyPolicy from './components/PrivacyPolicy'
 import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 // import BillingDashboard from './components/BillingDashboard'
+
 import MyUsagePanel from './components/MyUsagePanel'
 import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
@@ -111,6 +113,7 @@ function AppContent() {
         <Routes>
           {/* All routes here */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/login" element={<AuthSlider />} />
           <Route path="/register" element={<AuthSlider />} />
           <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />
