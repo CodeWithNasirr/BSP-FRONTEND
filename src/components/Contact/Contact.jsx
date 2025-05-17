@@ -10,7 +10,11 @@ const Contacts = () => {
   const[activeTab,setActiveTab]=useState("contact")
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState([]);
-const [group, setGroup] = useState([]);
+  const [group, setGroup] = useState([]);
+
+  // Paginations
+  const [c_page, setC_Page] = useState(1); // Current page
+  const [c_pagination, setC_Pagination] = useState({ next: null, previous: null, count: 0 });
 
 const updateLocalStorageUserInfo = (key, value) => {
   const storedUserInfo = localStorage.getItem("userInfo");
@@ -31,19 +35,25 @@ useEffect(() => {
     }
   }
 
-  const fetchContactsAndGroups = async () => {
+  const fetchContactsAndGroups = async (pageNum) => {
     setLoading(true);
     try {
       const [contactsRes, groupsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/get_contacts`, { headers: { Authorization: `Token ${token}` } }),
+        axios.get(`${API_BASE_URL}/get_contacts/?page=${pageNum}`, { headers: { Authorization: `Token ${token}` } }),
         axios.get(`${API_BASE_URL}/add_group`, { headers: { Authorization: `Token ${token}` } })
       ]);
 
-      setContact(contactsRes.data.data);
+      const contactsData = contactsRes.data;
+      setContact(contactsData.results || []);
+      setC_Pagination({
+        next: contactsData.next,
+        previous: contactsData.previous,
+        count: contactsData.count,
+      });
       setGroup(groupsRes.data.data);
 
       // 🪄 Update localStorage with full contact data
-      updateLocalStorageUserInfo("contacts", contactsRes.data.data);
+      updateLocalStorageUserInfo("contacts", contactsData.results);
 
     } catch (error) {
       toast.error("Failed to fetch contacts or groups");
@@ -51,9 +61,12 @@ useEffect(() => {
       setLoading(false);
     }
   };
+    // Fetch contacts and groups for the current page
+    fetchContactsAndGroups(c_page);
+  }, [c_page]); // Only re-run when c_page changes
 
-  fetchContactsAndGroups();
-}, []);
+
+
 
 
   const delete_contact = async (contact_id) => {
@@ -534,8 +547,9 @@ const GrphandleSubmit = async (e) => {
 
           {/* Contacts List */}
           {activeTab === "contact" && (
-            loading ? <div className="text-center my-50">Loading contacts...</div> :(
-              <div className="flex-grow overflow-y-auto h-[65vh]">
+            loading ? <div className="text-center my-30 animate-pulse">Loading contacts...</div> :(
+              <>
+              <div className="flex-grow overflow-y-auto h-[45vh]">
               {contact.map((contact, index) => (
                 <div
                 key={index}
@@ -569,10 +583,30 @@ const GrphandleSubmit = async (e) => {
                 </div>
               </div>
               ))}
-            </div>
-            )
-            
-          )}
+              </div>
+                {/* Pagination Controls */}
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={() => setC_Page((prev) => Math.max(prev - 1, 1))}
+                  disabled={!c_pagination.previous}
+                  className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                > 
+                  Previous
+                </button>
+                <span>
+                  Page {c_page} of {Math.ceil(c_pagination.count / 10)} {/* Adjust based on page_size */}
+                </span>
+                <button
+                  onClick={() => setC_Page((prev) => prev + 1)}
+                  disabled={!c_pagination.next}
+                  className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+              </>
+              )
+            )}
 
           {/* Group List */}
           {activeTab === "group" && (
