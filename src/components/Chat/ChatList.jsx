@@ -9,45 +9,38 @@ const ChatList = ({ onSelectConversation }) => {
   const token = localStorage.getItem("authToken");
   const [loading, setLoading] = useState(false);
 
-  // const updateLocalStorageUserInfo = (key, value) => {
-  //   const storedUserInfo = localStorage.getItem("userInfo");
-  //   if (!storedUserInfo) return;
-  //   const parsed = JSON.parse(storedUserInfo);
-  //   parsed[key] = value;
-  //   localStorage.setItem("userInfo", JSON.stringify(parsed));
-  // };
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
+
+  const fetchChatList = async (pageNum) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/get_chatList/?page=${pageNum}`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const chatData = response.data;
+      setConversations(chatData.results || []);
+      setPagination({
+        next: chatData.next,
+        previous: chatData.previous,
+        count: chatData.count,
+      });
+    } catch (error) {
+      console.error("Error fetching chat list:", error);
+      toast.error("Failed to fetch chat list");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // const storedUserInfo = localStorage.getItem("userInfo");
-    // if (storedUserInfo) {
-    //   const parsed = JSON.parse(storedUserInfo);
-    //   if (parsed.chat_list) {
-    //     setConversations(parsed.chat_list);
-    //   }
-    // }
-
-    const fetchChatList = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`${API_BASE_URL}/get_chatList/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        // console.log(response.data)
-        setConversations(response.data);
-        // updateLocalStorageUserInfo("chat_list", response.data.Data);
-      } catch (error) {
-        console.error("Error fetching chat list:", error);
-        toast.error("Failed to fetch chat list");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChatList();
-  }, []);
+    fetchChatList(page);
+  }, [page, token]); // Refetch when page or token changes
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -72,10 +65,10 @@ const ChatList = ({ onSelectConversation }) => {
           Loading Chats...
         </p>
       ) : (
-        <div className="flex items-center justify-center">
+        <div className="flex-grow items-center justify-center overflow-y-auto h-[100vh]">
           {conversations.length > 0 ? (
-            <ul className='w-full'>
-              {conversations.map(conv => (
+            <ul className="w-full">
+              {conversations.map((conv) => (
                 <li
                   key={conv.recipient}
                   className="cursor-pointer border-b border-gray-200 p-4 hover:bg-gray-50"
@@ -101,6 +94,27 @@ const ChatList = ({ onSelectConversation }) => {
           )}
         </div>
       )}
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between mt-4 px-4">
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={!pagination.previous}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span>
+          Page {page} of {Math.ceil(pagination.count / 10)} {/* Adjust based on page size */}
+        </span>
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={!pagination.next}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
