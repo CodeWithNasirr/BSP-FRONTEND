@@ -16,7 +16,7 @@ const ChatList = ({ onSelectConversation }) => {
   const fetchChatList = async (pageNum) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/get_chatList/?page=${pageNum}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/chats/?page=${pageNum}`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',

@@ -13,7 +13,7 @@ const ChatWindow = ({recipient}) => {
   
     const fetchMessages = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/get_chathistroy/${recipient}/`, {
+        const response = await axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
           headers: {
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState,useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
+import { Context } from '../context/Context';
 
 function CreateTemplate() {
   const navigate = useNavigate();
@@ -18,7 +19,6 @@ function CreateTemplate() {
   });
   const [mediaFile, setMediaFile] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
   const token = localStorage.getItem('authToken');
 
   // Fetch templates, groups, and contacts
@@ -26,9 +26,9 @@ function CreateTemplate() {
     const fetchData = async () => {
       try {
         const [templateRes, groupRes, contactRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/get_temp/`, { headers: { Authorization: `Token ${token}` } }),
-          axios.get(`${API_BASE_URL}/add_group`, { headers: { Authorization: `Token ${token}` } }),
-          axios.get(`${API_BASE_URL}/get_contacts/`, { headers: { Authorization: `Token ${token}` } }), // New endpoint
+          axios.get(`${API_BASE_URL}/api/whatsapp/templates/`, { headers: { Authorization: `Token ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/add-group/`, { headers: { Authorization: `Token ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/contacts/`, { headers: { Authorization: `Token ${token}` } }), // New endpoint
         ]);
         setTemplates(templateRes.data.Data);
         setGroup(groupRes.data.data);
@@ -41,14 +41,8 @@ function CreateTemplate() {
   }, []);
 
   // Check WhatsApp connection status
-  useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/check-whatsapp-status`, {
-        headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
-      })
-      .then((response) => setIsConnected(response.data.is_connected))
-      .catch((error) => toast.error('Failed to fetch WhatsApp status'));
-  }, []);
+  const {isConnected} = useContext(Context)
+  
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -96,7 +90,7 @@ function CreateTemplate() {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/Send_Campaigns/`, formDataToSend, {
+      const response = await axios.post(`${API_BASE_URL}/api/campaigns/send/`, formDataToSend, {
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Campaign Created Successfully!');

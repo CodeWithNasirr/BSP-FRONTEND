@@ -1,10 +1,11 @@
 import axios from "axios";
-import React,{useState,useEffect} from "react";
+import React,{useState,useEffect,useContext} from "react";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
 import { Link } from "react-router-dom";
 import DownloadCSVTemplate from "./Sample_csv";
 import ExportContactsButton from "./Export_Contact";
+import { Context } from "../context/Context";
 const Contacts = () => {
   const token = localStorage.getItem("authToken");
   const[activeTab,setActiveTab]=useState("contact")
@@ -39,8 +40,8 @@ useEffect(() => {
     setLoading(true);
     try {
       const [contactsRes, groupsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/get_contacts/?page=${pageNum}`, { headers: { Authorization: `Token ${token}` } }),
-        axios.get(`${API_BASE_URL}/add_group`, { headers: { Authorization: `Token ${token}` } })
+        axios.get(`${API_BASE_URL}/api/contacts/?page=${pageNum}`, { headers: { Authorization: `Token ${token}` } }),
+        axios.get(`${API_BASE_URL}/api/add-group/`, { headers: { Authorization: `Token ${token}` } })
       ]);
 
       const contactsData = contactsRes.data;
@@ -65,6 +66,7 @@ useEffect(() => {
     fetchContactsAndGroups(c_page);
   }, [c_page]); // Only re-run when c_page changes
 
+  //  const {group,contact} = useContext(Context)
 
 
 
@@ -72,7 +74,7 @@ useEffect(() => {
   const delete_contact = async (contact_id) => {
 
     try {
-      const response = await axios.delete(`${API_BASE_URL}/delete_contact/`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/delete-contact/`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
@@ -135,7 +137,7 @@ const handleSubmit = async (e) => {
       );
       console.log(filteredData)
         try{
-          const response = await axios.post(`${API_BASE_URL}/get_contacts/`,filteredData, {
+          const response = await axios.post(`${API_BASE_URL}/api/contacts/`,filteredData, {
             headers: {
               Authorization: `Token ${token}`,
               'Content-Type': 'application/json',
@@ -212,7 +214,7 @@ const GrphandleSubmit = async (e) => {
   
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/add_group/`,
+        `${API_BASE_URL}/api/add-group/`,
         FormgrpData, // sending data here
         {
           headers: { 

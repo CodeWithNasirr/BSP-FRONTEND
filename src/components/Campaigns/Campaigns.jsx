@@ -6,64 +6,50 @@ import { toast } from 'react-toastify';
 
 function Campaigns() {
   const navigate = useNavigate();
-  const [campaigns, setCampaigns] = useState([]); // Renamed 'Campaigns' to 'campaigns' (lowercase for consistency)
-  const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("authToken");
 
-  // Pagination
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Pagination state
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
 
-  const updateLocalStorageUserInfo = (key, value) => {
-    const storedUserInfo = localStorage.getItem("userInfo");
-    if (!storedUserInfo) return;
+  const fetchCampaigns = async (pageNum) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/campaigns/?page=${pageNum}`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const parsed = JSON.parse(storedUserInfo);
-    parsed[key] = value;
-    localStorage.setItem("userInfo", JSON.stringify(parsed));
+      const { results, next, previous, count } = response.data;
+      setCampaigns(results);
+      setPagination({ next, previous, count });
+
+      // Save to localStorage
+      localStorage.setItem("campaigns", JSON.stringify({ campaigns: results }));
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      toast.error("Failed to fetch campaigns");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // Load campaigns from localStorage if available
-    const storedUserInfo = localStorage.getItem("userInfo");
-    if (storedUserInfo) {
-      const parsed = JSON.parse(storedUserInfo);
+    const cached = localStorage.getItem("campaigns");
+    if (cached) {
+      const parsed = JSON.parse(cached);
       if (parsed.campaigns) {
         setCampaigns(parsed.campaigns);
       }
     }
 
-    // Fetch campaigns with pagination
-    const fetchCampaigns = async (pageNum) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`${API_BASE_URL}/get_Camp/?page=${pageNum}`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const campData = response.data;
-        setCampaigns(campData.results || []); // Ensure results is an array
-        setPagination({
-          next: campData.next, // URL for the next page
-          previous: campData.previous, // URL for the previous page
-          count: campData.count, // Total number of campaigns
-        });
-
-        // Update localStorage with the fetched campaigns
-        updateLocalStorageUserInfo("campaigns", campData.results);
-      } catch (error) {
-        console.error("Error fetching campaigns:", error);
-        toast.error("Failed to fetch campaigns");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCampaigns(page);
-  }, [page, token]); // Add 'token' to dependencies in case it changes
+  }, [page, token]);
 
   return (
     <div className="Main w-full h-screen bg-slate-100 px-15">

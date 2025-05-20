@@ -1,33 +1,18 @@
-import React,{useEffect,useState} from "react";
+import React,{useEffect,useState,useContext} from "react";
 import axios from "axios";
 import API_BASE_URL from "../config";
 import { toast } from 'react-toastify'
 import { Link } from "react-router-dom";
+import { Context } from "./context/Context";
 const WhatsAppSettings = () => {
+  const token = localStorage.getItem("authToken");
 
-  const [isConnected, setIsConnected] = useState(false);
-  const token = localStorage.getItem('authToken') 
-
-  useEffect(()=>{
-        axios
-        .get(`${API_BASE_URL}/check-whatsapp-status`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        .then((response)=>{
-          setIsConnected(response.data.is_connected);
-        })
-        .catch((error)=>{
-          toast.error("Failed to fetch user info:", error.response?.data || error.message);
-        })
-      },[])
-      // Ending
+  const {isConnected} = useContext(Context)
+  
   const [wp_Details,setWp_Details]=useState([])
   useEffect(()=>{
         axios
-        .get(`${API_BASE_URL}/Fetch_wp_details/`, {
+        .get(`${API_BASE_URL}/api/whatsapp/details/`, {
           headers: {
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',

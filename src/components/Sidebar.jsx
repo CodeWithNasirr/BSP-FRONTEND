@@ -4,7 +4,7 @@ import { useContext, createContext, useState, useEffect } from "react";
 import { useNavigate,Link } from "react-router-dom";
 import { toast } from 'react-toastify'
 const SidebarContext = createContext();
-import API_BASE_URL from "../config";
+import { Context } from "./context/Context";
 export default function Sidebar({ children }) {
   const [expanded, setExpanded] = useState(true); 
 
@@ -13,34 +13,7 @@ export default function Sidebar({ children }) {
     localStorage.removeItem("authToken");
     navigate('/login')
   }
-  const [userInfo,setUserInfo]=useState(
-    {
-      username:"",
-      email:""
-    }
-  )
-
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      // alert("No auth token found! 💔");
-      return;
-    }
-    axios
-      .get(`${API_BASE_URL}/dash-details/`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      .then((response) => {
-        setUserInfo(response.data);
-        // console.log(userInfo);
-      })
-      .catch((error) => {
-        toast.error("Failed to fetch user info:", error.response?.data || error.message);
-      });
-  }, []);
+  const {userInfo} = useContext(Context)
   
 
   return (

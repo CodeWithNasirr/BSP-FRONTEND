@@ -5,31 +5,34 @@ import API_BASE_URL from "../../config";
 import { NavLink } from "react-router-dom";
 const CampaignDetails = () => {
   const { id } = useParams();
-  const [Campaign, setCampaigns] = useState({ Data: [] });
   const token = localStorage.getItem("authToken");
-  const [template,setTemplate]=useState([]);
- 
-  useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/get_Camp/`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      .then((response) => {
-        const filtered_camp = response.data.Data.find(
-          (camp) => camp.campaign_id === id
-        );
-        setCampaigns(filtered_camp);
-        setTemplate(filtered_camp.Templates)
-        console.log(Campaign)
 
-      })
-      .catch((error) => {
-        console.error("Error fetching templates:", error);
-      });
-  }, []);
+  const [Campaign, setCampaign] = useState(null);
+  const [template, setTemplate] = useState([]);
+
+  useEffect(() => {
+    const fetchCampaignDetails = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/campaigns/${id}/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const Data = response.data
+        // console.log("API response:", Data)
+        setCampaign(Data);
+        setTemplate(Data.Templates || []);
+     
+      } catch (error) {
+        console.error("Error fetching campaign details:", error);
+      }
+    };
+
+    fetchCampaignDetails();
+  }, [id, token]);
+
+  if (!Campaign) return <p>Loading campaign details...</p>;
 
   return (
     <div className="max-h-[100vh] flex flex-col w-full min-w-0">

@@ -18,7 +18,7 @@ const LoginForm = ({ isActive }) => {
     if (authToken) {
         // 💕 Remove the token if the user manually navigates to the login page
         localStorage.removeItem("authToken");
-        console.log("Auth token removed. Redirecting to login...");
+        // console.log("Auth token removed. Redirecting to login...");
     }
 }, []);
 
@@ -34,13 +34,13 @@ const LoginForm = ({ isActive }) => {
             [name]: value
         }))
     }
-    console.log(formData)
+    // console.log(formData)
 
     const handleSubmit = async (e) => {
         e.preventDefault();
        try{
         const response = await axios.post(`${API_BASE_URL}/login/`,formData)
-        toast.success(response.data.Message)
+        toast.success(response.data.Message) 
         localStorage.setItem("authToken", response.data.Token);
         navigate('/dashboard')
        }

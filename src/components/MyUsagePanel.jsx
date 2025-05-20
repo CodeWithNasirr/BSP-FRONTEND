@@ -7,7 +7,7 @@ export default function MyUsagePanel() {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/my-usage-summary/`,{
+        const res = await axios.get(`${API_BASE_URL}/api/usage-summary/`,{
           headers: {
             Authorization: `Token ${token}`,
             'Content-Type': 'application/json',

@@ -29,7 +29,7 @@ function Templates() {
     if (!confirmDelete) return; // If user cancels, exit function
   
     try {
-      const response = await axios.delete(`${API_BASE_URL}/delete_temp/${template_name}/`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/whatsapp/templates/${template_name}/`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ function Templates() {
   const handleSync = async (e) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/Sync_temp/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/whatsapp/templates/sync/`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function Templates() {
   // Fetch templates from API
   useEffect(() => {
     axios
-      .get(`${API_BASE_URL}/get_temp/`, {
+      .get(`${API_BASE_URL}/api/whatsapp/templates/`, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',

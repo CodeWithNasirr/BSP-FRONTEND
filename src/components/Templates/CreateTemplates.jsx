@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import { Context } from "../context/Context";
 function CreateTemplate() {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState(null);
@@ -79,7 +80,7 @@ function CreateTemplate() {
     // console.log(filteredData)
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/send-template/`,
+        `${API_BASE_URL}/api/whatsapp/send-template/`,
         filteredData,
         {
           headers: {
@@ -117,38 +118,7 @@ function CreateTemplate() {
     }
   };
 
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/check-whatsapp-status`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-      .then((response) => {
-        setIsConnected(response.data.is_connected);
-      })
-      .catch((error) => {
-        toast.error(
-          "Failed to fetch user info:",
-          error.response?.data || error.message
-        );
-      });
-  }, []);
-
-  // const clientId = "1354428199237692";
-  // const REDIRECT_URI =
-  //   "https://9fe2-2402-3a80-18ae-9ce9-9062-bd11-4b6c-ba.ngrok-free.app/facebook/callback/";
-  // const scope =
-  //   "whatsapp_business_management,whatsapp_business_messaging,public_profile";
-
-  // const handleFacebookLogin = () => {
-  //   const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
-  //   window.open(url, "fbPopup", "width=500,height=600");
-  // };
-
+  const {isConnected} = useContext(Context)
   return (
     <div className="main bg-zinc-50">
       <form onSubmit={handleSubmit}>

@@ -23,7 +23,7 @@ const RegisterForm = ({ isActive }) => {
             [name]: value
         }))
     }
-    console.log(formData)
+    // console.log(formData)
 
     const handleSubmit = async (e) => {
         e.preventDefault();

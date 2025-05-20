@@ -1,84 +1,16 @@
 import axios from 'axios';
-import React,{useState,useEffect} from 'react';
+import React,{useContext} from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import API_BASE_URL from '../config';
-import { toast } from 'react-toastify'
+import { Context } from "./context/Context";
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("authToken");
-  const [isConnected, setIsConnected] = useState(false);
-
-  const [loading, setLoading] = useState(true);
-  const [userInfo,setUserInfo]=useState(
-    {
-      username:"",
-      email:""
-    }
-  )
-  useEffect(() => {
-    const cachedUserInfo = localStorage.getItem("userInfo");
-    const cachedStatus = localStorage.getItem("waStatus");
-  
-    if (cachedUserInfo) {
-      setUserInfo(JSON.parse(cachedUserInfo));
-      // console.log("CachedUserinfo called.....")
-    }
-    if (cachedStatus) {
-      setIsConnected(JSON.parse(cachedStatus));
-    }
-  
-    if (!token) return;
-  
-    const fetchDashboard = async () => {
-      try {
-        const [userRes, statusRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/dash-details/`, {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }),
-          axios.get(`${API_BASE_URL}/check-whatsapp-status`, {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }),
-        ]);
-  
-        setUserInfo(userRes.data);
-        // console.log("API called...")
-        setIsConnected(statusRes.data.is_connected);
-        localStorage.setItem("userInfo", JSON.stringify({
-          username: userRes.data.username,
-          email: userRes.data.email
-        }));
-        localStorage.setItem("waStatus", JSON.stringify(statusRes.data.is_connected));
-        console.log(localStorage)
-      } catch (error) {
-        toast.error("Failed to refresh dashboard data 🥲");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchDashboard();
-  }, [token]);
-  
-
-    // const clientId = "1354428199237692";
-    // const REDIRECT_URI = "https://whatsappx.up.railway.app/facebook/callback/";
-    // const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
-
-    // const handleFacebookLogin = () => {
-    //   const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
-    //   window.open(url, 'fbPopup','width=500,height=600');
-    // };
-
+   
+  const {userInfo,isConnected,loadingUser} = useContext(Context)
     
   return (
     <>
-    {loading ? (
+    {loadingUser ? (
       <div className="animate-pulse text-center text-2xl text-gray-400 my-50">Loading dashboard...</div>
     ) : (
     <div className="md:min-h-screen flex flex-col w-full min-w-0">
