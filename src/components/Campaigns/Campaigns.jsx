@@ -40,16 +40,22 @@ function Campaigns() {
   };
 
   useEffect(() => {
-    const cached = localStorage.getItem("campaigns");
-    if (cached) {
+  const cached = localStorage.getItem("campaigns");
+
+  if (cached) {
+    try {
       const parsed = JSON.parse(cached);
       if (parsed.campaigns) {
         setCampaigns(parsed.campaigns);
       }
+    } catch (err) {
+      console.error("Invalid JSON in localStorage for 'campaigns'", err);
+      localStorage.removeItem("campaigns"); // clean corrupted data
     }
+  }
 
-    fetchCampaigns(page);
-  }, [page, token]);
+  fetchCampaigns(page);
+}, [page, token]);
 
   return (
     <div className="Main w-full h-screen bg-slate-100 px-15">
@@ -94,7 +100,7 @@ function Campaigns() {
               <div key={index} className="w-1/4 text-center">{item}</div>
             ))}
           </div>
-        </div>
+        </div> 
 
         {/* Campaigns List */}
         {loading ? (
