@@ -80,29 +80,9 @@ useEffect(() => {
 }, [token]);
 
 
-  // Fetch templates, groups, and contacts
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [templateRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/whatsapp/templates/`, { headers: { Authorization: `Token ${token}` } }),
-        //   axios.get(`${API_BASE_URL}/api/add-group/`, { headers: { Authorization: `Token ${token}` } }),
-        //   axios.get(`${API_BASE_URL}/api/contacts/`, { headers: { Authorization: `Token ${token}` } }), // New endpoint
-        ]);
-        setTemplates(templateRes.data.Data);
-        // setGroup(groupRes.data.data);
-        // setContacts(contactRes.data.data); // Assuming API returns contact list
-      } catch (err) {
-        toast.error('Failed to fetch data');
-      }
-    };
-    fetchData();
-  }, []);
-
 
 
   const value = {
-    templates,
     group,
     contact,
     isConnected,
