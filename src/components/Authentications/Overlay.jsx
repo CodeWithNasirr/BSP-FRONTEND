@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../config";
+import { assest } from "../../assets/assets";
 const Overlay = ({ isRightPanelActive, setIsRightPanelActive }) => {
   const navigate = useNavigate();
     return (
@@ -8,7 +9,7 @@ const Overlay = ({ isRightPanelActive, setIsRightPanelActive }) => {
         <div 
           className={`bg-cover bg-no-repeat relative -left-full h-full w-[200%] transform transition-transform duration-600 ease-in-out
             ${isRightPanelActive ? 'translate-x-1/2' : 'translate-x-0'}`}
-          style={{ backgroundImage: `url("${API_BASE_URL}/media/static_media/image.gif")` }}
+          style={{ backgroundImage: `url(${assest.hero_bg2})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-[rgba(46,94,109,0.4)] to-transparent"></div>
           

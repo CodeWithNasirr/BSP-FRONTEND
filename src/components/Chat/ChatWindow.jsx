@@ -1,9 +1,10 @@
 import React, { useState,useRef, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
+import { assest } from '../../assets/assets';
 const ChatWindow = ({recipient}) => {
   const [messages, setMessages] = useState([]);
-  console.log(messages) 
+
   const [recipients,setRecipient]=useState([])
   const token = localStorage.getItem("authToken");
   const chatContainerRef=useRef(null); 
@@ -95,7 +96,7 @@ const ChatWindow = ({recipient}) => {
         imageFormData.append("url", selectedImage); // backend should expect 'url' field
   
         const response = await axios.post(
-          `${API_BASE_URL}/send-message/`,
+          `${API_BASE_URL}/api/whatsapp/send-message/`,
           imageFormData,
           {
             headers: {

@@ -3,7 +3,8 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import Overlay from './Overlay';
 import { useLocation } from "react-router-dom";
-import API_BASE_URL from "../../config";
+
+import { assest } from '../../assets/assets';
 
 const AuthSlider = () => {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
@@ -20,7 +21,7 @@ const AuthSlider = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-cover bg-center" 
-         style={{ backgroundImage: `url("${API_BASE_URL}/media/static_media/hero-bg.jpg")` }}>
+         style={{ backgroundImage: `url(${assest.hero_bg})` }}>
       <div 
         className={`container relative w-[768px] max-w-full min-h-[500px] bg-white rounded-[25px] shadow-2xl overflow-hidden transition-all duration-600 ease-in-out
           ${isRightPanelActive ? 'right-panel-active' : ''}`}

@@ -4,6 +4,7 @@ import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
 import axios from "axios";
 import API_BASE_URL from "../../config";
+import { assest } from "../../assets/assets";
 
 const MainChat = () => {
   const token = localStorage.getItem("authToken");
@@ -46,7 +47,7 @@ const MainChat = () => {
       <div
         className="flex-1 flex flex-col bg-cover bg-center"
         style={{
-          backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')`,
+          backgroundImage:`url(${assest.whatsapp_bg})`,
         }}
       >
         {recipient ? (
