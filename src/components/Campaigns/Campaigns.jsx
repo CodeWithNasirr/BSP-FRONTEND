@@ -29,8 +29,7 @@ function Campaigns() {
       setCampaigns(results);
       setPagination({ next, previous, count });
 
-      // Save to localStorage
-      localStorage.setItem("campaigns", JSON.stringify({ campaigns: results }));
+      
     } catch (error) {
       console.error("Error fetching campaigns:", error);
       toast.error("Failed to fetch campaigns");
@@ -40,20 +39,6 @@ function Campaigns() {
   };
 
   useEffect(() => {
-  const cached = localStorage.getItem("campaigns");
-
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      if (parsed.campaigns) {
-        setCampaigns(parsed.campaigns);
-      }
-    } catch (err) {
-      console.error("Invalid JSON in localStorage for 'campaigns'", err);
-      localStorage.removeItem("campaigns");
-    }
-  }
-
   fetchCampaigns(page);
 }, [page, token]);
 

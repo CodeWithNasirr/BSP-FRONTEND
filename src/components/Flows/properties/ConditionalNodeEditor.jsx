@@ -67,7 +67,7 @@ const ConditionalNodeEditor = ({ data, onChange }) => {
         <ul className="text-xs text-gray-600 space-y-1">
           <li><code>response == "yes"</code> - Exact match</li>
           <li><code>response.includes("thank")</code> - Contains text</li>
-          <li><code>response.length > 10</code> - Length check</li>
+          <li><code>response.length / 10</code> - Length check</li>
           <li><code>response == "1" || response == "one"</code> - Multiple conditions</li>
         </ul>
       </div>
