@@ -120,7 +120,7 @@ const ChatWindow = ({recipient}) => {
         };
   
         const response = await axios.post(
-          `${API_BASE_URL}/send-message/`,
+          `${API_BASE_URL}/api/whatsapp/send-message/`,
           updatedFormData,
           {
             headers: {
@@ -216,7 +216,7 @@ const ChatWindow = ({recipient}) => {
                         {msg.media_type === 'image' && msg.media_url && (
                           <div className="mb-2 relative">
                             <img 
-                              src={`https://whatsappx.up.railway.app/media/${msg.media_url}`}
+                              src={`${msg.media_url}`}
                               crossOrigin="anonymous"
                               alt="Sent media"
                               className="max-w-full h-auto rounded-lg max-h-60 object-cover"
