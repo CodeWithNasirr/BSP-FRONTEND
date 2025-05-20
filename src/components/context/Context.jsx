@@ -14,55 +14,70 @@ const ContextProvider = ({ children }) => {
   const token = localStorage.getItem("authToken");
   
 
-  useEffect(() => {
-    const cachedUserInfo = localStorage.getItem("userInfo");
-    const cachedStatus = localStorage.getItem("waStatus");
-  
-    if (cachedUserInfo) {
+useEffect(() => {
+  const cachedUserInfo = localStorage.getItem("userInfo");
+  const cachedStatus = localStorage.getItem("waStatus");
+
+  if (cachedUserInfo) {
+    try {
       setUserInfo(JSON.parse(cachedUserInfo));
-      // console.log("CachedUserinfo called.....")
+    } catch (e) {
+      console.error("Invalid JSON in userInfo:", e);
+      localStorage.removeItem("userInfo");
     }
-    if (cachedStatus) {
+  }
+
+  if (cachedStatus && cachedStatus !== "undefined") {
+    try {
       setIsConnected(JSON.parse(cachedStatus));
+    } catch (e) {
+      console.error("Invalid JSON in waStatus:", e);
+      localStorage.removeItem("waStatus");
     }
-  
-    if (!token) return;
-  
-    const fetchDashboard = async () => { 
-      try {
-        const [userRes, statusRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/dashboard/`, {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }),
-          axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }),
-        ]);
-  
-        setUserInfo(userRes.data);
-        // console.log("API called...")
-        setIsConnected(statusRes.data.is_connected);
-        localStorage.setItem("userInfo", JSON.stringify({
+  }
+
+  if (!token) return;
+
+  const fetchDashboard = async () => {
+    try {
+      const [userRes, statusRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/dashboard/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+        axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      ]);
+
+      setUserInfo(userRes.data);
+      setIsConnected(statusRes.data.is_connected);
+
+      localStorage.setItem(
+        "userInfo",
+        JSON.stringify({
           username: userRes.data.username,
-          email: userRes.data.email
-        }));
-        localStorage.setItem("waStatus", JSON.stringify(statusRes.data.is_connected));
-        // console.log(localStorage)
-      } catch (error) {
-        toast.error("Failed to refresh dashboard data 🥲");
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-  
-    fetchDashboard();
-  }, [token]);
+          email: userRes.data.email,
+        })
+      );
+      localStorage.setItem(
+        "waStatus",
+        JSON.stringify(statusRes.data.is_connected)
+      );
+    } catch (error) {
+      toast.error("Failed to refresh dashboard data 🥲");
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
+  fetchDashboard();
+}, [token]);
 
 
   // Fetch templates, groups, and contacts
