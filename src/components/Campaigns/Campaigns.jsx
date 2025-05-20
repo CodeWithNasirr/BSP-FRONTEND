@@ -50,7 +50,7 @@ function Campaigns() {
       }
     } catch (err) {
       console.error("Invalid JSON in localStorage for 'campaigns'", err);
-      localStorage.removeItem("campaigns"); // clean corrupted data
+      localStorage.removeItem("campaigns");
     }
   }
 
