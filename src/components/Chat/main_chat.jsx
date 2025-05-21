@@ -62,6 +62,6 @@ const MainChat = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default MainChat;

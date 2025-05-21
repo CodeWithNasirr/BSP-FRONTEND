@@ -90,7 +90,7 @@ function CreateTemplate() {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/campaigns/send/`, formDataToSend, {
+      const response = await axios.post(`${API_BASE_URL}/apis/campaigns/send/`, formDataToSend, {
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Campaign Created Successfully!');

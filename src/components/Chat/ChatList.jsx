@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
-
+ 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
   const token = localStorage.getItem("authToken");
