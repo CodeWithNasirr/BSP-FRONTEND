@@ -3,6 +3,8 @@ import { data, Link, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { NavLink } from "react-router-dom";
+import { assest } from "../../assets/assets";
+
 const CampaignDetails = () => {
   const { id } = useParams();
   const token = localStorage.getItem("authToken");
@@ -172,7 +174,7 @@ const CampaignDetails = () => {
                 </p>
               </div>
             </div>
-            <div className="w-full border pt-4 px-4 space-y-1 rounded-xl shadow-md bg-cover bg-center" style={{ backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')` }}>
+            <div className="w-full border pt-4 px-4 space-y-1 rounded-xl shadow-md bg-cover bg-center" style={{ backgroundImage:`url(${assest.whatsapp_bg})`, }}>
               <div className="flex justify-start">
               <div className="flex items-end">
                   <svg height="13" width="8">

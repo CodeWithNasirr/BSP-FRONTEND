@@ -1,7 +1,7 @@
 // TemplateViewModal.jsx
 import React from "react";
 import API_BASE_URL from "../../config";
-
+import { assest } from "../../assets/assets";
 const TemplateViewModal = ({ isOpen, onClose, template }) => {
   if (!isOpen || !template) return null;
 
@@ -9,7 +9,7 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="w-[30%] max-h-[80%] overflow-auto border rounded-xl shadow-md p-4 bg-cover bg-center relative bg-white"
         style={{
-          backgroundImage: `url('${API_BASE_URL}/media/FILES/whatsapp-bg-02.png')`,
+          backgroundImage:`url(${assest.whatsapp_bg})`,
         }}
       >
         {/* Close Button */}
