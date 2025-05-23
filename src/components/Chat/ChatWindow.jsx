@@ -4,7 +4,7 @@ import API_BASE_URL from '../../config';
 import { assest } from '../../assets/assets';
 const ChatWindow = ({recipient}) => {
   const [messages, setMessages] = useState([]);
-  console.log(messages)
+  // console.log(messages)
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem("authToken");
   const chatContainerRef=useRef(null); 
@@ -29,7 +29,7 @@ const ChatWindow = ({recipient}) => {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_success') {
-            console.log(data.message);
+        
           } else if (data.message?.action === 'new_message') {
             const newMessage = data.message.data;
             // Deduplicate by message_id
@@ -45,7 +45,7 @@ const ChatWindow = ({recipient}) => {
       };
 
       newSocket.onclose = (e) => {
-        console.log(`WebSocket disconnected: ${e.code} - ${e.reason}`);
+        console.log(`WebSocket disconnected: ${e.code} - ${e.reaso0}`);
         setTimeout(() => {
           console.log('Attempting to reconnect...');
           connectWebSocket();
@@ -206,7 +206,7 @@ const ChatWindow = ({recipient}) => {
          {/* Chat Header */}
         <div className="flex justify-center text-emerald-600  p-2 sticky top-0 z-10">
           {/* <span id="online-count" className="pr-1">3</span>online */}
-          <span className='border-b border-gray-200'>{messages[0].user_name || recipient}</span>
+          <span className='border-b border-gray-200'>{recipient}</span>
         </div>
 
         {/* Chat Content */}

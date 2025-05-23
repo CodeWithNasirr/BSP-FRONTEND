@@ -25,7 +25,7 @@ const ChatList = ({ onSelectConversation }) => {
       const newSocket = new WebSocket(wsUrl);
 
       newSocket.onopen = () => {
-        console.log('ChatList WebSocket connected');
+        // console.log('ChatList WebSocket connected');
         setSocket(newSocket);
       };
 
@@ -33,25 +33,25 @@ const ChatList = ({ onSelectConversation }) => {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_success') {
-            console.log(data.message);
+   
           } else if (data.message?.action === 'refresh_chatlist') {
             fetchChatList(page); // Refresh chat list
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // console.error('Error parsing WebSocket message:', error);
         }
       };
 
       newSocket.onclose = (e) => {
-        console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
+        // console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
         setTimeout(() => {
-          console.log('Attempting to reconnect...');
+          // console.log('Attempting to reconnect...');
           connectWebSocket();
         }, 3000);
       };
 
       newSocket.onerror = (error) => {
-        console.error('ChatList WebSocket error:', error);
+        // console.error('ChatList WebSocket error:', error);
       };
 
       return newSocket;
