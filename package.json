@@ -29,6 +29,7 @@
     "reactflow": "^11.11.4",
     "sitemap": "^8.0.0",
     "uuid": "^11.1.0",
+    "websocket": "^1.0.35",
     "zustand": "^5.0.4"
   },
   "devDependencies": {

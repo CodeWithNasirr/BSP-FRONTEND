@@ -4,14 +4,72 @@ import API_BASE_URL from '../../config';
 import { assest } from '../../assets/assets';
 const ChatWindow = ({recipient}) => {
   const [messages, setMessages] = useState([]);
-
-  const [recipients,setRecipient]=useState([])
+  console.log(messages)
+  const [socket, setSocket] = useState(null);
   const token = localStorage.getItem("authToken");
   const chatContainerRef=useRef(null); 
 
+// WebSocket connection
   useEffect(() => {
-    let interval;
-  
+    if (!recipient || !token) return;
+
+    const connectWebSocket = () => {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const backendHost = API_BASE_URL.replace('http://', '').replace('https://', '');
+      const wsUrl = `${wsProtocol}${backendHost}/ws/chat/${recipient}/?token=${token}`;
+
+      const newSocket = new WebSocket(wsUrl);
+
+      newSocket.onopen = () => {
+        console.log('WebSocket connected');
+        setSocket(newSocket);
+      };
+
+      newSocket.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'connection_success') {
+            console.log(data.message);
+          } else if (data.message?.action === 'new_message') {
+            const newMessage = data.message.data;
+            // Deduplicate by message_id
+            setMessages((prev) =>
+              prev.some((msg) => msg.message_id === newMessage.message_id)
+                ? prev
+                : [...prev, newMessage]
+            );
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      newSocket.onclose = (e) => {
+        console.log(`WebSocket disconnected: ${e.code} - ${e.reason}`);
+        setTimeout(() => {
+          console.log('Attempting to reconnect...');
+          connectWebSocket();
+        }, 3000);
+      };
+
+      newSocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      return newSocket;
+    };
+
+    const ws = connectWebSocket();
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [recipient, token]);
+
+  // Fetch initial messages
+  useEffect(() => {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
@@ -20,28 +78,25 @@ const ChatWindow = ({recipient}) => {
             'Content-Type': 'application/json',
           },
         });
-        setMessages(response.data.Data || []);
-        setRecipient(response.data.Data.recipient)
-
-  
+        // Deduplicate initial messages by message_id
+        const uniqueMessages = response.data.Data.reduce((acc, msg) => {
+          if (!acc.some((m) => m.message_id === msg.message_id)) {
+            acc.push(msg);
+          }
+          return acc;
+        }, []);
+        setMessages(uniqueMessages);
       } catch (error) {
-        console.error("Initial chat fetch failed:", error);
+        console.error('Initial chat fetch failed:', error);
       }
     };
-  
-    if (recipient) {
-      // 👇 Fetch chat history immediately on selection
-      fetchMessages();
-  
-      // 🔁 Then setup polling for every 30 seconds
-      interval = setInterval(fetchMessages, 30000);
-    }
-  
-    return () => clearInterval(interval);
-  }, [recipient]);
-  
 
-  // Auto Scroll 
+    if (recipient) {
+      fetchMessages();
+    }
+  }, [recipient, token]);
+
+  // Auto-scroll to latest message
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -151,7 +206,7 @@ const ChatWindow = ({recipient}) => {
          {/* Chat Header */}
         <div className="flex justify-center text-emerald-600  p-2 sticky top-0 z-10">
           {/* <span id="online-count" className="pr-1">3</span>online */}
-          <span className='border-b border-gray-200'>{messages.user_name}</span>
+          <span className='border-b border-gray-200'>{messages[0].user_name || recipient}</span>
         </div>
 
         {/* Chat Content */}
@@ -331,4 +386,3 @@ const ChatWindow = ({recipient}) => {
 };
 
 export default ChatWindow;
-

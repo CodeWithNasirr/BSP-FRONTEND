@@ -3,25 +3,82 @@ import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
- 
+
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
-  const token = localStorage.getItem("authToken");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [socket, setSocket] = useState(null);
+  const token = localStorage.getItem('authToken');
   const [loading, setLoading] = useState(false);
-
-  // Pagination
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
 
+ // WebSocket connection
+  useEffect(() => {
+    if (!token) return;
+
+    const connectWebSocket = () => {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const backendHost = API_BASE_URL.replace('http://', '').replace('https://', '');
+      const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
+
+      const newSocket = new WebSocket(wsUrl);
+
+      newSocket.onopen = () => {
+        console.log('ChatList WebSocket connected');
+        setSocket(newSocket);
+      };
+
+      newSocket.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'connection_success') {
+            console.log(data.message);
+          } else if (data.message?.action === 'refresh_chatlist') {
+            fetchChatList(page); // Refresh chat list
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      newSocket.onclose = (e) => {
+        console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
+        setTimeout(() => {
+          console.log('Attempting to reconnect...');
+          connectWebSocket();
+        }, 3000);
+      };
+
+      newSocket.onerror = (error) => {
+        console.error('ChatList WebSocket error:', error);
+      };
+
+      return newSocket;
+    };
+
+    const ws = connectWebSocket();
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [token, page]);
+
+  // Fetch chat list
   const fetchChatList = async (pageNum) => {
-    setLoading(true);
+    // setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/chats/?page=${pageNum}`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${searchQuery}`,
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const chatData = response.data;
       setConversations(chatData.results || []);
@@ -31,16 +88,18 @@ const ChatList = ({ onSelectConversation }) => {
         count: chatData.count,
       });
     } catch (error) {
-      console.error("Error fetching chat list:", error);
-      toast.error("Failed to fetch chat list");
+      console.error('Error fetching chat list:', error);
+      toast.error('Failed to fetch chat list');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchChatList(page);
-  }, [page, token]); // Refetch when page or token changes
+    if (token) {
+      fetchChatList(page);
+    }
+  }, [page, token, searchQuery]);
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -49,6 +108,8 @@ const ChatList = ({ onSelectConversation }) => {
         <div className="relative flex-1">
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search name or mobile number"
             className="w-full p-2 pl-10 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -65,7 +126,7 @@ const ChatList = ({ onSelectConversation }) => {
           Loading Chats...
         </p>
       ) : (
-        <div className="flex-grow items-center justify-center overflow-y-auto h-[100vh]">
+        <div className="flex-grow overflow-y-auto h-[100vh]">
           {conversations.length > 0 ? (
             <ul className="w-full">
               {conversations.map((conv) => (
@@ -77,7 +138,9 @@ const ChatList = ({ onSelectConversation }) => {
                   <div className="flex justify-between">
                     <span className="font-semibold">{conv.user_name}</span>
                     <span className="text-xs text-gray-500">
-                      {conv.last_message_at ? new Date(conv.last_message_at).toLocaleTimeString() : ''}
+                      {conv.last_message_at
+                        ? new Date(conv.last_message_at).toLocaleTimeString()
+                        : ''}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">{conv.last_message_text}</p>
@@ -104,9 +167,7 @@ const ChatList = ({ onSelectConversation }) => {
         >
           Previous
         </button>
-        <span>
-          Page {page} of {Math.ceil(pagination.count / 10)} {/* Adjust based on page size */}
-        </span>
+        <span>Page {page} of {Math.ceil(pagination.count / 10)}</span>
         <button
           onClick={() => setPage((prev) => prev + 1)}
           disabled={!pagination.next}
