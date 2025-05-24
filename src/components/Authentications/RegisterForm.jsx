@@ -8,7 +8,6 @@ const RegisterForm = ({ isActive }) => {
 
   const navigate = useNavigate();
     const [errors,setErrors]=useState({});
-
  
     const [formData, setFormData] =useState({
         username: "",
@@ -39,23 +38,29 @@ const RegisterForm = ({ isActive }) => {
         navigate('/login')
        }
        catch (error) {
-        if (error.response && error.response.data.errors) {
-            toast.error(error.response.data.errors.username[0])
-            toast.error(error.response.data.errors.email[0])
-            setFormData({
-                username: "",
-                email: "",
-                password: "",
-            })
-        } else {
-            alert("An unexpected error occurred.");
-            setFormData({
-                username: "",
-                email: "",
-                password: "",
-            })
-        }
-    }
+    // console.log(error.response?.data);
+
+      const errData = error.response?.data;
+
+      if (errData && errData.errors) {
+          if (errData.errors.username?.[0]) {
+              toast.error(errData.errors.username[0]);
+          }
+          if (errData.errors.email?.[0]) {
+              toast.error(errData.errors.email[0]);
+          }
+      } else if (errData?.detail) {
+          toast.error(errData.detail);  // in case Django sends a non-field error
+      } else {
+          alert("An unexpected error occurred.");
+      }
+
+    setFormData({
+        username: "",
+        email: "",
+        password: "",
+    });
+}
     }
 
 
