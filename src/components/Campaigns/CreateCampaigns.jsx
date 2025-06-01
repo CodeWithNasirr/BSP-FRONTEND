@@ -4,6 +4,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
 import { Context } from '../context/Context';
+import RequireSubscription from "../Subscriptions/RequireSubscription";
 
 function CreateTemplate() {
   const navigate = useNavigate();
@@ -93,17 +94,21 @@ function CreateTemplate() {
       const response = await axios.post(`${API_BASE_URL}/apis/campaigns/send/`, formDataToSend, {
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'multipart/form-data' },
       });
+  
       toast.success('Campaign Created Successfully!');
       setFormData({ template_name: '', campaigns_name: '', recipients: '' });
       setMediaFile(null);
       setSelectedTemplate(null);
       setRecipientType('group');
     } catch (error) {
-      toast.error('Failed to create campaign');
+      console.log(error.response.data)
+      toast.error(error.response.data.error);
+      // toast.error('Failed to create campaign');
     }
   };
 
   return (
+    <RequireSubscription>
     <div className="main bg-zinc-50">
       <form onSubmit={handleSubmit}>
         <div className="header flex justify-between px-5">
@@ -276,6 +281,7 @@ function CreateTemplate() {
         </div>
       </form>
     </div>
+    </RequireSubscription>
   );
 }
 

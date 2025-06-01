@@ -2,6 +2,8 @@ import React, { useState,useRef, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { assest } from '../../assets/assets';
+import RequireSubscription from "../Subscriptions/RequireSubscription";
+
 const ChatWindow = ({recipient}) => {
   const [messages, setMessages] = useState([]);
   // console.log(messages)
@@ -201,6 +203,7 @@ const ChatWindow = ({recipient}) => {
     }
   };
   return( 
+    <RequireSubscription>
     <div className="flex flex-col">
        <div className="h-[40rem] flex flex-col " > 
          {/* Chat Header */}
@@ -382,6 +385,7 @@ const ChatWindow = ({recipient}) => {
     </div>
     </div>
       </div>
+      </RequireSubscription>
   )
 };
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify';
+import RequireSubscription from "../Subscriptions/RequireSubscription";
 
 function Campaigns() {
   const navigate = useNavigate();
@@ -25,14 +26,15 @@ function Campaigns() {
         },
       });
 
+
       const { results, next, previous, count } = response.data;
       setCampaigns(results);
       setPagination({ next, previous, count });
 
       
     } catch (error) {
-      console.error("Error fetching campaigns:", error);
-      toast.error("Failed to fetch campaigns");
+      toast.error(error.response.data.error);
+      // toast.error(response.data.error);
     } finally {
       setLoading(false);
     }
@@ -43,6 +45,7 @@ function Campaigns() {
 }, [page, token]);
 
   return (
+    <RequireSubscription>
     <div className="Main w-full h-screen bg-slate-100 px-15">
       {/* Header */}
       <div className="header flex justify-between py-1 px-5">
@@ -178,6 +181,7 @@ function Campaigns() {
         </button>
       </div>
     </div>
+    </RequireSubscription>
   );
 }
 

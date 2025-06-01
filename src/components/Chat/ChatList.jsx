@@ -81,6 +81,7 @@ const ChatList = ({ onSelectConversation }) => {
       );
 
       const chatData = response.data;
+      console.log(chatData)
       setConversations(chatData.results || []);
       setPagination({
         next: chatData.next,
@@ -94,7 +95,7 @@ const ChatList = ({ onSelectConversation }) => {
       setLoading(false);
     }
   };
-
+ 
   useEffect(() => {
     if (token) {
       fetchChatList(page);

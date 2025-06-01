@@ -4,6 +4,7 @@ import axios from "axios";
 import API_BASE_URL from "../../config";
 import { NavLink } from "react-router-dom";
 import { assest } from "../../assets/assets";
+import RequireSubscription from "../Subscriptions/RequireSubscription";
 
 const CampaignDetails = () => {
   const { id } = useParams();
@@ -37,6 +38,7 @@ const CampaignDetails = () => {
   if (!Campaign) return <p>Loading campaign details...</p>;
 
   return (
+    <RequireSubscription>
     <div className="max-h-[100vh] flex flex-col w-full min-w-0">
       <div className="p-4 md:p-8 rounded-[5px] h-full overflow-y-auto capitalize">
         <div className="flex justify-between">
@@ -208,6 +210,7 @@ const CampaignDetails = () => {
         </div>
       </div>
     </div>
+    </RequireSubscription>
   );
 };
 

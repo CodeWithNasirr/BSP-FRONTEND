@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState } from "react";
+import { Navigate, useLocation } from 'react-router-dom';
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
@@ -12,7 +13,25 @@ const ContextProvider = ({ children }) => {
   const [group, setGroup] = useState([]);
   const [contact, setContacts] = useState([]); // New state for individual contacts
   const token = localStorage.getItem("authToken");
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
   
+useEffect(() => {
+  const checkSubscription = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/subscription-status/`, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      setSubscriptionStatus(res.data);
+    } catch (err) {
+      console.error("Failed to fetch subscription status:", err);
+      setSubscriptionStatus({ is_active: false });
+    }
+  };
+
+  checkSubscription();
+}, [token]);
+
 
 useEffect(() => {
   const cachedUserInfo = localStorage.getItem("userInfo");
@@ -83,6 +102,7 @@ useEffect(() => {
 
 
   const value = {
+    subscriptionStatus,
     group,
     contact,
     isConnected,

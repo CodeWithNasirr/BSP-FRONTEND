@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import API_BASE_URL from '../config';
-const URL = `${API_BASE_URL}/api/chatbot-flows/`;
+import { toast } from "react-toastify";
 
+const URL = `${API_BASE_URL}/api/chatbot-flows/`;
+ 
  
 const useFlowStore = create((set) => ({
   // Current flow data
@@ -39,7 +41,7 @@ const useFlowStore = create((set) => ({
       set({ savedFlows: flows, flow: flows[0] || null });
       return flows;
     } catch (error) {
-      console.error('Error fetching flows:', error);
+      toast.error(error.response.data.error);
       return [];
     }
   },

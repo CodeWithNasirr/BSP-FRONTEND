@@ -4,7 +4,7 @@ import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from "react-toastify";
 import TemplateViewModal from "./TemplateViewModal.jsx";
-
+import RequireSubscription from "../Subscriptions/RequireSubscription.jsx";
 function Templates() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -83,7 +83,7 @@ function Templates() {
         // console.log(templates.Data);
       })
       .catch((error) => {
-        toast.error(error)
+        toast.error(error.response.data.error);
         // console.error("Error fetching templates:", error);
         setLoading(false);
       });
@@ -97,6 +97,7 @@ function Templates() {
 
 
   return (
+    <RequireSubscription>
     <div className="Main w-full h-screen bg-slate-100 px-15">
       {/* Header */}
       <div className="header flex justify-between py-1 px-5">
@@ -273,6 +274,7 @@ function Templates() {
       template={selectedTemplate}
     />
     </div>
+    </RequireSubscription>
     
     
   );

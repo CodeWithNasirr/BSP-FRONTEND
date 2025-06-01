@@ -17,7 +17,7 @@ import FlowSimulator from './FlowSimulator';
 import { nodeTypes } from './nodes';
 import useFlowStore from '../../store/flowStore';
 import { exportFlow, importFlow } from '../../utils/flowUtils';
-
+import RequireSubscription from '../Subscriptions/RequireSubscription';
 const FlowBuilder = () => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -229,6 +229,7 @@ const FlowBuilder = () => {
   }, [reactFlowInstance]);
 
   return (
+    <RequireSubscription>
     <div className="h-full flex flex-col">
       <div className="flex-grow flex">
         {sidebarOpen && (
@@ -361,6 +362,7 @@ const FlowBuilder = () => {
         />
       )}
     </div>
+    </RequireSubscription>
   );
 };
 

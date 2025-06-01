@@ -6,6 +6,7 @@ import ChatWindow from "./ChatWindow";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { assest } from "../../assets/assets";
+import RequireSubscription from "../Subscriptions/RequireSubscription";
 
 const MainChat = () => {
   const token = localStorage.getItem("authToken");
@@ -38,6 +39,7 @@ const MainChat = () => {
   };
 
   return (
+    <RequireSubscription>
     <div className="flex h-screen bg-gray-100">
       {/* Left Pane: Chat List */}
       <div className="w-1/2 bg-white border-r border-gray-200 flex flex-col">
@@ -62,6 +64,7 @@ const MainChat = () => {
         )}
       </div>
     </div>
+    </RequireSubscription>
   );
 }; 
 

@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { Context } from "../context/Context";
 import { assest } from "../../assets/assets";
-
+import RequireSubscription from "../Subscriptions/RequireSubscription";
 function CreateTemplate() {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState(null);
@@ -122,6 +122,7 @@ function CreateTemplate() {
 
   const {isConnected} = useContext(Context)
   return (
+    <RequireSubscription>
     <div className="main bg-zinc-50">
       <form onSubmit={handleSubmit}>
         <div className="header flex justify-between px-5">
@@ -759,6 +760,7 @@ function CreateTemplate() {
         </div>
       </form>
     </div>
+    </RequireSubscription>
   );
 }
 

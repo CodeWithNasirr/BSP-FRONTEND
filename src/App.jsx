@@ -15,7 +15,7 @@ import WhatsAppScraper from './components/scrap'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
-import subscriptions from "./components/subscriptions"
+import subscriptions from "./components/Subscriptions/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 // import BillingDashboard from './components/BillingDashboard'
@@ -28,7 +28,7 @@ import { SiWhatsapp } from "react-icons/si";
 import LandingPage from './components/LandingPage/LandingPage'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import Wallet from './components/Wallet/Wallet'
 import { useRoutes, matchRoutes } from "react-router-dom";
 
 // Define your route list to match
@@ -50,7 +50,8 @@ const validRoutes = [
   "/chats/:id",
   "/subscriptions",
   "/my-usage-panel",
-  "/chat-flow"
+  "/chat-flow",
+  "/wallet"
 ];
 
 function AppContent() {
@@ -64,18 +65,15 @@ function AppContent() {
     location
   );
   const isValidRoute = !!match;
-
   const notFoundPage = !isLoginPage && !isRegisterPage && !isValidRoute;
 
   // const [isDesktop, setIsDesktop] = useState(true);
-
   // useEffect(() => {
   //   const handleResize = () => setIsDesktop(window.innerWidth >= 800);
   //   handleResize();
   //   window.addEventListener("resize", handleResize);
   //   return () => window.removeEventListener("resize", handleResize);
   // }, []);
-
   // if (!isDesktop) {
   //   return (
   //     <div className="mobile-warning text-center p-8 bg-red-100 min-h-screen flex items-center justify-center">
@@ -88,6 +86,9 @@ function AppContent() {
   //     </div>
   //   );
   // }
+  
+
+
 
   return (
     <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full h-screen' : 'min-h-screen'}`}>
@@ -102,6 +103,7 @@ function AppContent() {
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
             <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
             <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
+            <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
             <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
           </Sidebar>
@@ -131,6 +133,7 @@ function AppContent() {
           <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
           <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
           <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
+          <Route path="/wallet" element={<ProtectedRoute element={Wallet} />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
