@@ -110,6 +110,22 @@ export default function LandingPage() {
                   </svg>
                   Features
                 </a>
+                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/contact-us"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
+                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
+                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
+                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
+                  </svg>
+                  ContactUs
+                </Link>
+                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/terms-policy"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
+                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
+                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
+                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
+                  </svg>
+                  TermsAndConditions
+                </Link>
                 <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/privacy"}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
                     <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
@@ -152,6 +168,22 @@ export default function LandingPage() {
                 </svg>
                 Privacy
               </Link>
+                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/contact-us"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
+                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
+                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
+                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
+                  </svg>
+                  ContactUs
+                </Link>
+                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/terms-policy"}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
+                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
+                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
+                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
+                  </svg>
+                  TermsAndConditions
+                </Link>
               <a className="text-sm xl:text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" href="#pricing">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
                   <line x1="12" x2="12" y1="2" y2="22"></line>
@@ -484,15 +516,17 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              {/* <div className="">
+              <div className="">
                 <h3 className="text-lg font-semibold mb-6">Explore</h3>
                 <ul className="space-y-4">
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="/features"><span className="group-hover:translate-x-1 transition-transform duration-300">Features</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="/pricing"><span className="group-hover:translate-x-1 transition-transform duration-300">Pricing</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="/integrations"><span className="group-hover:translate-x-1 transition-transform duration-300">Integrations</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="/api"><span className="group-hover:translate-x-1 transition-transform duration-300">API Documentation</span></a></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="#features"><span className="group-hover:translate-x-1 transition-transform duration-300">Features</span></Link></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="#pricing"><span className="group-hover:translate-x-1 transition-transform duration-300">Pricing</span></Link></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/contact-us"><span className="group-hover:translate-x-1 transition-transform duration-300">ContactUs</span></Link></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/shipping-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">ShippingAndDelivery</span></Link></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/terms-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">TermsAndConditions</span></Link></li>
+                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/refund-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">CancellationAndRefund</span></Link></li>
                 </ul>
-              </div> */}
+              </div>
 {/*               
               <div className="">
                 <h3 className="text-lg font-semibold mb-6">Resources</h3>

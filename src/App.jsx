@@ -12,7 +12,6 @@ import CreateCampaigns from "./components/Campaigns/CreateCampaigns"
 import ProtectedRoute from "./components/Protected_Route"
 import whatsapp_details from "./components/whatsapp_details"
 import WhatsAppScraper from './components/scrap'
-import PrivacyPolicy from './components/PrivacyPolicy'
 import main_chat from "./components/Chat/main_chat"
 import ChatWindow from "./components/Chat/ChatWindow"
 import subscriptions from "./components/Subscriptions/subscriptions"
@@ -20,12 +19,19 @@ import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 // import BillingDashboard from './components/BillingDashboard'
 
+// Landing pages..
+import PrivacyPolicy from './components/LandingPage/PrivacyPolicy'
+import LandingPage from './components/LandingPage/LandingPage'
+import CancellationAndRefund from './components/LandingPage/CancellationAndRefund'
+import ContactUs from './components/LandingPage/ContactUs'
+import ShippingAndDelivery from './components/LandingPage/ShippingAndDelivery'
+import TermsAndConditions from './components/LandingPage/TermsAndConditions'
+
 import MyUsagePanel from './components/MyUsagePanel'
 import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
 import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
-import LandingPage from './components/LandingPage/LandingPage'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet'
@@ -116,6 +122,11 @@ function AppContent() {
           {/* All routes here */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/refund-policy" element={<CancellationAndRefund />} />
+          <Route path="/shipping-policy" element={<ShippingAndDelivery />} />
+          <Route path="/terms-policy" element={<TermsAndConditions />} />
+          
           <Route path="/login" element={<AuthSlider />} />
           <Route path="/register" element={<AuthSlider />} />
           <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />
