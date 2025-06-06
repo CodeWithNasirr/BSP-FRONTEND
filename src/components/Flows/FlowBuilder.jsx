@@ -101,8 +101,8 @@ const FlowBuilder = () => {
           image: '',
           footerText: '',
           buttons: [
-            { text: 'Option 1', value: '1' },
-            { text: 'Option 2', value: '2' },
+            { text: 'Button 1', value: '1' },
+            { text: 'Button 2', value: '2' },
           ],
         };
       case 'waitNode':
@@ -268,6 +268,12 @@ const FlowBuilder = () => {
                         return '#CCFBF1';
                       case 'messageNode':
                         return '#E0F2FE';
+
+                      case 'listMessageNode':
+                        return '#E0F2FE';
+                      case 'singleSelectNode':
+                        return '#E0F2FE';
+                        
                       case 'imageTextButtonsNode':
                         return '#EEF2FF';
                       case 'waitNode':
@@ -329,22 +335,22 @@ const FlowBuilder = () => {
                     >
                       <Trash2 size={18} />
                     </button>
-                    <button
+                    {/* <button
                       onClick={handleSimulateFlow}
                       className="flow-button flow-button-secondary py-1 flex items-center"
                       title="Simulate Flow"
                     >
                       <Play size={18} className="mr-1" />
                       Simulate
-                    </button>
+                    </button> */}
                   </div>
                 </Panel>
               </ReactFlow>
             </div>
           </ReactFlowProvider>
         </div>
-
-        {propertiesOpen && selectedNode && (
+          
+        {/* {propertiesOpen && selectedNode && (
           <div className="w-80 sidebar-panel">
             <PropertyPanel
               node={selectedNode}
@@ -352,15 +358,15 @@ const FlowBuilder = () => {
               onClose={() => setPropertiesOpen(false)}
             />
           </div>
-        )}
+        )} */}
       </div>
 
-      {simulatorOpen && (
+      {/* {simulatorOpen && (
         <FlowSimulator
           flow={reactFlowInstance?.toObject()}
           onClose={() => setSimulatorOpen(false)}
         />
-      )}
+      )} */}
     </div>
     </RequireSubscription>
   );

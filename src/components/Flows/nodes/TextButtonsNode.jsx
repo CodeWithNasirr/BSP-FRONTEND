@@ -8,7 +8,7 @@ const TextButtonsNode = ({ data, selected }) => {
   const [buttons, setButtons] = useState(
     data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false }]
   );
-
+ 
   const handleAddButton = () => {
     const newButton = {
       text: `Button ${buttons.length + 1}`,

@@ -8,6 +8,8 @@ import {
   X, 
   MessageCircle,
   ListPlus,
+  List,
+  Circle,
   SquarePower,Image
 } from 'lucide-react';
 
@@ -64,6 +66,30 @@ const NodePanel = ({ onClose }) => {
 
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          onDragStart={(e) => onDragStart(e, 'listMessageNode')}
+          draggable
+        >
+          <List className="mr-3 text-blue-500" size={24} />
+          <div>
+            <h4 className="font-medium">List Message</h4>
+            <p className="text-xs text-gray-500">Send text or media message</p>
+          </div>
+        </div>
+        
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          onDragStart={(e) => onDragStart(e, 'singleSelectNode')}
+          draggable
+        >
+          <Circle className="mr-3 text-blue-500" size={24} />
+          <div>
+            <h4 className="font-medium">Single List Message</h4>
+            <p className="text-xs text-gray-500">Send text or media message</p>
+          </div>
+        </div>
+
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'textButtonsNode')}
           draggable
         >
@@ -86,7 +112,7 @@ const NodePanel = ({ onClose }) => {
           </div>
         </div> 
 
-        <div 
+        {/* <div 
           className="p-3 bg-node-wait rounded-lg border border-amber-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
           onDragStart={(e) => onDragStart(e, 'waitNode')}
           draggable
@@ -96,7 +122,7 @@ const NodePanel = ({ onClose }) => {
             <h4 className="font-medium">Wait for Reply</h4>
             <p className="text-xs text-gray-500">Wait for user response</p>
           </div>
-        </div> 
+        </div>  */}
  
         {/* <div 
           className="p-3 bg-node-condition rounded-lg border border-indigo-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"

@@ -5,9 +5,11 @@ import ApiNode from './ApiNode';
 import EndNode from './EndNode';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
+import ListMessageNode from './ListMessageNode';
+import SingleSelectNode from './SingleSelectNode';
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
-
+ 
 const nodeStyles = {
   base: 'p-3 rounded-lg shadow-md flex items-center space-x-2 min-w-[150px]',
   start: 'bg-teal-100 border-teal-300',
@@ -30,4 +32,6 @@ export const nodeTypes = {
   endNode: EndNode,
   textButtonsNode: TextButtonsNode,
   imageTextButtonsNode:TextImageNode,
+  listMessageNode: ListMessageNode,
+  singleSelectNode: SingleSelectNode,
 };

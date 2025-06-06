@@ -10,7 +10,7 @@ const MessageNode = ({ data, selected }) => {
   const [collectLocation, setCollectLocation] = useState(data.collect_location || false);
   const [collectInput, setCollectInput] = useState(data.collect_input || false);
   const [inputKey, setInputKey] = useState(data.input_key || '');
-
+ 
   const handleSave = () => {
     data.message = message;
     data.mediaUrl = mediaUrl;

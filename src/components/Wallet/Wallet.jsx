@@ -62,12 +62,12 @@ const Wallet = () => {
       toast.error("Please enter a valid amount");
       return;
     }
-
+ 
     setLoading(true);
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/wallet/create-order/`,
-        { amount: topUpAmount },
+        { amount: topUpAmount }, 
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -100,7 +100,7 @@ const Wallet = () => {
               },
             }
           );
-          console.log(verifyResponse.data)
+          // console.log(verifyResponse.data)
 
           if (verifyResponse.data.status === 'success') {
             toast.success("Wallet topped up successfully!");
