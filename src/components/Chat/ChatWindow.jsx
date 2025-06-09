@@ -204,8 +204,7 @@ const ChatWindow = ({recipient}) => {
   };
   return( 
     <RequireSubscription>
-    <div className="flex flex-col">
-       <div className="h-[40rem] flex flex-col " > 
+    <div className="flex flex-col min-h-screen">
          {/* Chat Header */}
         <div className="flex justify-center text-emerald-600  p-2 sticky top-0 z-10">
           {/* <span id="online-count" className="pr-1">3</span>online */}
@@ -384,7 +383,6 @@ const ChatWindow = ({recipient}) => {
       )}
     </div>
     </div>
-      </div>
       </RequireSubscription>
   )
 };
