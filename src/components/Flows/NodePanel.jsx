@@ -76,17 +76,6 @@ const NodePanel = ({ onClose }) => {
           </div>
         </div>
         
-        <div 
-          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
-          onDragStart={(e) => onDragStart(e, 'singleSelectNode')}
-          draggable
-        >
-          <Circle className="mr-3 text-blue-500" size={24} />
-          <div>
-            <h4 className="font-medium">Single List Message</h4>
-            <p className="text-xs text-gray-500">Send text or media message</p>
-          </div>
-        </div>
 
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"

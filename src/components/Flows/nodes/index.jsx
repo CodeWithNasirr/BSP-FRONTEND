@@ -6,7 +6,6 @@ import EndNode from './EndNode';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
-import SingleSelectNode from './SingleSelectNode';
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
  
@@ -33,5 +32,4 @@ export const nodeTypes = {
   textButtonsNode: TextButtonsNode,
   imageTextButtonsNode:TextImageNode,
   listMessageNode: ListMessageNode,
-  singleSelectNode: SingleSelectNode,
 };

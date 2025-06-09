@@ -321,6 +321,18 @@ const Dashboard = () => {
                         className="w-32 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         min="1"
                       />
+                       {/* <a
+                        // onClick={handleTopUp}
+                        href='https://rzp.io/rzp/LrW8CK60'
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        disabled={loadingTopUp}
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ${
+                          loadingTopUp ? 'cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {loadingTopUp ? 'Processing...' : 'Top Up'}
+                      </a> */}
                       <button
                         onClick={handleTopUp}
                         disabled={loadingTopUp}
