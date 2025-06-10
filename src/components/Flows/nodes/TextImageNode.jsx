@@ -8,7 +8,7 @@ const TextButtonsNode = ({ data, selected }) => {
   const [footer, setFooter] = useState(data.footerText || '');
   const [buttons, setButtons] = useState(data.buttons || []);
   const [mediaUrl, setMediaUrl] = useState(data.image || '');
-  
+   
  
   const handleAddButton = () => {
     const newButton = { text: `Button ${buttons.length + 1}` };
