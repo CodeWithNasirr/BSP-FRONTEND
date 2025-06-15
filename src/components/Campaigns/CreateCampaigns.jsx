@@ -5,8 +5,8 @@ import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
 import { Context } from '../context/Context';
 import RequireSubscription from "../Subscriptions/RequireSubscription";
-
-function CreateTemplate() {
+ 
+function CreateCampaigns() {
   const navigate = useNavigate();
   const [isDisabled, setIsDisabled] = useState(true);
   const [templates, setTemplates] = useState([]);
@@ -18,6 +18,7 @@ function CreateTemplate() {
     campaigns_name: '',
     recipients: '',
   });
+  const [loading,setLoading] = useState(false)
   const [mediaFile, setMediaFile] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const token = localStorage.getItem('authToken');
@@ -89,6 +90,7 @@ function CreateTemplate() {
     if (mediaFile) {
       formDataToSend.append('media_file', mediaFile);
     }
+    setLoading(true)
 
     try {
       const response = await axios.post(`${API_BASE_URL}/apis/campaigns/send/`, formDataToSend, {
@@ -104,6 +106,9 @@ function CreateTemplate() {
       console.log(error.response.data)
       toast.error(error.response.data.error);
       // toast.error('Failed to create campaign');
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -140,8 +145,8 @@ function CreateTemplate() {
                 ${isDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 cursor-pointer'}`}
               disabled={isDisabled}
               type="submit"
-            >
-              Create Campaigns
+            > 
+              {loading ? 'Sending...' : 'Create Campaigns'}
             </button>
           </div>
         </div>
@@ -285,4 +290,4 @@ function CreateTemplate() {
   );
 }
 
-export default CreateTemplate;
+export default CreateCampaigns;

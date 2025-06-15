@@ -18,7 +18,6 @@ import subscriptions from "./components/Subscriptions/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 // import BillingDashboard from './components/BillingDashboard'
-
 // Landing pages..
 import PrivacyPolicy from './components/LandingPage/PrivacyPolicy'
 import LandingPage from './components/LandingPage/LandingPage'

@@ -10,8 +10,9 @@ import RequireSubscription from "../Subscriptions/RequireSubscription";
 function CreateTemplate() {
   const navigate = useNavigate();
   const [activeButton, setActiveButton] = useState(null);
-  const [isDisabled, setIsDisabled] = useState(true);
+  const [isDisabled, setIsDisabled] = useState(true); 
   const token = localStorage.getItem("authToken");
+  const [loading,setLoading] = useState(false)
   const [formData, setformData] = useState({
     template_name: "",
     template_language: "",
@@ -80,6 +81,7 @@ function CreateTemplate() {
     );
 
     // console.log(filteredData)
+    setLoading(true)
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/whatsapp/send-template/`,
@@ -117,6 +119,8 @@ function CreateTemplate() {
         // If parsing fails, show generic error
         toast.error("Failed to create template");
       }
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -157,14 +161,14 @@ function CreateTemplate() {
             <button
               className={`rounded-full px-5 py-2 text-white text-sm font-semibold flex items-center 
           ${
-            isDisabled
+            isDisabled 
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-indigo-600 cursor-pointer"
           }`}
               disabled={isDisabled}
               type="submit"
             >
-              Create Template
+              {loading ? 'Creating...' : 'Create Template'}
             </button>
           </div>
         </div>
