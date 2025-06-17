@@ -26,7 +26,56 @@ function CreateTemplate() {
     button_text: "",
     button_url: "", 
     button_number: "",
+    placeholder_mappings: {}, // Store variable to contact field mappings
+    
   });
+
+  const [variables, setVariables] = useState([]);
+
+  // Function to extract variables like {{1}}, {{2}}, etc.
+  const extractVariables = (text) => {
+    const regex = /{{\d+}}/g;
+    const matches = text.match(regex) || [];
+    return [...new Set(matches)]; // Remove duplicates
+  };
+
+  // Update variables whenever body_text changes
+  useEffect(() => {
+    const extractedVars = extractVariables(formData.body_text);
+    setVariables(extractedVars);
+  }, [formData.body_text]);
+
+// Handle variable mapping changes (field selection)
+  const handleVariableFieldChange = (variable, field) => {
+    setformData((prev) => ({
+      ...prev,
+      placeholder_mappings: {
+        ...prev.placeholder_mappings,
+        [variable]: {
+          ...prev.placeholder_mappings[variable],
+          field: field,
+        },
+      },
+    }));
+  };
+
+
+
+ // Handle variable example changes
+  const handleVariableExampleChange = (variable, example) => {
+    setformData((prev) => ({
+      ...prev,
+      placeholder_mappings: {
+        ...prev.placeholder_mappings,
+        [variable]: {
+          ...prev.placeholder_mappings[variable],
+          example: example,
+        },
+      },
+    }));
+  };
+
+
 
   const headerButtonClick = (btn) => {
     setActiveButton(btn);
@@ -53,7 +102,7 @@ function CreateTemplate() {
         ...prevData,
         [name]:name === 'template_name'?value.toLowerCase() : value
       }}
-      console.log(updatedData)
+      // console.log(updatedData)
 
 
       // Check if all required fields are filled
@@ -70,59 +119,78 @@ function CreateTemplate() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Filter out empty fields
-    const filteredData = Object.fromEntries(
-      Object.entries(formData).filter(
-        ([_, value]) =>
-          typeof value === "string" ? value.trim() !== "" : value // Keep files
-      )
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    // Prepare form data
+    const formDataToSend = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (
+        typeof value === "string" &&
+        value.trim() === "" &&
+        key !== "header_img_video_file_url"
+      ) {
+        return; // Skip empty strings except files
+      }
+
+      if (key === "placeholder_mappings") {
+        formDataToSend.append(key, JSON.stringify(value));
+      } else {
+        formDataToSend.append(key, value);
+      }
+    });
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/whatsapp/send-template/`,
+      formDataToSend,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
-    // console.log(filteredData)
-    setLoading(true)
+    toast.success("Template Created Successfully!");
+    console.log(response)
+    resetFormData();
+
+  } catch (error) {
+    console.error("Error creating template:", error?.response?.data);
+
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/whatsapp/send-template/`,
-        filteredData,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      toast.success("Template Created Successfully!");
-      setformData({
-        template_name: "",
-        template_language: "",
-        template_category: "",
-        header_type: "",
-        header_text: "",
-        header_img_video_file_url: "",
-        body_text: "",
-        footer_text: "",
-        button_type: "",
-        button_text: "",
-        button_url: "",
-        button_number: "",
-      });
-    } catch (error) {
-      console.error("Error creating template:", error.response.data);
-      try {
-        // Parse the nested error JSON string
-        const errorData = JSON.parse(error.response.data.error);
-        // Show the user-friendly message if available, otherwise fallback
-        toast.error(errorData.error.error_user_msg || "Failed to create template");
-      } catch (parseError) {
-        // If parsing fails, show generic error
-        toast.error("Failed to create template");
-      }
-    }finally{
-      setLoading(false)
+      const errorData = JSON.parse(error?.response?.data?.error || "{}");
+      const userMsg = errorData?.error?.error_user_msg || "Failed to create template";
+      toast.error(userMsg);
+    } catch {
+      toast.error("Failed to create template");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Optional: Clear form data separately for reusability
+const resetFormData = () => {
+  setformData({
+    template_name: "",
+    template_language: "",
+    template_category: "",
+    header_type: "",
+    header_text: "",
+    header_img_video_file_url: "",
+    body_text: "",
+    footer_text: "",
+    button_type: "",
+    button_text: "",
+    button_url: "",
+    button_number: "",
+    placeholder_mappings:{},
+  });
+};
 
   const {isConnected} = useContext(Context)
   return (
@@ -474,6 +542,54 @@ function CreateTemplate() {
                 rows="5"
                 name="body_text"
               ></textarea>
+
+            {/* Variable Mapping and Samples Section */}
+              {variables.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-slate-600 text-sm font-medium">
+                    Map Variables to Contact Fields
+                  </h3>
+                  <p className="text-slate-600 text-xs mb-2">
+                    Map each variable to a contact field for dynamic substitution and provide an example.
+                  </p>
+                  {variables.map((variable, index) => (
+                    <div key={index} className="mb-2 flex items-center space-x-4">
+                      <div className="flex-1">
+                        <label className="text-slate-600 text-xs">
+                          [{variable}] - Field
+                        </label>
+                        <input
+                          list="contact-fields"
+                          value={formData.placeholder_mappings[variable]?.field || ""}
+                          onChange={(e) => handleVariableFieldChange(variable, e.target.value)}
+                          placeholder="Select or type a field name"
+                          className="rounded-md ring-gray-300 bg-white border-0 shadow-sm outline-none ring-1 ring-inset py-1.5 px-5 text-sm w-full"
+                        />
+                        <datalist id="contact-fields">
+                          <option value="name" />
+                          <option value="email" />
+                          <option value="phone" />
+                          <option value="discount" />
+                          <option value="offer_end_date" />
+                          {/* Add more if needed */}
+                        </datalist>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-slate-600 text-xs">
+                          [{variable}] - Example
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g., John"
+                          value={formData.placeholder_mappings[variable]?.example || ""}
+                          onChange={(e) => handleVariableExampleChange(variable, e.target.value)}
+                          className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <h2 className="text-slate-600">
                 Footer Description <span className="text-xs">(Optional)</span>

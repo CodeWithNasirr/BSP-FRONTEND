@@ -5,7 +5,7 @@ import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
 import { Context } from '../context/Context';
 import RequireSubscription from "../Subscriptions/RequireSubscription";
- 
+import VariableSubstitutionSection from './VariableSubstitutionSection';
 function CreateCampaigns() {
   const navigate = useNavigate();
   const [isDisabled, setIsDisabled] = useState(true);
@@ -17,11 +17,15 @@ function CreateCampaigns() {
     template_name: '',
     campaigns_name: '',
     recipients: '',
+    variable_values: {}, // e.g., { "{{1}}": "Alice", "{{2}}": "email" }
+    variable_methods: {}, // e.g., { "{{1}}": "static", "{{2}}": "dynamic" }
   });
   const [loading,setLoading] = useState(false)
   const [mediaFile, setMediaFile] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const token = localStorage.getItem('authToken');
+
+  const [variables, setVariables] = useState([]); // Store detected variables
 
   // Fetch templates, groups, and contacts
   useEffect(() => {
@@ -79,6 +83,22 @@ function CreateCampaigns() {
     }
   };
 
+
+  // Extract variables from selected template
+  useEffect(() => {
+    const template = templates.find((t) => t.template_name === formData.template_name);
+    setSelectedTemplate(template);
+    if (template?.body_text) {
+      const regex = /{{\d+}}/g;
+      const matches = template.body_text.match(regex) || [];
+      setVariables([...new Set(matches)]);
+    } else {
+      setVariables([]);
+    }
+  }, [formData.template_name, templates]);
+
+
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,6 +107,10 @@ function CreateCampaigns() {
     formDataToSend.append('campaigns_name', formData.campaigns_name);
     formDataToSend.append('recipients', formData.recipients);
     formDataToSend.append('recipient_type', recipientType); // Send recipient type
+    // Append variable_values and variable_methods as JSON strings
+    formDataToSend.append('variable_values', JSON.stringify(formData.variable_values));
+    formDataToSend.append('variable_methods', JSON.stringify(formData.variable_methods || {}));
+   
     if (mediaFile) {
       formDataToSend.append('media_file', mediaFile);
     }
@@ -98,7 +122,8 @@ function CreateCampaigns() {
       });
   
       toast.success('Campaign Created Successfully!');
-      setFormData({ template_name: '', campaigns_name: '', recipients: '' });
+      setFormData({ template_name: '', campaigns_name: '', recipients: '', variable_values: {}, variable_methods: {} });
+      // setFormData({ template_name: '', campaigns_name: '', recipients: '' });
       setMediaFile(null);
       setSelectedTemplate(null);
       setRecipientType('group');
@@ -264,6 +289,13 @@ function CreateCampaigns() {
                     />
                   )}
                 </div>
+
+                {/* Variable Substitution Method and Table */}
+             <VariableSubstitutionSection
+                variables={variables}
+                formData={formData}
+                setFormData={setFormData}
+              />
 
                 {selectedTemplate && selectedTemplate.header_type?.toUpperCase() === 'IMAGE' && (
                   <div className="sm:col-span-6">
