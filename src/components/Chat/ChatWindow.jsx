@@ -221,7 +221,7 @@ const ChatWindow = ({recipient}) => {
                   {msg.direction === "OUTBOUND" ? (
                     <>
                       <div className='flex justify-end mb-1'>
-                        <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[60%]">
+                        <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[67%]">
                           {msg.header_text && <h1 className='font-semibold'>{msg.header_text}</h1>}
                           
                           {/* Media Content */}

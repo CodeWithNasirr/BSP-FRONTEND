@@ -6,15 +6,16 @@ const TextButtonsNode = ({ data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(data.message || '');
   const [buttons, setButtons] = useState(
-    data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false }]
+    data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false, checkout: false }]
   );
- 
+
   const handleAddButton = () => {
     const newButton = {
       text: `Button ${buttons.length + 1}`,
       value: `${buttons.length + 1}`,
       collect_cart: false,
-      collect_payment_method: false
+      collect_payment_method: false,
+      checkout: false
     };
     const updatedButtons = [...buttons, newButton];
     setButtons(updatedButtons);
@@ -103,7 +104,16 @@ const TextButtonsNode = ({ data, selected }) => {
                   className="mr-1"
                 />
                 <span className="text-xs">Collect Payment Method</span>
-              </label> 
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={btn.checkout || false}
+                  onChange={(e) => handleButtonChange(index, 'checkout', e.target.checked)}
+                  className="mr-1"
+                />
+                <span className="text-xs">Checkout</span>
+              </label>
             </div>
           ))}
 
@@ -139,6 +149,9 @@ const TextButtonsNode = ({ data, selected }) => {
                     )}
                     {button.collect_payment_method && (
                       <span className="text-xs bg-green-200 px-1 rounded">Payment</span>
+                    )}
+                    {button.checkout && (
+                      <span className="text-xs bg-purple-200 px-1 rounded">Checkout</span>
                     )}
                   </div>
                 </div>
