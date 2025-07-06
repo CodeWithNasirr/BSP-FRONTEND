@@ -181,9 +181,9 @@ const Wallet = () => {
       <div>
         <h3 className="text-xl font-semibold text-gray-800 mb-4">Transaction History</h3>
         {transactions.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
+              <thead> 
                 <tr className="bg-gray-100">
                   <th className="p-3 text-sm font-medium text-gray-700">Date</th>
                   <th className="p-3 text-sm font-medium text-gray-700">Type</th>

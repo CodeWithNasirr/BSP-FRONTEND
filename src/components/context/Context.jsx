@@ -6,7 +6,7 @@ import { toast } from 'react-toastify'
 export const Context = createContext();
 
 const ContextProvider = ({ children }) => {
-  const [userInfo,setUserInfo]=useState({username:"",email:""})
+  const [userInfo,setUserInfo]=useState({username:"",email:"",api_provider:""})
   const [loadingUser, setLoadingUser] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [templates, setTemplates] = useState([]);
@@ -14,7 +14,7 @@ const ContextProvider = ({ children }) => {
   const [contact, setContacts] = useState([]); // New state for individual contacts
   const token = localStorage.getItem("authToken");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-
+ 
   
 useEffect(() => {
   const checkSubscription = async () => {
@@ -22,6 +22,7 @@ useEffect(() => {
       const res = await axios.get(`${API_BASE_URL}/api/subscription-status/`, {
         headers: { Authorization: `Token ${token}` },
       });
+      console.log(res.data)
       setSubscriptionStatus(res.data);
     } catch (err) {
       console.error("Failed to fetch subscription status:", err);
@@ -44,7 +45,7 @@ useEffect(() => {
       console.error("Invalid JSON in userInfo:", e);
       localStorage.removeItem("userInfo");
     }
-  }
+  } 
 
   if (cachedStatus && cachedStatus !== "undefined") {
     try {
@@ -73,7 +74,6 @@ useEffect(() => {
           },
         }),
       ]);
-
       setUserInfo(userRes.data);
       setIsConnected(statusRes.data.is_connected);
 
@@ -102,6 +102,7 @@ useEffect(() => {
 
 
   const value = {
+    setSubscriptionStatus,
     subscriptionStatus,
     group,
     contact,

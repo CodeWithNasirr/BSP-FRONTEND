@@ -99,8 +99,8 @@ const WhatsAppSettings = () => {
                  <div>
                    <div>Account status</div>
                    <div className={`py-1 px-2 rounded-md w-[fit-content] text-xs 
-                    ${wp_Details.number_status === "verified"? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
-                     {wp_Details.number_status=="verified" ?"VERIFIED":"PENDING"}
+                    ${wp_Details.number_status === "verified" ||"ACTIVE"? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+                     {wp_Details.number_status=="verified" || "ACTIVE" ?"VERIFIED":"PENDING"}
                    </div>
                  </div>
                  {/* <button className="flex items-center absolute right-0 top-0 text-xs mr-1 space-x-2 p-1 px-2 bg-slate-50 rounded-xl">

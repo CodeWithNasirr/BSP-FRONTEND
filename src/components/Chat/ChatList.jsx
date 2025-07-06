@@ -81,7 +81,7 @@ const ChatList = ({ onSelectConversation }) => {
       );
 
       const chatData = response.data;
-      console.log(chatData)
+      // console.log(chatData)
       setConversations(chatData.results || []);
       setPagination({
         next: chatData.next,
@@ -89,7 +89,7 @@ const ChatList = ({ onSelectConversation }) => {
         count: chatData.count,
       });
     } catch (error) {
-      console.error('Error fetching chat list:', error);
+      // console.error('Error fetching chat list:', error);
       toast.error('Failed to fetch chat list');
     } finally {
       setLoading(false);

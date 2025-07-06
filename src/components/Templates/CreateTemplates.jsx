@@ -41,9 +41,9 @@ function CreateTemplate() {
 
   // Update variables whenever body_text changes
   useEffect(() => {
-    const extractedVars = extractVariables(formData.body_text);
+    const extractedVars = extractVariables(formData.body_text || formData.header_text);
     setVariables(extractedVars);
-  }, [formData.body_text]);
+  }, [formData.body_text],[formData.header_text]);
 
 // Handle variable mapping changes (field selection)
   const handleVariableFieldChange = (variable, field) => {
@@ -102,8 +102,6 @@ function CreateTemplate() {
         ...prevData,
         [name]:name === 'template_name'?value.toLowerCase() : value
       }}
-      // console.log(updatedData)
-
 
       // Check if all required fields are filled
       const isFormComplete =
@@ -144,7 +142,7 @@ function CreateTemplate() {
     });
 
     const response = await axios.post(
-      `${API_BASE_URL}/api/whatsapp/send-template/`,
+      `${API_BASE_URL}/api/whatsapp/create-template/`,
       formDataToSend,
       {
         headers: {

@@ -40,9 +40,16 @@ const LoginForm = ({ isActive }) => {
         e.preventDefault();
        try{
         const response = await axios.post(`${API_BASE_URL}/login/`,formData)
-        toast.success(response.data.Message) 
+        // toast.success(response.data.Message)
+        toast.success(response.data.Message, {
+                onClose: () => {
+                  window.location.reload();
+                },
+                autoClose: 2000 // Close toast after 2 seconds
+              }); 
         localStorage.setItem("authToken", response.data.Token);
         navigate('/dashboard')
+        
        }
        catch (error) {
         if (error.response && error.response.data.errors) {

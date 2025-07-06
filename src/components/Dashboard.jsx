@@ -107,7 +107,7 @@ const Dashboard = () => {
                },
              }
            );
-           console.log(verifyResponse.data)
+          //  console.log(verifyResponse.data)
  
            if (verifyResponse.data.status === 'success') {
              toast.success("Wallet topped up successfully!");
@@ -115,7 +115,7 @@ const Dashboard = () => {
              setTopUpAmount('');
              fetchWalletHistory(transactionPage); // Refresh history after top-up
            } else {
-             console.log(verifyResponse.data.error)
+            //  console.log(verifyResponse.data.error)
              toast.error("Payment verification failed");
            }
          },
