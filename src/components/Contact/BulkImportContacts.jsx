@@ -7,7 +7,7 @@ const BulkImportContacts = () => {
   const [isUploading, setIsUploading] = useState(false);
   const token = localStorage.getItem("authToken");
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setFile(e.target.files[0]); 
   };
 
   const handleUpload = async () => {
@@ -21,17 +21,18 @@ const BulkImportContacts = () => {
 
     try {
       setIsUploading(true);
-      const response = await axios.post(`${API_BASE_URL}/api/import-contacts`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/import-contacts/`, formData, {
               headers: {
                 Authorization: `Token ${token}`,
                 'Content-Type': 'multipart/form-data',
               },
             });
       toast.success(response.data.message);
-      console.log(response.data);
+      // console.log(response.data);
     } catch (error) {
-      toast.error("Error importing contacts.");
-      console.error(error);
+      toast.error(error.response.data.error);
+      // console.log(error.response.data.error)
+
     } finally {
       setIsUploading(false);
     }

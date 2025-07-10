@@ -10,21 +10,24 @@ const WhatsAppSettings = () => {
   const {isConnected} = useContext(Context)
   
   const [wp_Details,setWp_Details]=useState([])
-  useEffect(()=>{
-        axios
-        .get(`${API_BASE_URL}/api/whatsapp/details/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        .then((response)=>{
-          setWp_Details(response.data.Data)
-        })
-        .catch((error)=>{
-          toast.error("Failed to fetch user info:", error.response?.data || error.message);
-        })
-      },[])
+  useEffect(() => {
+    if (!isConnected) return; // only fetch if connected
+
+    axios
+      .get(`${API_BASE_URL}/api/whatsapp/details/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then((response) => {
+        setWp_Details(response.data.Data);
+      })
+      .catch((error) => {
+        toast.error("Failed to fetch WhatsApp details.");
+        console.error("WhatsApp details error:", error.response?.data || error.message);
+      });
+  }, [isConnected, token]);
       
 
       // const clientId = "1354428199237692";

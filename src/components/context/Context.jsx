@@ -22,7 +22,7 @@ useEffect(() => {
       const res = await axios.get(`${API_BASE_URL}/api/subscription-status/`, {
         headers: { Authorization: `Token ${token}` },
       });
-      console.log(res.data)
+      // console.log(res.data)
       setSubscriptionStatus(res.data);
     } catch (err) {
       console.error("Failed to fetch subscription status:", err);

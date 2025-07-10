@@ -22,7 +22,7 @@ export default function Sidebar({ children }) {
         <div className="p-4 pb-2 flex justify-between items-center">
          <h1 className={`overflow-hidden transition-all font-extrabold text-center mx-5 ${
               expanded ? "w-32" : "w-0"
-            }`}>WhatsGptx❤️</h1>
+            }`}></h1>
           {/* <img
             src="https://img.logoipsum.com/243.svg"
             className={`overflow-hidden transition-all ${
