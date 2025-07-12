@@ -134,13 +134,14 @@ const Order = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {orders.map(order => (
                     <tr key={order.id} className="hover:bg-gray-50 transition duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"> {new Date(order.timestamp).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="py-4 whitespace-nowrap text-sm text-gray-600"> {new Date(order.timestamp).toLocaleString()}</td>
+                      <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="font-medium">{order.username}</div>
                         <div className="text-gray-600">{order.phone_number}</div>
                         <div className="text-gray-600">{order.address}</div>
+                        <div className="text-gray-600 ">{order.location}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
                         <ul className="list-disc list-inside">
                           {order.items.map((item, idx) => <li key={idx}>{item}</li>)}
                         </ul>

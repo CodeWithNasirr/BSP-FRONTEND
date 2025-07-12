@@ -19,7 +19,7 @@ const MainChat = () => {
 
   useEffect(() => {
     if (recipient) {
-      axios
+      axios 
         .get(`${API_BASE_URL}/api/chats/${recipient}/mark-read/`, {
           headers: {
             Authorization: `Token ${token}`,

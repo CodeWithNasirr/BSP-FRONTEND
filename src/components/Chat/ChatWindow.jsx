@@ -9,7 +9,8 @@ const ChatWindow = ({recipient}) => {
   // console.log(messages)
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem("authToken");
-  const chatContainerRef=useRef(null); 
+  const chatContainerRef=useRef(null);
+  const [isSending, setIsSending] = useState(false);
 
 // WebSocket connection
   useEffect(() => {
@@ -143,6 +144,8 @@ const ChatWindow = ({recipient}) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // if (!formData.text_content && !selectedImage) return;
+    setIsSending(true)
   
     try {
       if (selectedImage) {
@@ -166,7 +169,7 @@ const ChatWindow = ({recipient}) => {
         // Reset everything after success
         setFormData({
           url: "",
-          message_text: "",
+          message_text: "", 
           recipient: "",
         });
         cancelImage(); // clears preview and selected file
@@ -200,6 +203,9 @@ const ChatWindow = ({recipient}) => {
   
     } catch (error) {
       console.error("Error sending message:", error);
+    }
+    finally{
+    setIsSending(false)
     }
   };
   return( 
@@ -350,11 +356,22 @@ const ChatWindow = ({recipient}) => {
 
         <input type="hidden" name="recipient" value={recipient} onChange={handleChange} />
 
-        <button
+      <button
           type="submit"
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition"
+          disabled={isSending}
+          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition disabled:opacity-50"
         >
-          Send
+          {isSending ? (
+            <>
+              <svg className="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l5-5-5-5v4a12 12 0 00-12 12h4z" />
+              </svg>
+              Sending...
+            </>
+          ) : (
+            "Send"
+          )}
         </button>
       </form>
 
@@ -371,13 +388,14 @@ const ChatWindow = ({recipient}) => {
             >
               Cancel
             </button>
-            <button
-              onClick={confirmImageSend}
-              type="button"
-              className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-            >
-              Send Image
-            </button>
+           <button
+          onClick={confirmImageSend}
+          type="button"
+          disabled={isSending}
+          className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isSending ? 'Sending Image...' : 'Send Image'}
+        </button>
           </div>
         </div>
       )}
