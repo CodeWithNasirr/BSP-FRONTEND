@@ -90,7 +90,7 @@ const ChatList = ({ onSelectConversation }) => {
       });
     } catch (error) {
       // console.error('Error fetching chat list:', error);
-      toast.error('Failed to fetch chat list');
+      // toast.error('Failed to fetch chat list');
     } finally {
       setLoading(false);
     }
