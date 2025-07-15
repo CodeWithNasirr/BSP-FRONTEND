@@ -60,7 +60,7 @@ const validRoutes = [
   "/chat-flow",
   "/wallet"
 ];
-
+ 
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
