@@ -164,7 +164,8 @@ function CreateTemplate() {
       const userMsg = errorData?.error?.error_user_msg || "Failed to create template";
       toast.error(userMsg);
     } catch {
-      toast.error("Failed to create template");
+      // console.log(error.response.data.error)
+      toast.error(error.response.data.error.error_user_msg);
     }
   } finally {
     setLoading(false);

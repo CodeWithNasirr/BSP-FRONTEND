@@ -128,7 +128,7 @@ function CreateCampaigns() {
       setSelectedTemplate(null);
       setRecipientType('group');
     } catch (error) {
-      console.log(error.response.data)
+      // console.log(error.response.data)
       toast.error(error.response.data.error);
       // toast.error('Failed to create campaign');
     }
