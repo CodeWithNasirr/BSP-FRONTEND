@@ -5,7 +5,8 @@ import CreateTemplates from "./components/Templates/CreateTemplates"
 import Campaigns from "./components/Campaigns/Campaigns"
 import Campaigns_Details from './components/Campaigns/Campaigns_Details'
 import BulkImportContacts from './components/Contact/BulkImportContacts'
-import Contacts from './components/Contact/Contact'
+// import Contacts from './components/Contact/Contact'
+import ContactManagement from './components/Contact/ContactManagement'
 import ConnectWhatsAppForm from './components/ConnectForm'
 import Dashboard from './components/Dashboard'
 import CreateCampaigns from "./components/Campaigns/CreateCampaigns"
@@ -137,7 +138,9 @@ function AppContent() {
           <Route path="/campaigns" element={<ProtectedRoute element={Campaigns} />} />
           <Route path="/campaigns/create" element={<ProtectedRoute element={CreateCampaigns} />} />
           <Route path="/campaigns/:id" element={<ProtectedRoute element={Campaigns_Details} />} />
-          <Route path="/contacts" element={<ProtectedRoute element={Contacts} />} />
+          <Route path="/contacts" element={<ProtectedRoute element={ContactManagement } />} />
+          {/* <Route path="/contacts" element={<ProtectedRoute element={() => <ContactManagement initialTab="contact" />} />}/> */}
+          {/* <Route path="/groups" element={<ProtectedRoute element={() => <ContactManagement initialTab="group" />} />}/> */}
           <Route path="/bulk-upload" element={<ProtectedRoute element={BulkImportContacts} />} />
           <Route path="/connect-form" element={<ProtectedRoute element={ConnectWhatsAppForm} />} />
           <Route path="/whatsapp-setting" element={<ProtectedRoute element={whatsapp_details} />} />

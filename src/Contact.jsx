@@ -23,7 +23,6 @@ const Contacts = ({
   const [c_page, setC_Page] = useState(1);
   const [c_pagination, setC_Pagination] = useState({ next: null, previous: null, count: 0 });
   const [showAddContactForm, setShowAddContactForm] = useState(false);
-  const [selectedContact, setSelectedContact] = useState(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -79,91 +78,18 @@ const Contacts = ({
   }, [c_page, token, setContacts, setGroups]);
 
   const deleteContact = async (contact_id) => {
-  try {
-    const response = await axios.delete(`${API_BASE_URL}/api/delete-contact/`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        'Content-Type': 'application/json',
-      },
-      data: { contact_id },
-    });
-
-    toast.success(response.data.message, {
-      autoClose: 2000,
-    });
-
-    // Refresh contact list
-    const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}`, {
-      headers: { Authorization: `Token ${token}` },
-    });
-    setContacts(contactsRes.data.results || []);
-    setSelectedContacts([])
-    setActiveDropdownId(false)
-    setContAllSelected(false)
-    updateLocalStorageUserInfo("contacts", contactsRes.data.results);
-
-    // Close contact detail view if the deleted contact was selected
-    setSelectedContact((prev) => {
-      if (prev && prev.id === contact_id[0]) {
-        return null;
-      }
-      return prev;
-    });
-
-    setActiveDropdownId(false);
-  } catch (error) {
-    toast.error(error.response?.data?.error || error.message);
-  }
-};
-
-  const removeContactFromGroup = async (contact_id, group_id) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/remove-contact-from-group/`, {
-        contact_id,
-        group_id,
-      }, {
+      const response = await axios.delete(`${API_BASE_URL}/api/delete-contact/`, {
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
+        data: { contact_id },
       });
-      toast.success(response.data.Message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}`, {
-        headers: { Authorization: `Token ${token}` },
+      toast.success(response.data.message, {
+        onClose: () => window.location.reload(),
+        autoClose: 2000,
       });
-      setContacts(contactsRes.data.results || []);
-      updateLocalStorageUserInfo("contacts", contactsRes.data.results);
-      setSelectedContact((prev) => {
-        if (prev && prev.id === contact_id) {
-          return { ...prev, Group: [] };
-        }
-        return prev;
-      });
+      setActiveDropdownId(false);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to remove contact from group");
-    }
-  };
-
-  const addContactToGroup = async (contact_id, group_id) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/add-contact-to-group/`, {
-        contact_id,
-        group_id,
-      }, {
-        headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
-      });
-      toast.success(response.data.Message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}`, {
-        headers: { Authorization: `Token ${token}` },
-      });
-      setContacts(contactsRes.data.results || []);
-      updateLocalStorageUserInfo("contacts", contactsRes.data.results);
-      setSelectedContact((prev) => {
-        if (prev && prev.id === contact_id) {
-          const group = groups.find((g) => g.id === group_id);
-          return { ...prev, Group: [{ group_name: group.group_name, id: group.id }] };
-        }
-        return prev;
-      });
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to add contact to group");
+      toast.error(error.response?.data?.error || error.message);
     }
   };
 
@@ -231,10 +157,6 @@ const Contacts = ({
     setActiveDropdownId(activeDropdownId === dropdownId ? null : dropdownId);
   };
 
-  const viewContact = (contact) => {
-    setSelectedContact(contact);
-  };
-
   return (
     <div className="md:h-screen flex flex-col w-full min-w-0">
       <div className="md:bg-inherit bg-white md:flex md:flex-grow capitalize">
@@ -252,7 +174,6 @@ const Contacts = ({
                   onClick={(e) => {
                     e.preventDefault();
                     setShowAddContactForm(!showAddContactForm);
-                    setSelectedContact(null);
                   }}
                 >
                   <svg
@@ -334,13 +255,6 @@ const Contacts = ({
                     <Link
                       to=""
                       className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (selectedContacts.length === 1) {
-                          const contact = contacts.find((c) => c.id === selectedContacts[0]);
-                          viewContact(contact);
-                        }
-                      }}
                     >
                       View
                     </Link>
@@ -386,7 +300,6 @@ const Contacts = ({
                   <div
                     key={index}
                     className="flex space-x-2 hover:bg-gray-50 cursor-pointer items-center px-4 py-3 border-b border-slate-200"
-                    onClick={() => viewContact(contact)}
                   >
                     <div className="flex items-center justify-center mt-1">
                       <label htmlFor={`contact_${contact.id}`} className="cursor-pointer">
@@ -394,10 +307,7 @@ const Contacts = ({
                           type="checkbox"
                           id={`contact_${contact.id}`}
                           checked={selectedContacts.includes(contact.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleSelectContact(contact.id);
-                          }}
+                          onChange={() => handleSelectContact(contact.id)}
                           className="w-4 h-4 rounded-full"
                         />
                       </label>
@@ -435,7 +345,7 @@ const Contacts = ({
           )}
         </div>
 
-        {!showAddContactForm && !selectedContact && (
+        {!showAddContactForm && (
           <div className="md:w-[70%] bg-zinc-100 md:h-[100vh] md:overflow-y-hidden flex justify-center items-center">
             <div className="border border-slate-200 pt-20 py-10 w-[30em] rounded-xl bg-white">
               <h2 className="text-center text-2xl text-slate-500 mb-6">Select Contact</h2>
@@ -600,120 +510,6 @@ const Contacts = ({
                     </button>
                   </div>
                 </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedContact && (
-          <div className="md:w-[70%] bg-zinc-100 md:h-[100vh] md:overflow-y-hidden">
-            <div className="h-20 bg-white border-b border-slate-200 md:flex items-center justify-between px-10 hidden">
-              <h1 className="text-xl">Contact Details</h1>
-              <a
-                className="inline-flex justify-center rounded-md border border-transparent bg-slate-200 px-4 py-2 text-sm text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 mr-4"
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedContact(null);
-                }}
-              >
-                Close
-              </a>
-            </div>
-            <div className="flex justify-center md:h-[90vh] md:overflow-y-scroll">
-              <div className="w-[30em] p-8 bg-white rounded-xl shadow-md">
-                <div className="flex justify-center items-center">
-                  <div className="rounded-full w-40 h-40 m-4">
-                    <svg
-                      className="text-gray-500"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                  </div>
-                </div>
-                <div className="grid gap-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                    <p className="mt-1 text-gray-900">{selectedContact.full_name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone</label>
-                    <p className="mt-1 text-gray-900">{selectedContact.phone_number}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <p className="mt-1 text-gray-900">{selectedContact.email || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Group</label>
-                    <p className="mt-1 text-gray-900">{selectedContact.Group[0]?.group_name || 'None'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Add to Group</label>
-                    <select
-                      className="mt-1 block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                      onChange={(e) => {
-                        const selectedGroupName = e.target.value;
-                        if (selectedGroupName) {
-                          const group = groups.find((g) => g.group_name === selectedGroupName);
-                          if (group) {
-                            addContactToGroup(selectedContact.id, group.id);
-                          }
-                        }
-                      }}
-                    >
-                      <option value="">Select group to add</option>
-                      {groups
-                        .filter((group) => !selectedContact.Group.some((g) => g.group_name === group.group_name))
-                        .map((group, index) => (
-                          <option key={index} value={group.group_name}>{group.group_name}</option>
-                        ))}
-                    </select>
-                  </div>
-                  {selectedContact.Group[0]?.group_name && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Remove from Group</label>
-                      <select
-                        className="mt-1 block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                        onChange={(e) => {
-                          const selectedGroupName = e.target.value;
-                          if (selectedGroupName) {
-                            const group = groups.find((g) => g.group_name === selectedGroupName);
-                            if (group) {
-                              removeContactFromGroup(selectedContact.id, group.id);
-                            }
-                          }
-                        }}
-                      >
-                        <option value="">Select group to remove</option>
-                        {selectedContact.Group.map((group, index) => (
-                          <option key={index} value={group.group_name}>{group.group_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    className="rounded-full px-5 py-2 text-sm bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    onClick={() => setSelectedContact(null)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    className="rounded-full px-5 py-2 text-sm bg-red-600 text-white hover:bg-red-500"
-                    onClick={() => deleteContact([selectedContact.id])}
-                  >
-                    Delete Contact
-                  </button>
-                </div>
               </div>
             </div>
           </div>
