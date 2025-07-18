@@ -230,7 +230,7 @@ const FlowBuilder = () => {
 
   return (
     <RequireSubscription>
-    <div className="h-full flex flex-col">
+    <div className="max-h-screen flex flex-col">
       <div className="flex-grow flex">
         {sidebarOpen && (
           <div className="w-64 sidebar-panel">
