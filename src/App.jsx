@@ -59,7 +59,8 @@ const validRoutes = [
   "/subscriptions",
   "/my-usage-panel",
   "/chat-flow",
-  "/wallet"
+  "/wallet",
+  "/orders"
 ];
  
 function AppContent() {

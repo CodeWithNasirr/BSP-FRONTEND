@@ -64,7 +64,7 @@ const Order = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="max-h-screen bg-gray-50 p-6">
       <header className="bg-white shadow-md rounded-lg p-6 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 text-center">Order Management</h1>
         <p className="text-gray-600 mt-1 text-center">Track and manage all customer orders efficiently</p>
