@@ -1,18 +1,17 @@
-import React, { useState,useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { assest } from '../../assets/assets';
-import RequireSubscription from "../Subscriptions/RequireSubscription";
+import RequireSubscription from '../Subscriptions/RequireSubscription';
 
-const ChatWindow = ({recipient}) => {
+const ChatWindow = ({ recipient }) => {
   const [messages, setMessages] = useState([]);
-  // console.log(messages)
   const [socket, setSocket] = useState(null);
-  const token = localStorage.getItem("authToken");
-  const chatContainerRef=useRef(null);
+  const token = localStorage.getItem('authToken');
+  const chatContainerRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
 
-// WebSocket connection
+  // WebSocket connection
   useEffect(() => {
     if (!recipient || !token) return;
 
@@ -24,7 +23,7 @@ const ChatWindow = ({recipient}) => {
       const newSocket = new WebSocket(wsUrl);
 
       newSocket.onopen = () => {
-        console.log('WebSocket connected');
+        console.log(`WebSocket connected for ${recipient}`);
         setSocket(newSocket);
       };
 
@@ -32,15 +31,17 @@ const ChatWindow = ({recipient}) => {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_success') {
-        
+            console.log('WebSocket connection successful');
           } else if (data.message?.action === 'new_message') {
             const newMessage = data.message.data;
-            // Deduplicate by message_id
-            setMessages((prev) =>
-              prev.some((msg) => msg.message_id === newMessage.message_id)
-                ? prev
-                : [...prev, newMessage]
-            );
+            // Only append if message matches current recipient
+            if (newMessage.recipient === recipient) {
+              setMessages((prev) =>
+                prev.some((msg) => msg.message_id === newMessage.message_id)
+                  ? prev
+                  : [...prev, newMessage]
+              );
+            }
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -48,7 +49,7 @@ const ChatWindow = ({recipient}) => {
       };
 
       newSocket.onclose = (e) => {
-        console.log(`WebSocket disconnected: ${e.code} - ${e.reaso0}`);
+        console.log(`WebSocket disconnected: ${e.code} - ${e.reason}`);
         setTimeout(() => {
           console.log('Attempting to reconnect...');
           connectWebSocket();
@@ -71,8 +72,11 @@ const ChatWindow = ({recipient}) => {
     };
   }, [recipient, token]);
 
-  // Fetch initial messages
+  // Fetch initial messages and reset on recipient change
   useEffect(() => {
+    // Reset messages when recipient changes
+    setMessages([]);
+
     const fetchMessages = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
@@ -83,7 +87,7 @@ const ChatWindow = ({recipient}) => {
         });
         // Deduplicate initial messages by message_id
         const uniqueMessages = response.data.Data.reduce((acc, msg) => {
-          if (!acc.some((m) => m.message_id === msg.message_id)) {
+          if (!acc.some((m) => msg.message_id && m.message_id === msg.message_id)) {
             acc.push(msg);
           }
           return acc;
@@ -91,6 +95,7 @@ const ChatWindow = ({recipient}) => {
         setMessages(uniqueMessages);
       } catch (error) {
         console.error('Initial chat fetch failed:', error);
+        alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
       }
     };
 
@@ -105,16 +110,17 @@ const ChatWindow = ({recipient}) => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-  
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+    if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
       setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
+    } else {
+      alert('Please select a JPEG or PNG image');
     }
   };
 
@@ -124,98 +130,88 @@ const ChatWindow = ({recipient}) => {
   };
 
   const confirmImageSend = (e) => {
-    // You could also call handleSubmit here if image needs form submission
     handleSubmit(e);
-    cancelImage(); // Reset after sending
+    cancelImage();
   };
 
-  const [formData,setFormData]=useState({
-    url:"",
-    message_text:"",
-    recipient:""
-  })
+  const [formData, setFormData] = useState({
+    url: '',
+    message_text: '',
+    recipient: ''
+  });
 
-  const handleChange=(e)=>{
-    const {name,value}=e.target;
-    setFormData((prevent)=>({
-      ...prevent,[name]:value
-    }))
-  }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (!formData.text_content && !selectedImage) return;
-    setIsSending(true)
-  
+    if (!formData.message_text.trim() && !selectedImage) {
+      alert('Please enter a message or select an image');
+      return;
+    }
+    setIsSending(true);
+
     try {
       if (selectedImage) {
-        // Build multipart/form-data for image message
         const imageFormData = new FormData();
-        imageFormData.append("recipient", recipient);
-        imageFormData.append("message_text", formData.message_text);
-        imageFormData.append("url", selectedImage); // backend should expect 'url' field
-  
-        const response = await axios.post(
+        imageFormData.append('recipient', recipient);
+        imageFormData.append('message_text', formData.message_text);
+        imageFormData.append('url', selectedImage);
+
+        await axios.post(
           `${API_BASE_URL}/api/whatsapp/send-message/`,
           imageFormData,
           {
             headers: {
               Authorization: `Token ${token}`,
-              "Content-Type": "multipart/form-data",
+              'Content-Type': 'multipart/form-data',
             },
           }
         );
-  
-        // Reset everything after success
-        setFormData({
-          url: "",
-          message_text: "", 
-          recipient: "",
-        });
-        cancelImage(); // clears preview and selected file
       } else {
-        // Send normal text message
         const updatedFormData = {
-          ...formData,
-          recipient: recipient,
+          recipient,
+          message_text: formData.message_text,
+          url: ''
         };
-  
-        const response = await axios.post(
+
+        await axios.post(
           `${API_BASE_URL}/api/whatsapp/send-message/`,
           updatedFormData,
           {
             headers: {
               Authorization: `Token ${token}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
           }
         );
-  
-        setFormData({
-          url: "",
-          message_text: "",
-          recipient: "",
-        });
       }
-  
-      // Optionally reload or trigger a refresh state
-      // window.location.reload();
-  
+
+      setFormData({
+        url: '',
+        message_text: '',
+        recipient: ''
+      });
+      cancelImage();
     } catch (error) {
-      console.error("Error sending message:", error);
-    }
-    finally{
-    setIsSending(false)
+      console.error('Error sending message:', error);
+      alert(`Error: ${error.response?.data?.error || 'Something went wrong'}`);
+    } finally {
+      setIsSending(false);
     }
   };
-  return( 
+
+  return (
     <RequireSubscription>
       <div className="flex flex-col min-h-screen">
-
-         {/* Chat Header */}
-        <div className="hidden md:flex md:justify-center md:text-emerald-600  md:p-2 md:sticky md:top-0 md:z-10">
-          {/* <span id="online-count" className="pr-1">3</span>online */}
-          <span className='border-b border-gray-200'>{recipient}</span>
+        {/* Chat Header */}
+        <div className="hidden md:flex md:justify-center md:text-emerald-600 md:p-2 md:sticky md:top-0 md:z-10">
+          <span className="border-b border-gray-200">{recipient}</span>
         </div>
 
         {/* Chat Content */}
@@ -229,7 +225,7 @@ const ChatWindow = ({recipient}) => {
               .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
               .map((msg) => (
                 <li key={msg.id}>
-                  {msg.direction === "OUTBOUND" ? (
+                  {msg.direction === 'OUTBOUND' ? (
                     <>
                       <div className="flex justify-end mb-2">
                         <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-2 md:p-4 max-w-[70%]">
@@ -279,7 +275,7 @@ const ChatWindow = ({recipient}) => {
                         </svg>
                       </div>
                       <div className="bg-white p-2 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
-                        {msg.media_type === "image" && msg.media_url && (
+                        {msg.media_type === 'image' && msg.media_url && (
                           <div className="mb-2">
                             <img
                               src={`${msg.media_url}`}
@@ -335,7 +331,7 @@ const ChatWindow = ({recipient}) => {
               onChange={handleImageChange}
               type="file"
               className="sr-only"
-              accept=".jpg, .png"
+              accept="image/jpeg,image/png"
               id="file-upload"
               name="url"
             />
@@ -366,7 +362,7 @@ const ChatWindow = ({recipient}) => {
                   Sending...
                 </>
               ) : (
-                "Send"
+                'Send'
               )}
             </button>
           </form>
@@ -389,7 +385,7 @@ const ChatWindow = ({recipient}) => {
                   disabled={isSending}
                   className="px-2 md:px-3 py-1 text-sm md:text-base text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isSending ? "Sending Image..." : "Send Image"}
+                  {isSending ? 'Sending Image...' : 'Send Image'}
                 </button>
               </div>
             </div>
@@ -397,7 +393,7 @@ const ChatWindow = ({recipient}) => {
         </div>
       </div>
     </RequireSubscription>
-  )
+  );
 };
 
 export default ChatWindow;
