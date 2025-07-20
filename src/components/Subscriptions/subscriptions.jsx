@@ -7,30 +7,32 @@ import { Context } from '../context/Context';
 const plans = [
     {
         name: 'BASIC', price: 999, included_messages: 1200, gradient: 'from-green-500 to-green-600', disabled: false, features: [
-            'Client Dashboard Access',
+             'Client Dashboard Access',
             'Up to 1200 messages/month',
             'Unlimited Contacts & Groups',
-            'Unlimited Campaigns',
-            'Media Template Support (Image/Doc)',
+            'Unlimited Campaigns (Basic)',
+            'Media Template Support (Image Only)',
             'Chat Inbox (Reply to WhatsApp Users)',
             'WhatsApp Branding Setup (DP, About)',
-            'Broadcast Scheduling',
+            'Basic Chatbot Flows (Limited)',
             'Realtime Delivery Reports',
+            '**No Scheduling or Website Integration**',
         ],
     },
     { name: 'GROWTH', price: 1799, included_messages: 5000, gradient: 'from-blue-500 to-blue-600', disabled: false,
         features: [
-      'All in BASIC',
+       'Everything in BASIC',
       'Up to 5,000 messages/month',
       'Smart Campaign Retargeting',
       'Auto Campaigns on Group/Contact Triggers',
       'Multiple WhatsApp Templates',
-      'Basic Chatbot Flows',
       'Daily Analytics Summary',
+      '**Campaign Scheduling (Available on Request)**',
+      '**Catalog Sharing (Available on Request)**',
     ], },
     { name: 'BUSINESS PRO', price: 3499, included_messages: 12000, gradient: 'from-purple-500 to-purple-600', disabled: false,
     features: [
-      'All in GROWTH',
+       'Everything in GROWTH',
       'Up to 12,000 messages/month',
       'Drag & Drop Chatbot Flow Builder',
       'Product Showcase via WhatsApp',
@@ -38,6 +40,7 @@ const plans = [
       'Priority Messaging Queue',
       'Webhook-Based Triggers',
       'Live Support via WhatsApp',
+      '**Website Integration (Available on Request)**',
     ], },
 ];
 
