@@ -12,6 +12,12 @@ const ChatList = ({ onSelectConversation }) => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
+  
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
 
  // WebSocket connection
   useEffect(() => {
