@@ -6,6 +6,7 @@ import RequireSubscription from '../Subscriptions/RequireSubscription';
 
 const ChatWindow = ({ recipient }) => {
   const [messages, setMessages] = useState([]);
+  // console.log(messages)
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
   const chatContainerRef = useRef(null);
@@ -23,7 +24,7 @@ const ChatWindow = ({ recipient }) => {
       const newSocket = new WebSocket(wsUrl);
 
       newSocket.onopen = () => {
-        console.log(`WebSocket connected for ${recipient}`);
+        // console.log(`WebSocket connected for ${recipient}`);
         setSocket(newSocket);
       };
 
@@ -31,7 +32,7 @@ const ChatWindow = ({ recipient }) => {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_success') {
-            console.log('WebSocket connection successful');
+            // console.log('WebSocket connection successful');
           } else if (data.message?.action === 'new_message') {
             const newMessage = data.message.data;
             // Only append if message matches current recipient
@@ -44,20 +45,20 @@ const ChatWindow = ({ recipient }) => {
             }
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // console.error('Error parsing WebSocket message:', error);
         }
       };
 
       newSocket.onclose = (e) => {
-        console.log(`WebSocket disconnected: ${e.code} - ${e.reason}`);
+        // console.log(`WebSocket disconnected: ${e.code} - ${e.reason}`);
         setTimeout(() => {
-          console.log('Attempting to reconnect...');
+          // console.log('Attempting to reconnect...');
           connectWebSocket();
         }, 3000);
       };
 
       newSocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        // console.error('WebSocket error:', error);
       };
 
       return newSocket;
@@ -94,7 +95,7 @@ const ChatWindow = ({ recipient }) => {
         }, []);
         setMessages(uniqueMessages);
       } catch (error) {
-        console.error('Initial chat fetch failed:', error);
+        // console.error('Initial chat fetch failed:', error);
         alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
       }
     };

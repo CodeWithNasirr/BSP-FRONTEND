@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
+  // console.log(conversations)
   const [searchQuery, setSearchQuery] = useState('');
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
@@ -37,7 +38,7 @@ const ChatList = ({ onSelectConversation }) => {
       const newSocket = new WebSocket(wsUrl);
 
       newSocket.onopen = () => {
-        console.log('ChatList WebSocket connected');
+        // console.log('ChatList WebSocket connected');
         setSocket(newSocket);
       };
 
@@ -45,25 +46,25 @@ const ChatList = ({ onSelectConversation }) => {
         try {
           const data = JSON.parse(e.data);
           if (data.type === 'connection_success') {
-            console.log('WebSocket connection successful');
+            // console.log('WebSocket connection successful');
           } else if (data.message?.action === 'refresh_chatlist') {
             fetchChatList(pageRef.current); // ✅ use latest page from ref
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // console.error('Error parsing WebSocket message:', error);
         }
       };
 
       newSocket.onclose = (e) => {
-        console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
+        // console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
         setTimeout(() => {
-          console.log('Attempting to reconnect...');
+          // console.log('Attempting to reconnect...');
           connectWebSocket();
         }, 3000);
       };
 
       newSocket.onerror = (error) => {
-        console.error('ChatList WebSocket error:', error);
+        // console.error('ChatList WebSocket error:', error);
       };
 
       return newSocket;
@@ -147,7 +148,7 @@ const ChatList = ({ onSelectConversation }) => {
                   onClick={() => onSelectConversation(conv.recipient)}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm md:text-base">{conv.user_name}</span>
+                    <span className="font-semibold text-sm md:text-base">{conv.user_name || "unknown"}</span>
                     <span className="text-xs md:text-sm text-gray-500">
                       {conv.last_message_at
                         ? new Date(conv.last_message_at).toLocaleTimeString()
