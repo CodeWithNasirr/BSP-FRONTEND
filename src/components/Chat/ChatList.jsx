@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
@@ -12,14 +12,20 @@ const ChatList = ({ onSelectConversation }) => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
-  
+
+  const pageRef = useRef(page); // ✅ Ref to track current page
+
+  // Sync ref with state
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
   // Reset to page 1 when search query changes
   useEffect(() => {
     setPage(1);
   }, [searchQuery]);
 
-
- // WebSocket connection
+  // WebSocket connection
   useEffect(() => {
     if (!token) return;
 
@@ -41,7 +47,7 @@ const ChatList = ({ onSelectConversation }) => {
           if (data.type === 'connection_success') {
             console.log('WebSocket connection successful');
           } else if (data.message?.action === 'refresh_chatlist') {
-            fetchChatList(page); // Refresh chat list
+            fetchChatList(pageRef.current); // ✅ use latest page from ref
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -70,10 +76,10 @@ const ChatList = ({ onSelectConversation }) => {
         ws.close();
       }
     };
-  }, [token, page]);
+  }, [token]);
 
   // Fetch chat list
-  const fetchChatList = async (pageNum) => {
+  const fetchChatList = async (pageNum = 1) => {
     // setLoading(true);
     try {
       const response = await axios.get(
@@ -87,7 +93,6 @@ const ChatList = ({ onSelectConversation }) => {
       );
 
       const chatData = response.data;
-      // console.log(chatData)
       setConversations(chatData.results || []);
       setPagination({
         next: chatData.next,
@@ -95,13 +100,12 @@ const ChatList = ({ onSelectConversation }) => {
         count: chatData.count,
       });
     } catch (error) {
-      // console.error('Error fetching chat list:', error);
-      // toast.error('Failed to fetch chat list');
+      toast.error('Failed to fetch chat list');
     } finally {
       setLoading(false);
     }
   };
- 
+
   useEffect(() => {
     if (token) {
       fetchChatList(page);
@@ -169,24 +173,26 @@ const ChatList = ({ onSelectConversation }) => {
 
       {/* Pagination Controls */}
       <div className="flex justify-between mt-2 md:mt-4 px-2 md:px-4">
-        <button
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={!pagination.previous}
-          className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-sm md:text-base">
-          Page {page} of {Math.ceil(pagination.count / 10)}
-        </span>
-        <button
-          onClick={() => setPage((prev) => prev + 1)}
-          disabled={!pagination.next}
-          className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={!pagination.previous || page === 1}
+              className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm md:text-base">
+              Page {page} of {Math.max(1, Math.ceil(pagination.count / 10))}
+            </span>
+            <button
+              onClick={() => {
+                if (pagination.next) setPage((prev) => prev + 1);
+              }}
+              disabled={!pagination.next}
+              className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
     </div>
   );
 };
