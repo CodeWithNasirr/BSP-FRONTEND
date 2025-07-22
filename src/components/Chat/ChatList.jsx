@@ -1,90 +1,39 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
+import debounce from 'lodash/debounce';
 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
-  // console.log(conversations)
   const [searchQuery, setSearchQuery] = useState('');
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
-
-  const pageRef = useRef(page); // ✅ Ref to track current page
+  const pageRef = useRef(page);
 
   // Sync ref with state
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
 
-  // Reset to page 1 when search query changes
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
-  // WebSocket connection
-  useEffect(() => {
-    if (!token) return;
-
-    const connectWebSocket = () => {
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-      const backendHost = API_BASE_URL.replace('http://', '').replace('https://', '');
-      const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
-
-      const newSocket = new WebSocket(wsUrl);
-
-      newSocket.onopen = () => {
-        // console.log('ChatList WebSocket connected');
-        setSocket(newSocket);
-      };
-
-      newSocket.onmessage = (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data.type === 'connection_success') {
-            // console.log('WebSocket connection successful');
-          } else if (data.message?.action === 'refresh_chatlist') {
-            fetchChatList(pageRef.current); // ✅ use latest page from ref
-          }
-        } catch (error) {
-          // console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      newSocket.onclose = (e) => {
-        // console.log(`ChatList WebSocket disconnected: ${e.code} - ${e.reason}`);
-        setTimeout(() => {
-          // console.log('Attempting to reconnect...');
-          connectWebSocket();
-        }, 3000);
-      };
-
-      newSocket.onerror = (error) => {
-        // console.error('ChatList WebSocket error:', error);
-      };
-
-      return newSocket;
-    };
-
-    const ws = connectWebSocket();
-
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, [token]);
+  // Debounced fetchChatList
+  const debouncedFetchChatList = useCallback(
+    debounce((pageNum, query) => {
+      fetchChatList(pageNum, query);
+    }, 300),
+    []
+  );
 
   // Fetch chat list
-  const fetchChatList = async (pageNum = 1) => {
+  const fetchChatList = async (pageNum = 1, query = searchQuery) => {
     // setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${searchQuery}`,
+        `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(query)}`,
         {
           headers: {
             Authorization: `Token ${token}`,
@@ -107,11 +56,65 @@ const ChatList = ({ onSelectConversation }) => {
     }
   };
 
+  // WebSocket connection
+  useEffect(() => {
+    if (!token) return;
+
+    const connectWebSocket = () => {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const backendHost = API_BASE_URL.replace('http://', '').replace('https://', '');
+      const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
+
+      const newSocket = new WebSocket(wsUrl);
+
+      newSocket.onopen = () => {
+        setSocket(newSocket);
+      };
+
+      newSocket.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'connection_success') {
+            // Connection established
+          } else if (data.message?.action === 'refresh_chatlist') {
+            fetchChatList(pageRef.current, searchQuery); // Use current page and search query
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      newSocket.onclose = (e) => {
+        setTimeout(() => {
+          connectWebSocket();
+        }, 3000);
+      };
+
+      newSocket.onerror = (error) => {
+        console.error('ChatList WebSocket error:', error);
+      };
+
+      return newSocket;
+    };
+
+    const ws = connectWebSocket();
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, [token, searchQuery]);
+
+  // Fetch chats on page or searchQuery change
   useEffect(() => {
     if (token) {
-      fetchChatList(page);
+      debouncedFetchChatList(page, searchQuery);
     }
-  }, [page, token, searchQuery]);
+  }, [page, searchQuery, token, debouncedFetchChatList]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -155,7 +158,7 @@ const ChatList = ({ onSelectConversation }) => {
                         : ""}
                     </span>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600">{conv.last_message_text}</p>
+                  <p className="text-xs md:text-sm text-gray-600 overflow-hidden">{conv.last_message_text}</p>
                   {conv.unread_count > 0 && (
                     <span className="inline-block bg-blue-500 text-white text-xs px-1 md:px-2 py-0.5 md:py-1 rounded-full">
                       {conv.unread_count} unread
@@ -174,26 +177,26 @@ const ChatList = ({ onSelectConversation }) => {
 
       {/* Pagination Controls */}
       <div className="flex justify-between mt-2 md:mt-4 px-2 md:px-4">
-            <button
-              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              disabled={!pagination.previous || page === 1}
-              className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="text-sm md:text-base">
-              Page {page} of {Math.max(1, Math.ceil(pagination.count / 10))}
-            </span>
-            <button
-              onClick={() => {
-                if (pagination.next) setPage((prev) => prev + 1);
-              }}
-              disabled={!pagination.next}
-              className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={!pagination.previous || page === 1}
+          className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span className="text-sm md:text-base">
+          Page {page} of {Math.max(1, Math.ceil(pagination.count / 10))}
+        </span>
+        <button
+          onClick={() => {
+            if (pagination.next) setPage((prev) => prev + 1);
+          }}
+          disabled={!pagination.next}
+          className="px-2 md:px-4 py-1 md:py-2 bg-gray-200 rounded text-sm md:text-base disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };

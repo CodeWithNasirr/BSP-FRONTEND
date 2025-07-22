@@ -247,7 +247,7 @@ const ChatWindow = ({ recipient }) => {
                               />
                             </div>
                           )}
-                          <span className="text-sm md:text-base">{msg.text_content}</span>
+                          <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
                           <div className="text-xs md:text-sm text-gray-500 mt-1">
                             <span className="font-light">{msg.footer_text}</span>
                             <br />
@@ -275,7 +275,7 @@ const ChatWindow = ({ recipient }) => {
                           <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
                         </svg>
                       </div>
-                      <div className="bg-white p-2 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
+                      <div className="bg-white p-2 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg ">
                         {msg.media_type === 'image' && msg.media_url && (
                           <div className="mb-2">
                             <img
@@ -290,7 +290,7 @@ const ChatWindow = ({ recipient }) => {
                             />
                           </div>
                         )}
-                        <span className="text-sm md:text-base">{msg.text_content}</span>
+                        <span className="text-sm md:text-base break-all break-words whitespace-pre-wrap overflow-hidden">{msg.text_content}</span>
                         <div className="text-xs md:text-sm text-gray-500 mt-1">
                           {new Date(msg.timestamp).toLocaleTimeString()} · {msg.status}
                         </div>
