@@ -3,52 +3,78 @@ import React from 'react';
 const PrivacyPolicy = () => {
   return (
     <div className="max-w-5xl mx-auto p-8 text-gray-800 bg-gray-50">
-      <h1 className="text-4xl font-extrabold text-blue-700 mb-8 text-center">Privacy Policy for Numlockitsolutions WhatsApp Marketing</h1>
+      <h1 className="text-4xl font-extrabold text-blue-700 mb-8 text-center">
+        Privacy Policy – Numlock IT Solutions WhatsApp Marketing
+      </h1>
+
       <p className="mb-6 text-lg leading-relaxed">
-        At Numlockitsolutions WhatsApp Marketing, we are dedicated to safeguarding your privacy and ensuring the security of your data. This Privacy Policy outlines how we collect, use, and protect your information when you use our WhatsApp automation platform, a trusted service verified by Razorpay.
+        At <strong>Numlock IT Solutions</strong>, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal data when you use our WhatsApp marketing automation platform. We are a trusted service integrated with the WhatsApp Cloud API and secure payment gateways like Razorpay.
       </p>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">1. Information We Collect</h2>
       <ul className="list-disc list-inside mb-6 space-y-2">
-        <li>WhatsApp Business Phone Numbers</li>
-        <li>WhatsApp Message Templates</li>
-        <li>Meta User ID and Access Tokens</li>
-        <li>Name and Email (provided via Meta login, if applicable)</li>
+        <li>WhatsApp Business phone numbers</li>
+        <li>WhatsApp message templates</li>
+        <li>Meta user ID and access tokens (via Meta login)</li>
+        <li>Name and email address (if provided)</li>
       </ul>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">2. How We Use Your Information</h2>
       <p className="mb-6">
-        Your data is used exclusively to enhance your experience with our platform:
+        We only use your data to operate and improve our services. Specifically:
       </p>
       <ul className="list-disc list-inside mb-6 space-y-2">
-        <li>Facilitate message delivery via WhatsApp on your behalf</li>
-        <li>Customize and optimize message templates</li>
-        <li>Provide insights through campaign performance analytics</li>
+        <li>Send WhatsApp messages on your behalf through the Cloud API</li>
+        <li>Manage and customize your message templates</li>
+        <li>Analyze campaign performance to help you improve results</li>
       </ul>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">3. Data Sharing</h2>
       <p className="mb-6">
-        We do not sell, share, or disclose your information to third parties, except as required to operate our platform or comply with legal obligations. Your data remains secure within Numlockitsolutions WhatsApp Marketing.
+        We do not sell or rent your personal data. We only share it with:
       </p>
+      <ul className="list-disc list-inside mb-6 space-y-2">
+        <li>Meta, for WhatsApp messaging functionality</li>
+        <li>Razorpay, for secure payment processing</li>
+        <li>Legal authorities, when required by law</li>
+      </ul>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">4. Data Retention & Deletion</h2>
       <p className="mb-6">
-        You may request the deletion of your account and all associated data at any time by contacting us at:
-        <a href="mailto:support@numlockitsolutions.co.in" className="text-blue-600 underline hover:text-blue-800"> support@numlockitsolutions.co.in</a>. We will process your request promptly in accordance with applicable laws.
+        You can request deletion of your account and associated data anytime by contacting:
+        <a
+          href="mailto:support@numlockitsolutions.co.in"
+          className="text-blue-600 underline hover:text-blue-800 ml-1"
+        >
+          support@numlockitsolutions.co.in
+        </a>.
+        We will fulfill your request in compliance with applicable laws and platform policies.
       </p>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">5. Data Security</h2>
       <p className="mb-6">
-        We implement industry-standard security measures to protect your data, including encrypted API communications with Meta’s services and secure payment processing via Razorpay, ensuring your information is safe.
+        We use industry-standard security practices, including:
       </p>
+      <ul className="list-disc list-inside mb-6 space-y-2">
+        <li>Encrypted communication with Meta APIs</li>
+        <li>Secure access token handling and storage</li>
+        <li>Payment protection through Razorpay’s secure infrastructure</li>
+      </ul>
 
       <h2 className="text-2xl font-semibold text-blue-600 mt-10 mb-4">6. Contact Us</h2>
       <p className="mb-6">
-        For any questions or concerns regarding your privacy, please reach out to:
-        <a href="mailto:support@numlockitsolutions.co.in" className="text-blue-600 underline hover:text-blue-800"> support@numlockitsolutions.co.in</a>
+        If you have any questions or concerns about this Privacy Policy, feel free to contact us at:
+        <a
+          href="mailto:support@numlockitsolutions.co.in"
+          className="text-blue-600 underline hover:text-blue-800 ml-1"
+        >
+          support@numlockitsolutions.co.in
+        </a>
       </p>
 
-      <p className="text-sm text-gray-600 text-center mt-8">Last Updated: April 17, 2025</p>
+      <p className="text-sm text-gray-600 text-center mt-8">
+        Last Updated: April 17, 2025
+      </p>
     </div>
   );
 };
