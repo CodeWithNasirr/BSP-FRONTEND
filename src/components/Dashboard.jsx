@@ -139,13 +139,13 @@ const Dashboard = () => {
    };
 
   return (
-    <>
+  <>
       {loadingUser ? (
         <div className="animate-pulse text-center text-2xl text-gray-400 my-50">Loading dashboard...</div>
       ) : (
-        <div className="md:min-h-screen flex flex-col w-full min-w-0">
+        <div className="md:max-h-screen flex flex-col w-full min-w-0 max-h-screen">
           <div className="bg-white md:bg-inherit p-4 md:p-8 rounded-[5px] text-[#000] h-full overflow-y-auto capitalize">
-            <div className="flex justify-between mt-3 md:mt-0">
+            <div className="flex flex-col sm:flex-row justify-between mt-3 md:mt-0">
               <div>
                 <h2 className="md:block hidden text-xl mb-1">Dashboard</h2>
                 <p className="mb-6 flex items-center leading-6">
@@ -155,23 +155,23 @@ const Dashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="flex space-x-2 mb-8 text-xs md:text-sm">
+            <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-8 text-xs md:text-sm">
               <a
-                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
                 href=""
                 onClick={(e) => (e.preventDefault(), navigate('/contacts'))}
               >
                 Add Contact
               </a>
               <a
-                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
                 href=""
                 onClick={(e) => (e.preventDefault(), navigate('/campaigns'))}
               >
                 Create Campaign
               </a>
               <a
-                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm"
+                className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
                 href=""
                 onClick={(e) => (e.preventDefault(), navigate('/templates/create'))}
               >
@@ -182,7 +182,7 @@ const Dashboard = () => {
                 onClick={(e) => isConnected && e.preventDefault()}
                 className={`rounded-md cursor-pointer ${
                   isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
-                } px-3 py-2 text-sm font-semibold text-white shadow-sm`}
+                } px-3 py-2 text-sm font-semibold text-white shadow-sm text-center`}
                 disabled={isConnected}
               >
                 {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
@@ -190,17 +190,17 @@ const Dashboard = () => {
             </div>
 
             {/* Dashboard Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-4 md:space-y-0">
+            <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-4 md:space-y-0">
               {/* Contacts Card */}
-              <div className="bg-slate-100 md:bg-slate-200 col-span-2 md:col-span-1 rounded-lg p-3">
+              <div className="bg-slate-100 md:bg-slate-200 col-span-2 sm:col-span-1 md:col-span-1 rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2>Contacts</h2>
-                    <h2 className="text-xl text-gray-600">{userInfo.contacts}</h2>
+                    <h2 className="text-base md:text-lg font-medium">Contacts</h2>
+                    <h2 className="text-lg md:text-xl text-gray-600">{userInfo.contacts}</h2>
                   </div>
                   <div className="flex">
-                    <span className="bg-secondary/10 p-3 rounded-full self-start">
-                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+                    <span className="bg-secondary/10 p-2 md:p-3 rounded-full self-start">
+                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="24" height="24" md:width="36" md:height="36" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2c4.714 0 7.071 0 8.535 1.464C22 4.93 22 7.286 22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"></path>
                           <path strokeLinecap="round" strokeLinejoin="round" d="m7 14l2.293-2.293a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 0 1.414 0L17 10m0 0v2.5m0-2.5h-2.5"></path>
@@ -209,10 +209,10 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-sm space-x-1 md:block hidden">
+                <div className="text-xs md:text-sm space-x-1 mt-2 md:block hidden">
                   <a className="flex items-center space-x-1 underline" href="" onClick={(e) => (e.preventDefault(), navigate('/contacts'))}>
                     <span>View Contacts</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" md:width="24" height="16" md:height="24" viewBox="0 0 24 24">
                       <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 16l8-8m0 0h-6m6 0v6"></path>
                     </svg>
                   </a>
@@ -220,15 +220,15 @@ const Dashboard = () => {
               </div>
 
               {/* Campaigns Card */}
-              <div className="bg-slate-100 md:bg-slate-200 col-span-2 md:col-span-1 rounded-lg p-3">
+              <div className="bg-slate-100 md:bg-slate-200 col-span-2 sm:col-span-1 md:col-span-1 rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2>Campaigns</h2>
-                    <h2 className="text-xl text-gray-600">{userInfo.campaigns}</h2>
+                    <h2 className="text-base md:text-lg font-medium">Campaigns</h2>
+                    <h2 className="text-lg md:text-xl text-gray-600">{userInfo.campaigns}</h2>
                   </div>
                   <div className="flex">
-                    <span className="bg-secondary/10 p-3 rounded-full self-start">
-                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+                    <span className="bg-secondary/10 p-2 md:p-3 rounded-full self-start">
+                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="24" height="24" md:width="36" md:height="36" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2c4.714 0 7.071 0 8.535 1.464C22 4.93 22 7.286 22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"></path>
                           <path strokeLinecap="round" strokeLinejoin="round" d="m7 14l2.293-2.293a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 0 1.414 0L17 10m0 0v2.5m0-2.5h-2.5"></path>
@@ -237,10 +237,10 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-sm space-x-1 md:block hidden">
+                <div className="text-xs md:text-sm space-x-1 mt-2 md:block hidden">
                   <a className="flex items-center space-x-1 underline" href="" onClick={(e) => (e.preventDefault(), navigate('/campaigns'))}>
                     <span>View Campaigns</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" md:width="24" height="16" md:height="24" viewBox="0 0 24 24">
                       <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 16l8-8m0 0h-6m6 0v6"></path>
                     </svg>
                   </a>
@@ -248,15 +248,15 @@ const Dashboard = () => {
               </div>
 
               {/* Templates Card */}
-              <div className="bg-slate-100 md:bg-slate-200 col-span-2 md:col-span-1 rounded-lg p-3">
+              <div className="bg-slate-100 md:bg-slate-200 col-span-2 sm:col-span-1 md:col-span-1 rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2>Templates</h2>
-                    <h2 className="text-xl text-gray-600">{userInfo.templates}</h2>
+                    <h2 className="text-base md:text-lg font-medium">Templates</h2>
+                    <h2 className="text-lg md:text-xl text-gray-600">{userInfo.templates}</h2>
                   </div>
                   <div className="flex">
-                    <span className="bg-secondary/10 p-3 rounded-full self-start">
-                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+                    <span className="bg-secondary/10 p-2 md:p-3 rounded-full self-start">
+                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="24" height="24" md:width="36" md:height="36" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2c4.714 0 7.071 0 8.535 1.464C22 4.93 22 7.286 22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"></path>
                           <path strokeLinecap="round" strokeLinejoin="round" d="m7 14l2.293-2.293a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 0 1.414 0L17 10m0 0v2.5m0-2.5h-2.5"></path>
@@ -265,10 +265,10 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-sm space-x-1 md:block hidden">
-                  <a className="flex items-center space-x-1 underline" href="" onClick={(e) => (e.preventDefault(), navigate('/templates'))}>
+                <div className="text-xs md:text-sm space-x-1 mt-2 md:block hidden">
+                  <a className="flex items-center space-x-1 underline" onClick={(e) => (e.preventDefault(), navigate('/templates'))}>
                     <span>View Templates</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" md:width="24" height="16" md:height="24" viewBox="0 0 24 24">
                       <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 16l8-8m0 0h-6m6 0v6"></path>
                     </svg>
                   </a>
@@ -276,15 +276,15 @@ const Dashboard = () => {
               </div>
 
               {/* Chats Card */}
-              <div className="bg-slate-100 md:bg-slate-200 col-span-2 md:col-span-1 rounded-lg p-3">
+              <div className="bg-slate-100 md:bg-slate-200 col-span-2 sm:col-span-1 md:col-span-1 rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2>All Chats</h2>
-                    <h2 className="text-xl text-gray-600">{userInfo.chats}</h2>
+                    <h2 className="text-base md:text-lg font-medium">All Chats</h2>
+                    <h2 className="text-lg md:text-xl text-gray-600">{userInfo.chats}</h2>
                   </div>
                   <div className="flex">
-                    <span className="bg-secondary/10 p-3 rounded-full self-start">
-                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+                    <span className="bg-secondary/10 p-2 md:p-3 rounded-full self-start">
+                      <svg className="text-secondary" xmlns="http://www.w3.org/2000/svg" width="24" height="24" md:width="36" md:height="36" viewBox="0 0 24 24">
                         <g fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2c4.714 0 7.071 0 8.535 1.464C22 4.93 22 7.286 22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z"></path>
                           <path strokeLinecap="round" strokeLinejoin="round" d="m7 14l2.293-2.293a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 0 1.414 0L17 10m0 0v2.5m0-2.5h-2.5"></path>
@@ -293,10 +293,10 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </div>
-                <div className="text-sm space-x-1 md:block hidden">
+                <div className="text-xs md:text-sm space-x-1 mt-2 md:block hidden">
                   <a className="flex items-center space-x-1 underline" onClick={(e) => (e.preventDefault(), navigate('/chats'))}>
                     <span>View Chats</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" md:width="24" height="16" md:height="24" viewBox="0 0 24 24">
                       <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8 16l8-8m0 0h-6m6 0v6"></path>
                     </svg>
                   </a>
@@ -304,35 +304,23 @@ const Dashboard = () => {
               </div>
 
               {/* Wallet Card */}
-              <div className="bg-slate-100 md:bg-slate-200 col-span-2 md:col-span-4 rounded-lg p-3">
-                <div className="flex justify-between items-center mb-4">
+              <div className="bg-slate-100 md:bg-slate-200 col-span-2 sm:col-span-1 md:col-span-4 rounded-lg p-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                   <div>
                     <h2 className="text-lg font-semibold">Wallet</h2>
-                    <p className="text-2xl text-green-600">₹{balance.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">Available for campaigns</p>
+                    <p className="text-xl sm:text-2xl text-green-600">₹{balance.toFixed(2)}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Available for campaigns</p>
                   </div>
-                  <div className="text-right">
-                    <div className="flex space-x-2">
+                  <div className="text-left sm:text-right mt-4 sm:mt-0">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <input
                         type="number"
                         value={topUpAmount}
                         onChange={(e) => setTopUpAmount(e.target.value)}
                         placeholder="Enter amount (₹)"
-                        className="w-32 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full sm:w-32 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         min="1"
                       />
-                       {/* <a
-                        // onClick={handleTopUp}
-                        href='https://rzp.io/rzp/LrW8CK60'
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        disabled={loadingTopUp}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ${
-                          loadingTopUp ? 'cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {loadingTopUp ? 'Processing...' : 'Top Up'}
-                      </a> */}
                       <button
                         onClick={handleTopUp}
                         disabled={loadingTopUp}
@@ -343,12 +331,12 @@ const Dashboard = () => {
                         {loadingTopUp ? 'Processing...' : 'Top Up'}
                       </button>
                     </div>
-                    <div className="flex justify-end space-x-2 mt-2">
+                    <div className="flex justify-start sm:justify-end space-x-2 mt-2">
                       {[500, 1000, 2000].map((amount) => (
                         <button
                           key={amount}
                           onClick={() => setTopUpAmount(amount.toString())}
-                          className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-gray-700 text-sm"
+                          className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-gray-700 text-xs"
                         >
                           ₹{amount}
                         </button>
@@ -365,19 +353,19 @@ const Dashboard = () => {
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="p-2 text-sm font-medium text-gray-700">Date</th>
-                            <th className="p-2 text-sm font-medium text-gray-700">Type</th>
-                            <th className="p-2 text-sm font-medium text-gray-700">Amount</th>
-                            <th className="p-2 text-sm font-medium text-gray-700">Description</th>
+                            <th className="p-2 text-xs sm:text-sm font-medium text-gray-700">Date</th>
+                            <th className="p-2 text-xs sm:text-sm font-medium text-gray-700">Type</th>
+                            <th className="p-2 text-xs sm:text-sm font-medium text-gray-700">Amount</th>
+                            <th className="p-2 text-xs sm:text-sm font-medium text-gray-700">Description</th>
                           </tr>
                         </thead>
                         <tbody>
                           {transactions.map((transaction) => (
                             <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                              <td className="p-2 text-sm text-gray-600">
+                              <td className="p-2 text-xs sm:text-sm text-gray-600">
                                 {new Date(transaction.timestamp).toLocaleString()}
                               </td>
-                              <td className="p-2 text-sm">
+                              <td className="p-2 text-xs sm:text-sm">
                                 <span
                                   className={`px-2 py-1 rounded-full text-xs ${
                                     transaction.transaction_type === 'CREDIT'
@@ -388,11 +376,11 @@ const Dashboard = () => {
                                   {transaction.transaction_type}
                                 </span>
                               </td>
-                              <td className="p-2 text-sm text-gray-600">
+                              <td className="p-2 text-xs sm:text-sm text-gray-600">
                                 ₹{Math.abs(transaction.amount).toFixed(2)}
                                 {transaction.transaction_type === 'DEBIT' ? ' (Deducted)' : ' (Added)'}
                               </td>
-                              <td className="p-2 text-sm text-gray-600">{transaction.description}</td>
+                              <td className="p-2 text-xs sm:text-sm text-gray-600">{transaction.description}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -402,24 +390,24 @@ const Dashboard = () => {
                         <button
                           onClick={() => setTransactionPage((prev) => Math.max(prev - 1, 1))}
                           disabled={!transactionPagination.previous}
-                          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 text-xs sm:text-sm"
                         >
                           Previous
                         </button>
-                        <span>
+                        <span className="text-xs sm:text-sm">
                           Page {transactionPage} of {Math.ceil(transactionPagination.count / 10)}
                         </span>
                         <button
                           onClick={() => setTransactionPage((prev) => prev + 1)}
                           disabled={!transactionPagination.next}
-                          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 text-xs sm:text-sm"
                         >
                           Next
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-center text-gray-500">No transactions yet.</p>
+                    <p className="text-center text-gray-500 text-xs sm:text-sm">No transactions yet.</p>
                   )}
                 </div>
               </div>
