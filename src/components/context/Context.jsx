@@ -15,7 +15,41 @@ const ContextProvider = ({ children }) => {
   const token = localStorage.getItem("authToken");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
  
-  
+  const fetchDashboard = async () => {
+    if (!token) return;
+    try {
+      const [userRes, statusRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/dashboard/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+        axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      ]);
+
+      setUserInfo(userRes.data);
+      setIsConnected(statusRes.data.is_connected);
+
+      localStorage.setItem("userInfo", JSON.stringify({
+        username: userRes.data.username,
+        email: userRes.data.email,
+      }));
+
+      localStorage.setItem("waStatus", JSON.stringify(statusRes.data.is_connected));
+    } catch (error) {
+      toast.error("Failed to refresh dashboard data 🥲");
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
+
 useEffect(() => {
   const checkSubscription = async () => {
     try {
@@ -58,42 +92,42 @@ useEffect(() => {
 
   if (!token) return;
 
-  const fetchDashboard = async () => {
-    try {
-      const [userRes, statusRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/dashboard/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-        axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-      ]);
-      setUserInfo(userRes.data);
-      setIsConnected(statusRes.data.is_connected);
+  // const fetchDashboard = async () => {
+  //   try {
+  //     const [userRes, statusRes] = await Promise.all([
+  //       axios.get(`${API_BASE_URL}/api/dashboard/`, {
+  //         headers: {
+  //           Authorization: `Token ${token}`,
+  //           'Content-Type': 'application/json',
+  //         },
+  //       }),
+  //       axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
+  //         headers: {
+  //           Authorization: `Token ${token}`,
+  //           'Content-Type': 'application/json',
+  //         },
+  //       }),
+  //     ]);
+  //     setUserInfo(userRes.data);
+  //     setIsConnected(statusRes.data.is_connected);
 
-      localStorage.setItem(
-        "userInfo",
-        JSON.stringify({
-          username: userRes.data.username,
-          email: userRes.data.email,
-        })
-      );
-      localStorage.setItem(
-        "waStatus",
-        JSON.stringify(statusRes.data.is_connected)
-      );
-    } catch (error) {
-      toast.error("Failed to refresh dashboard data 🥲");
-    } finally {
-      setLoadingUser(false);
-    }
-  };
+  //     localStorage.setItem(
+  //       "userInfo",
+  //       JSON.stringify({
+  //         username: userRes.data.username,
+  //         email: userRes.data.email,
+  //       })
+  //     );
+  //     localStorage.setItem(
+  //       "waStatus",
+  //       JSON.stringify(statusRes.data.is_connected)
+  //     );
+  //   } catch (error) {
+  //     toast.error("Failed to refresh dashboard data 🥲");
+  //   } finally {
+  //     setLoadingUser(false);
+  //   }
+  // };
 
   fetchDashboard();
 }, [token]);
