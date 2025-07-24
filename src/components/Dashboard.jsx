@@ -223,7 +223,7 @@ const Dashboard = () => {
       override_default_response_type: true,
       extras: {
         setup: {},
-        featureType: '', // Set to desired feature type (e.g., 'only_waba_sharing')
+        featureType: 'whatsapp_business_app_onboarding', // Set to desired feature type (e.g., 'only_waba_sharing')
         sessionInfoVersion: '3',
       },
     });
