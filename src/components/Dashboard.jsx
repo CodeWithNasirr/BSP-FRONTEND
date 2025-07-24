@@ -138,6 +138,97 @@ const Dashboard = () => {
      }
    };
 
+   // Facebook SDK and Embedded Signup Logic
+  useEffect(() => {
+    // Load Facebook SDK
+    const script = document.createElement('script');
+    script.src = 'https://connect.facebook.net/en_US/sdk.js';
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = 'anonymous';
+    document.body.appendChild(script);
+
+    // Initialize SDK
+    window.fbAsyncInit = () => {
+      window.FB.init({
+        appId: "3890308814613591", // Store in .env
+        // appId: process.env.REACT_APP_FACEBOOK_APP_ID, // Store in .env
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v23.0', // Use latest Graph API version
+      });
+    };
+
+    // Session logging message event listener
+    window.addEventListener('message', (event) => {
+      if (!event.origin.endsWith('facebook.com')) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'WA_EMBEDDED_SIGNUP') {
+          // Send data to Django backend
+          axios.post(`${API_BASE_URL}/api/whatsapp-signup`, data, {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          })
+            .then((response) => {
+              toast.success('WhatsApp signup data processed successfully');
+              // Optionally update isConnected in context or refetch userInfo
+            })
+            .catch((error) => toast.error('Failed to process WhatsApp signup data'));
+        }
+      } catch {
+        toast.error('Invalid WhatsApp signup message');
+      }
+    });
+
+    return () => {
+      // Cleanup event listener
+      window.removeEventListener('message', () => {});
+    };
+  }, [token]);
+
+  // Response callback for token
+  const fbLoginCallback = (response) => {
+    if (response.authResponse) {
+      const code = response.authResponse.code;
+      // Send exchangeable token to Django backend
+      axios.post(`${API_BASE_URL}/api/exchange-token`, { code }, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+        .then((response) => {
+          if (response.data.status === 'success') {
+            toast.success('WhatsApp connected successfully!');
+            // Update context or refetch userInfo to reflect isConnected
+          } else {
+            toast.error('Token exchange failed');
+          }
+        })
+        .catch((error) => toast.error('Failed to exchange token'));
+    } else {
+      toast.error('WhatsApp login failed');
+    }
+  };
+
+  // Launch WhatsApp Signup
+  const launchWhatsAppSignup = () => {
+    window.FB.login(fbLoginCallback, {
+      config_id: "3713662958940509", // Store in .env
+      // config_id: process.env.REACT_APP_CONFIG_ID, // Store in .env
+      response_type: 'code',
+      override_default_response_type: true,
+      extras: {
+        setup: {},
+        featureType: '', // Set to desired feature type (e.g., 'only_waba_sharing')
+        sessionInfoVersion: '3',
+      },
+    });
+  };
+
   return (
   <>
       {loadingUser ? (
@@ -177,7 +268,7 @@ const Dashboard = () => {
               >
                 Create Template
               </a>
-              <Link
+              {/* <Link
                 to={isConnected ? "#" : "/connect-form"}
                 onClick={(e) => isConnected && e.preventDefault()}
                 className={`rounded-md cursor-pointer ${
@@ -186,7 +277,16 @@ const Dashboard = () => {
                 disabled={isConnected}
               >
                 {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
-              </Link>
+              </Link> */}
+              <button
+                onClick={launchWhatsAppSignup}
+                disabled={isConnected}
+                className={`rounded-md cursor-pointer ${
+                  isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
+                } px-3 py-2 text-sm font-semibold text-white shadow-sm text-center`}
+              >
+                {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
+              </button>
             </div>
 
             {/* Dashboard Cards */}
