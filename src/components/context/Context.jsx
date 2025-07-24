@@ -110,6 +110,7 @@ useEffect(() => {
     userInfo,
     setUserInfo,
     loadingUser,
+    fetchDashboard,
   };
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

@@ -7,7 +7,7 @@ import API_BASE_URL from '../config'; // Adjust the path as needed
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { userInfo, isConnected, loadingUser } = useContext(Context);
+  const { userInfo, isConnected, loadingUser,fetchDashboard,} = useContext(Context);
   const token = localStorage.getItem("authToken");
   const user_email = userInfo.email || '';
   const user_name = userInfo.username || '';
@@ -166,7 +166,7 @@ const Dashboard = () => {
         const data = JSON.parse(event.data);
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
           // Send data to Django backend
-          axios.post(`${API_BASE_URL}/api/whatsapp-signup`, data, {
+          axios.post(`${API_BASE_URL}/api/whatsapp-signup/`, data, {
             headers: {
               Authorization: `Token ${token}`,
               'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ const Dashboard = () => {
     if (response.authResponse) {
       const code = response.authResponse.code;
       // Send exchangeable token to Django backend
-      axios.post(`${API_BASE_URL}/api/exchange-token`, { code }, {
+      axios.post(`${API_BASE_URL}/api/exchange-token/`, { code }, {
         headers: {
           Authorization: `Token ${token}`,
           'Content-Type': 'application/json',
@@ -203,6 +203,7 @@ const Dashboard = () => {
         .then((response) => {
           if (response.data.status === 'success') {
             toast.success('WhatsApp connected successfully!');
+            fetchDashboard(); // Update isConnected
             // Update context or refetch userInfo to reflect isConnected
           } else {
             toast.error('Token exchange failed');
