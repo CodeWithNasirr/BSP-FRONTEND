@@ -31,7 +31,7 @@ import TermsAndConditions from './components/LandingPage/TermsAndConditions'
 import MyUsagePanel from './components/MyUsagePanel'
 import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
-import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
+import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CreditCard ,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
 import { Utensils, ShoppingBasket, ReceiptText, ClipboardList, ChefHat } from "lucide-react";
 import { ToastContainer } from 'react-toastify';
@@ -104,7 +104,7 @@ function AppContent() {
             <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
             <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
             <SidebarItem icon={<Utensils size={20} />} text="Orders" to="/orders" />
-            <SidebarItem icon={<CircleDollarSign size={20} />} text="subscriptions" to="/subscriptions" />
+            <SidebarItem icon={<CreditCard  size={20} />} text="subscriptions" to="/subscriptions" />
             <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
             <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />

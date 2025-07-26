@@ -5,7 +5,7 @@ import { Context } from "./context/Context";
 import { toast } from 'react-toastify';
 import API_BASE_URL from '../config'; // Adjust the path as needed
 
-const Dashboard = () => {
+const Dashboard = () => { 
   const navigate = useNavigate();
   const { userInfo, isConnected, loadingUser,fetchDashboard,} = useContext(Context);
   const token = localStorage.getItem("authToken");

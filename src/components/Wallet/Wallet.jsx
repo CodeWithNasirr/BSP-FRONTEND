@@ -132,42 +132,50 @@ const Wallet = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="w-full sm:max-w-3xl mx-auto p-4 sm:p-6 bg-white rounded-lg shadow-md">
       {/* Wallet Balance and Top-Up Section */}
-      <div className="mb-8"> 
-        <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold text-gray-800">Wallet Balance</h2>
-            <p className="text-4xl font-bold text-green-600 mt-2">₹{balance.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mt-1">Available for campaigns</p>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">
+              Wallet Balance
+            </h2>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 mt-1 sm:mt-2">
+              ₹{balance.toFixed(2)}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              Available for campaigns
+            </p>
           </div>
-          <div className="text-right">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Top Up Wallet</h3>
-            <div className="flex space-x-2">
+          <div className="text-center sm:text-right">
+            <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
+              Top Up Wallet
+            </h3>
+            <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 items-center">
               <input
                 type="number"
                 value={topUpAmount}
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 placeholder="Enter amount (₹)"
-                className="w-40 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-32 p-1.5 sm:p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
                 min="1"
               />
               <button
                 onClick={handleTopUp}
                 disabled={loading}
-                className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ${
+                className={`w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ${
                   loading ? 'cursor-not-allowed' : ''
-                }`}
+                } text-xs sm:text-sm`}
               >
                 {loading ? 'Processing...' : 'Add Funds'}
               </button>
             </div>
-            <div className="flex justify-end space-x-2 mt-2">
+            <div className="flex justify-center sm:justify-end space-x-2 mt-2">
               {[500, 1000, 2000].map((amount) => (
                 <button
                   key={amount}
                   onClick={() => setTopUpAmount(amount.toString())}
-                  className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-gray-700 text-sm"
+                  className="px-2 sm:px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-gray-700 text-xs"
                 >
                   ₹{amount}
                 </button>
@@ -179,25 +187,37 @@ const Wallet = () => {
 
       {/* Wallet Transaction History Section */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Transaction History</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
+          Transaction History
+        </h3>
         {transactions.length > 0 ? (
           <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
             <table className="w-full text-left border-collapse">
-              <thead> 
+              <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-3 text-sm font-medium text-gray-700">Date</th>
-                  <th className="p-3 text-sm font-medium text-gray-700">Type</th>
-                  <th className="p-3 text-sm font-medium text-gray-700">Amount</th>
-                  <th className="p-3 text-sm font-medium text-gray-700">Description</th>
+                  <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
+                    Date
+                  </th>
+                  <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
+                    Type
+                  </th>
+                  <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
+                    Amount
+                  </th>
+                  <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
+                    Description
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 text-sm text-gray-600">
+                  <tr key={transaction.id} className="border-b hover:bg-gray-50 flex flex-col sm:table-row">
+                    <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 sm:table-cell">
+                      <span className="sm:hidden font-medium">Date: </span>
                       {new Date(transaction.timestamp).toLocaleString()}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 sm:p-3 text-xs sm:text-sm sm:table-cell">
+                      <span className="sm:hidden font-medium">Type: </span>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           transaction.transaction_type === 'CREDIT'
@@ -208,38 +228,42 @@ const Wallet = () => {
                         {transaction.transaction_type}
                       </span>
                     </td>
-                    <td className="p-3 text-sm text-gray-600">
+                    <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 sm:table-cell">
+                      <span className="sm:hidden font-medium">Amount: </span>
                       ₹{Math.abs(transaction.amount).toFixed(2)}
                       {transaction.transaction_type === 'DEBIT' ? ' (Deducted)' : ' (Added)'}
                     </td>
-                    <td className="p-3 text-sm text-gray-600">{transaction.description}</td>
+                    <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 sm:table-cell">
+                      <span className="sm:hidden font-medium">Description: </span>
+                      {transaction.description}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             {/* Pagination Controls */}
-            <div className="flex justify-between mt-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-3 sm:mt-4 space-y-2 sm:space-y-0">
               <button
                 onClick={() => setTransactionPage((prev) => Math.max(prev - 1, 1))}
                 disabled={!transactionPagination.previous}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 rounded text-xs sm:text-sm disabled:opacity-50"
               >
                 Previous
               </button>
-              <span>
+              <span className="text-xs sm:text-sm">
                 Page {transactionPage} of {Math.ceil(transactionPagination.count / 10)}
               </span>
               <button
                 onClick={() => setTransactionPage((prev) => prev + 1)}
                 disabled={!transactionPagination.next}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 rounded text-xs sm:text-sm disabled:opacity-50"
               >
                 Next
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-500">No transactions yet.</p>
+          <p className="text-center text-xs sm:text-sm text-gray-500">No transactions yet.</p>
         )}
       </div>
     </div>
