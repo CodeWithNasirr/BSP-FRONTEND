@@ -4,7 +4,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
 import debounce from 'lodash/debounce';
-
+ 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +115,7 @@ const ChatList = ({ onSelectConversation }) => {
   useEffect(() => {
     setPage(1);
   }, [searchQuery]);
-
+ 
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Search Bar */}

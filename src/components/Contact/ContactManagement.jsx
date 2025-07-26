@@ -8,7 +8,7 @@ const ContactManagement = ({ initialTab = "contact" }) => {
   const [contacts, setContacts] = useState([]);
   const [groups, setGroups] = useState([]);
   const [isContSelected, setContAllSelected] = useState(false);
-  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [selectedContacts, setSelectedContacts] = useState([]); 
 
   return (
     <div className="md:h-screen flex flex-col w-full min-w-0">
