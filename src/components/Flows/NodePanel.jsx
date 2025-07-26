@@ -1,31 +1,22 @@
 import React from 'react';
 import { 
   MessageSquare, 
-  Clock, 
-  GitBranch, 
-  Globe, 
   Square, 
   X, 
   MessageCircle,
   ListPlus,
   List,
-  Circle,
-  SquarePower,Image
+  SquarePower,
+  Image
 } from 'lucide-react';
 
-const NodePanel = ({ onClose }) => {
-  
-  const onDragStart = (event, nodeType) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
-
+const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = touchDragHandlers || {};
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full p-4 sm:p-6 bg-white">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="sidebar-title">Flow Nodes</h3>
+        <h3 className="text-lg sm:text-xl font-semibold">Flow Nodes</h3>
         <button 
           onClick={onClose}
           className="p-1 rounded-full hover:bg-gray-100"
@@ -34,117 +25,97 @@ const NodePanel = ({ onClose }) => {
         </button>
       </div>
       
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-xs sm:text-sm text-gray-500 mb-4">
         Drag and drop nodes onto the canvas to build your WhatsApp flow
       </p>
-     
 
-      <div className="space-y-3">
-      <div 
-          className="p-3 bg-node-end rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+      <div className="flex-grow space-y-3 overflow-y-auto">
+        <div 
+          className="p-3 bg-node-end rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'start')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'start')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <SquarePower className="mr-3 text-blue-500" size={24} />
+          <SquarePower className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium">Start Flow</h4>
+            <h4 className="font-medium text-sm">Start Flow</h4>
             <p className="text-xs text-gray-500">Entry point of the flow</p>
           </div>
         </div>
 
         <div 
-          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'messageNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'messageNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <MessageSquare className="mr-3 text-blue-500" size={24} />
+          <MessageSquare className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium">Send Message</h4>
+            <h4 className="font-medium text-sm">Send Message</h4>
             <p className="text-xs text-gray-500">Send text or media message</p>
           </div>
         </div>
 
         <div 
-          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'listMessageNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'listMessageNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <List className="mr-3 text-blue-500" size={24} />
+          <List className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium">List Message</h4>
+            <h4 className="font-medium text-sm">List Message</h4>
             <p className="text-xs text-gray-500">Send text or media message</p>
           </div>
         </div>
-        
 
         <div 
-          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'textButtonsNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'textButtonsNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <ListPlus className="mr-3 text-blue-500" size={24} />
+          <ListPlus className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium">Text + Buttons</h4>
+            <h4 className="font-medium text-sm">Text + Buttons</h4>
             <p className="text-xs text-gray-500">Message with button options</p>
           </div>
         </div>
 
         <div 
-          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'imageTextButtonsNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'imageTextButtonsNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <Image className="mr-3 text-blue-500" size={24} />
+          <Image className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium">Image + Text + Buttons</h4>
+            <h4 className="font-medium text-sm">Image + Text + Buttons</h4>
             <p className="text-xs text-gray-500">Message with image and buttons</p>
           </div>
         </div> 
 
-        {/* <div 
-          className="p-3 bg-node-wait rounded-lg border border-amber-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
-          onDragStart={(e) => onDragStart(e, 'waitNode')}
-          draggable
-        >
-          <Clock className="mr-3 text-amber-500" size={24} />
-          <div>
-            <h4 className="font-medium">Wait for Reply</h4>
-            <p className="text-xs text-gray-500">Wait for user response</p>
-          </div>
-        </div>  */}
- 
-        {/* <div 
-          className="p-3 bg-node-condition rounded-lg border border-indigo-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
-          onDragStart={(e) => onDragStart(e, 'conditionalNode')}
-          draggable
-        >
-          <GitBranch className="mr-3 text-indigo-500" size={24} />
-          <div>
-            <h4 className="font-medium">Conditional Split</h4>
-            <p className="text-xs text-gray-500">Branch based on conditions</p>
-          </div>
-        </div> */}
-
-        {/* <div 
-          className="p-3 bg-node-api rounded-lg border border-purple-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
-          onDragStart={(e) => onDragStart(e, 'apiNode')}
-          draggable
-        >
-          <Globe className="mr-3 text-purple-500" size={24} />
-          <div>
-            <h4 className="font-medium">Call API</h4>
-            <p className="text-xs text-gray-500">Make external API requests</p>
-          </div>
-        </div> */}
-
         <div 
-          className="p-3 bg-node-end rounded-lg border border-red-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md"
+          className="p-3 bg-node-end rounded-lg border border-red-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'endNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'endNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           draggable
         >
-          <Square className="mr-3 text-red-500" size={24} />
+          <Square className="mr-3 text-red-500" size={20} />
           <div>
-            <h4 className="font-medium">End Flow</h4>
+            <h4 className="font-medium text-sm">End Flow</h4>
             <p className="text-xs text-gray-500">Terminate conversation flow</p>
           </div>
         </div>
@@ -152,14 +123,14 @@ const NodePanel = ({ onClose }) => {
 
       <div className="mt-auto pt-4 border-t border-gray-200">
         <div className="rounded-lg p-3 bg-whatsapp-light">
-          <h4 className="font-medium flex items-center mb-2">
-            <MessageCircle className="text-whatsapp-dark mr-2" size={18} />
+          <h4 className="font-medium flex items-center mb-2 text-sm">
+            <MessageCircle className="text-whatsapp-dark mr-2" size={16} />
             Tips
           </h4>
-          <ul className="text-xs text-gray-700 space-y-2">
+          <ul className="text-xs text-gray-700 space-y-1">
             <li>• Drag nodes onto the canvas</li>
             <li>• Connect nodes by dragging from handles</li>
-            <li>• Click on a node to edit its properties</li>
+            <li>• Tap on a node to edit its properties</li>
             <li>• Use Save button to store your flow</li>
           </ul>
         </div>

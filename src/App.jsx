@@ -58,7 +58,7 @@ const validRoutes = [
   "/chats/:id",
   "/subscriptions",
   "/my-usage-panel",
-  "/chat-flow",
+  // "/chat-flow",
   "/wallet",
   "/orders"
 ];
@@ -68,43 +68,35 @@ function AppContent() {
   const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
   const isLandingPage = location.pathname === "/";
+  const [enableChatFlow, setEnableChatFlow] = useState(() => localStorage.getItem('chatFlowEnabled') === 'true');
+  const dynamicRoutes = [...validRoutes, ...(enableChatFlow ? ['/chat-flow'] : [])];
 
   const match = matchRoutes(
-    validRoutes.map((path) => ({ path })),
+    dynamicRoutes.map((path) => ({ path })),
     location
   );
   const isValidRoute = !!match;
   const notFoundPage = !isLoginPage && !isRegisterPage && !isValidRoute;
 
-  // const [isDesktop, setIsDesktop] = useState(true);
-  // useEffect(() => {
-  //   const handleResize = () => setIsDesktop(window.innerWidth >= 800);
-  //   handleResize();
-  //   window.addEventListener("resize", handleResize);
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
-  // if (!isDesktop) {
-  //   return (
-  //     <div className="mobile-warning text-center p-8 bg-red-100 min-h-screen flex items-center justify-center">
-  //       <div>
-  //         <h2 className="text-2xl font-semibold text-red-600 mb-2">Desktop & Laptop Only!</h2>
-  //         <p className="text-lg text-red-500">
-  //           I'm sorry buddy, our application requires a larger screen for optimal experience.
-  //         </p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-  
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640); // sm = 640px
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isChatWindow =
+  (location.pathname.startsWith("/chats/") && location.pathname.split("/").length === 3) ||
+  (location.pathname === "/chats" && new URLSearchParams(location.search).has("recipient"));
 
 
   return (
-    <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full h-screen' : 'min-h-screen'}`}>
-      {!isLoginPage && !isRegisterPage && !notFoundPage && !isLandingPage &&(
+    <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full h-screen' : 'min-h-screen'}`}>
+      {!isLoginPage && !isRegisterPage && !notFoundPage && !isLandingPage && !(isMobile && isChatWindow) && (
         <div className="text-black">
           <Sidebar>
-            {/* Sidebar items */}
             <SidebarItem icon={<MessagesSquare size={20} />} text="Dashboard" to="/dashboard" />
             <SidebarItem icon={<ContactRound size={20} />} text="Contacts" to="/contacts" />
             <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
@@ -120,7 +112,7 @@ function AppContent() {
         </div>
       )}
 
-      <div className={`flex-1 overflow-auto ${isLoginPage || isRegisterPage || notFoundPage ? 'w-full' : ''}`}>
+      <div className={`flex-1 overflow-auto ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full' : ''}`}>
         <ToastContainer />
         <Routes>
           {/* All routes here */}
@@ -149,7 +141,8 @@ function AppContent() {
           <Route path="/chats/:id" element={<ProtectedRoute element={ChatWindow} />} />
           <Route path="/subscriptions" element={<ProtectedRoute element={subscriptions} />} />
           <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
-          <Route path="/chat-flow" element={<ProtectedRoute element={FlowBuilder} />} />
+          <Route path="/chat-flow" element={<ProtectedRoute element={() => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} />
+
           <Route path="/wallet" element={<ProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<ProtectedRoute element={Order} />} />
           <Route path="*" element={<NotFound />} />
