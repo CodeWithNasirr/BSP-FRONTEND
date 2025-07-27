@@ -689,7 +689,7 @@ const resetFormData = () => {
                         onChange={handleChange}
                         className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-gray-300 sm:text-sm sm:leading-6"
                         type="text"
-                        name="phone_number"
+                        name="button_number"
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -815,7 +815,7 @@ const resetFormData = () => {
           </div>
         )}
 
-        <div className="w-full sm:w-[30%] mx-auto sm:h-[50vh] p-4 sm:p-6 rounded-xl shadow-sm bg-cover bg-center" style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}>
+        <div className="w-full sm:w-[30%] mx-auto sm:h-[80vh] p-4 sm:p-6 rounded-xl shadow-sm bg-cover bg-center" style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}>
           <img
             src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
             alt="WhatsApp Logo"
