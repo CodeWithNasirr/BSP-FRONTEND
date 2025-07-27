@@ -213,7 +213,7 @@ const Dashboard = () => {
     } else {
       toast.error('WhatsApp login failed');
     }
-  };
+  }; 
 
   // Launch WhatsApp Signup
   const launchWhatsAppSignup = () => {
