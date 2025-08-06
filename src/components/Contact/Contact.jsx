@@ -600,7 +600,7 @@ const Contacts = ({
             <a
               className="rounded-full bg-indigo-600 hover:bg-indigo-500 cursor-pointer px-5 py-2 text-white text-sm font-semibold flex items-center justify-center"
               href="#"
-              onClick={(e) => {
+              onClick={(e) => { 
                 e.preventDefault();
                 setShowAddContactForm(!showAddContactForm);
               }}

@@ -188,7 +188,7 @@ const Dashboard = () => {
       window.removeEventListener('message', () => {});
     };
   }, [token]);
-
+ 
   // Response callback for token
   const fbLoginCallback = (response) => {
     if (response.authResponse) {
@@ -226,6 +226,7 @@ const Dashboard = () => {
         setup: {},
         featureType: 'whatsapp_business_app_onboarding', // Set to desired feature type (e.g., 'only_waba_sharing')
         sessionInfoVersion: '3',
+        redirect_uri: 'https://indianchiplevelcommunity.com/api/exchange-token/', // Add this
       },
     });
   };

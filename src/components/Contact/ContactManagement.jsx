@@ -20,7 +20,7 @@ const ContactManagement = ({ initialTab = "contact" }) => {
             contacts={contacts}
             setContacts={setContacts}
             groups={groups}
-            setGroups={setGroups}
+            setGroups={setGroups} 
             isContSelected={isContSelected}
             setContAllSelected={setContAllSelected}
             selectedContacts={selectedContacts}

@@ -265,7 +265,7 @@ const Groups = ({
             </div>
           </div>
         )}
-
+ 
         {showAddGroupForm && (
           <div className="md:w-[70%] bg-zinc-100 md:h-[100vh] md:overflow-y-hidden">
             <div className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10">

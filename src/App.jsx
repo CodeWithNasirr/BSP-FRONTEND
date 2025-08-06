@@ -20,6 +20,10 @@ import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 import Order from './components/Orders/Order'
 // import BillingDashboard from './components/BillingDashboard'
+
+// catalogs
+import ProductView from './components/Catalogs/ProductView'
+import CreateProduct from './components/Catalogs/CreateProduct'
 // Landing pages..
 import PrivacyPolicy from './components/LandingPage/PrivacyPolicy'
 import LandingPage from './components/LandingPage/LandingPage'
@@ -53,14 +57,16 @@ const validRoutes = [
   "/contacts",
   "/bulk-upload",
   "/connect-form",
-  "/whatsapp-setting",
+  "/whatsapp-setting", 
   "/chats",
   "/chats/:id",
   "/subscriptions",
   "/my-usage-panel",
   // "/chat-flow",
   "/wallet",
-  "/orders"
+  "/orders",
+  "/products",
+  "/products/create-pr"
 ];
  
 function AppContent() {
@@ -145,6 +151,9 @@ function AppContent() {
 
           <Route path="/wallet" element={<ProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<ProtectedRoute element={Order} />} />
+          <Route path="/products" element={<ProtectedRoute element={ProductView} />} />
+          <Route path="/products/create-pr" element={<ProtectedRoute element={CreateProduct} />} />
+        
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

@@ -3,6 +3,8 @@ import WaitNode from './WaitNode';
 import ConditionalNode from './ConditionalNode';
 import ApiNode from './ApiNode';
 import EndNode from './EndNode';
+// import MetaFlowNode from './MetaFlowNode';
+import CatalogCarouselNode from './CatalogCarouselNode';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
@@ -32,4 +34,6 @@ export const nodeTypes = {
   textButtonsNode: TextButtonsNode,
   imageTextButtonsNode:TextImageNode,
   listMessageNode: ListMessageNode,
+  // metaFlowNode: MetaFlowNode,
+  catalogCarouselNode: CatalogCarouselNode, // ✅ Add this
 };

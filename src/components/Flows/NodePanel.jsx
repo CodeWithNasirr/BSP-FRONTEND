@@ -104,6 +104,20 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <p className="text-xs text-gray-500">Message with image and buttons</p>
           </div>
         </div> 
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
+          onDragStart={(e) => onDragStart(e, 'catalogCarouselNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'catalogCarouselNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          draggable
+        >
+          <Image className="mr-3 text-blue-500" size={20} />
+          <div>
+            <h4 className="font-medium text-sm">catalogCarouselNode</h4>
+            <p className="text-xs text-gray-500">Message with catalogCarouselNode</p>
+          </div>
+        </div> 
 
         <div 
           className="p-3 bg-node-end rounded-lg border border-red-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"

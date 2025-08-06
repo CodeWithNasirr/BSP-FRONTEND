@@ -255,7 +255,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
           <div className="flex-grow relative h-[calc(100vh-4rem)] sm:h-screen">
             <ReactFlowProvider>
               <div className="h-full w-full" ref={reactFlowWrapper}>
-                <ReactFlow
+                <ReactFlow 
                   nodes={nodes}
                   edges={edges}
                   onNodesChange={onNodesChange}
@@ -279,6 +279,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
                         case 'start': return '#CCFBF1';
                         case 'messageNode': return '#E0F2FE';
                         case 'listMessageNode': return '#E0F2FE';
+                        case 'catalogCarouselNode': return '#E0F2FE';
                         case 'singleSelectNode': return '#E0F2FE';
                         case 'imageTextButtonsNode': return '#EEF2FF';
                         case 'waitNode': return '#FEF3C7';
