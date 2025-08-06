@@ -24,6 +24,7 @@ import Order from './components/Orders/Order'
 // catalogs
 import ProductView from './components/Catalogs/ProductView'
 import CreateProduct from './components/Catalogs/CreateProduct'
+import MetaCatalogSetup from './components/Catalogs/MetaCatalogSetup'
 // Landing pages..
 import PrivacyPolicy from './components/LandingPage/PrivacyPolicy'
 import LandingPage from './components/LandingPage/LandingPage'
@@ -37,7 +38,8 @@ import FlowBuilder from './components/Flows/FlowBuilder'
 import { BrowserRouter as Router, Routes, Route,useLocation} from "react-router-dom";
 import {MessageSquareMore,MessagesSquare,ContactRound,MessageCircleMore,House,CreditCard ,CircleDollarSign,NotebookTabs,Workflow} from "lucide-react" 
 import { SiWhatsapp } from "react-icons/si";
-import { Utensils, ShoppingBasket, ReceiptText, ClipboardList, ChefHat } from "lucide-react";
+import { Utensils } from "lucide-react";
+import { MdViewCarousel } from "react-icons/md"; // or any other you prefer
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet'
@@ -66,7 +68,8 @@ const validRoutes = [
   "/wallet",
   "/orders",
   "/products",
-  "/products/create-pr"
+  "/products/create-pr",
+  "/meta-catalog-setup"
 ];
  
 function AppContent() {
@@ -114,6 +117,7 @@ function AppContent() {
             <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
             <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
             <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
+            <SidebarItem icon={<MdViewCarousel size={20} />} text="Catalogs" to="/meta-catalog-setup" />
           </Sidebar>
         </div>
       )}
@@ -153,6 +157,8 @@ function AppContent() {
           <Route path="/orders" element={<ProtectedRoute element={Order} />} />
           <Route path="/products" element={<ProtectedRoute element={ProductView} />} />
           <Route path="/products/create-pr" element={<ProtectedRoute element={CreateProduct} />} />
+          <Route path="/meta-catalog-setup" element={<MetaCatalogSetup />} />
+
         
           <Route path="*" element={<NotFound />} />
         </Routes>
