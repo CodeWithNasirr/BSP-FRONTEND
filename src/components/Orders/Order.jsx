@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
+import { toast } from "react-toastify";
+
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
@@ -29,12 +31,27 @@ const Order = () => {
     }
   };
 
- const handleStatusChange = async (orderId, newStatus) => {
+  const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await axios.patch(`${API_BASE_URL}/api/orders/${orderId}/`, { status: newStatus },{ headers: { Authorization: `Token ${token}` } },);
+      const response = await axios.patch(`${API_BASE_URL}/api/orders/${orderId}/`, 
+        { status: newStatus },
+        { headers: { Authorization: `Token ${token}` } }
+      );
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
+      
+      // ✅ Show success toast
+      toast.success(`Order #${orderId} status updated to ${newStatus}`, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+
     } catch (error) {
       console.error('Error updating status:', error);
     }
@@ -83,8 +100,11 @@ const Order = () => {
               >
                 <option value="All">All</option>
                 <option value="Received">Received</option>
+                <option value="Confirmed">Confirmed</option>
                 <option value="Pending">Pending</option>
                 <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Rejected">Rejected</option>
                 <option value="Failed">Failed</option>
               </select>
             </div>
@@ -139,28 +159,34 @@ const Order = () => {
                         <div className="font-medium">{order.username}</div>
                         <div className="text-gray-600">{order.phone_number}</div>
                         <div className="text-gray-600">{order.address}</div>
-                        <div className="text-gray-600 ">{order.location}</div>
+                        <div className="text-gray-600">{order.location}</div>
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
                         <ul className="list-disc list-inside">
                           {order.items.map((item, idx) => <li key={idx}>{item}</li>)}
                         </ul>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${order.total}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{order.total}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <select
                           className={`w-full rounded-lg border-none text-sm font-semibold py-1 px-2 focus:ring-2 focus:ring-indigo-600 transition duration-150 ${
                             order.status === 'Received' ? 'bg-yellow-100 text-yellow-800' :
-                            order.status === 'Pending' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'Pending' ? 'bg-blue-200 text-blue-900' :
                             order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
+                            order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                            order.status === 'Rejected' ? 'bg-red-200 text-red-900' :
+                            'bg-red-300 text-red-900'
                           }`}
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
                         >
                           <option value="Received">Received</option>
+                          <option value="Confirmed">Confirmed</option>
                           <option value="Pending">Pending</option>
                           <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
+                          <option value="Rejected">Rejected</option>
                           <option value="Failed">Failed</option>
                         </select>
                       </td>

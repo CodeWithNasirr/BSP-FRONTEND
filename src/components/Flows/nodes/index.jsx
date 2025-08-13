@@ -5,6 +5,7 @@ import ApiNode from './ApiNode';
 import EndNode from './EndNode';
 // import MetaFlowNode from './MetaFlowNode';
 import CatalogCarouselNode from './CatalogCarouselNode';
+import Appointment_Booking from './Appointment_Booking';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
@@ -36,4 +37,5 @@ export const nodeTypes = {
   listMessageNode: ListMessageNode,
   // metaFlowNode: MetaFlowNode,
   catalogCarouselNode: CatalogCarouselNode, // ✅ Add this
+  appointment: Appointment_Booking, // ✅ Add this
 };
