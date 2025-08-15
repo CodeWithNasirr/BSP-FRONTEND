@@ -45,7 +45,7 @@ const Contacts = ({
 
   // Debounced function to fetch contacts
   const fetchContactsAndGroups = debounce(async (pageNum, search = '') => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const [contactsRes, groupsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/contacts/?page=${pageNum}&search=${encodeURIComponent(search)}`, {
