@@ -12,6 +12,49 @@ const ChatWindow = ({ recipient }) => {
   const chatContainerRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
 
+
+  // Format timestamp to match ChatList
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (isYesterday) {
+      return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+  };
+
+  // Format date for separator
+  const formatDateSeparator = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isToday) return 'Today';
+    if (isYesterday) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   // WebSocket connection
   useEffect(() => {
     if (!recipient || !token) return;
@@ -206,6 +249,15 @@ const ChatWindow = ({ recipient }) => {
       setIsSending(false);
     }
   };
+  // Group messages by date for separators
+  const groupedMessages = messages.reduce((acc, msg) => {
+    const date = new Date(msg.timestamp).toDateString();
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(msg);
+    return acc;
+  }, {});
 
   return (
     <RequireSubscription>
@@ -221,83 +273,92 @@ const ChatWindow = ({ recipient }) => {
           ref={chatContainerRef}
           className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
         >
-          <ul id="chat_messages" className="flex flex-col gap-2">
-            {[...messages]
-              .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-              .map((msg) => (
-                <li key={msg.id}>
-                  {msg.direction === 'OUTBOUND' ? (
-                    <>
-                      <div className="flex justify-end mb-2">
-                        <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-2 md:p-4 max-w-[70%]">
-                          {msg.header_text && (
-                            <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>
-                          )}
-                          {msg.media_url && (
-                            <div className="mb-2">
-                              <img
-                                src={`${msg.media_url}`}
-                                crossOrigin="anonymous"
-                                alt="Sent media"
-                                className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                }}
-                                loading="lazy"
-                              />
+          <ul id="chat_messages" className="flex flex-col gap-3">
+            {Object.keys(groupedMessages)
+              .sort((a, b) => new Date(a) - new Date(b))
+              .map((date) => (
+                <React.Fragment key={date}>
+                  <li className="text-center my-2">
+                    <span className="inline-block bg-gray-200 text-gray-700 text-sm px-4 py-1 rounded-full">
+                      {formatDateSeparator(date)}
+                    </span>
+                  </li>
+                  {groupedMessages[date]
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                    .map((msg) => (
+                      <li key={msg.id}>
+                        {msg.direction === 'OUTBOUND' ? (
+                          <>
+                            <div className="flex justify-end mb-3">
+                              <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-3 md:p-4 max-w-[70%] shadow-sm">
+                                {msg.header_text && (
+                                  <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>
+                                )}
+                                {msg.media_url && (
+                                  <div className="mb-2">
+                                    <img
+                                      src={`${msg.media_url}`}
+                                      crossOrigin="anonymous"
+                                      alt="Sent media"
+                                      className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain"
+                                      onError={(e) => {
+                                        e.target.onerror = null;
+                                      }}
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                )}
+                                <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
+                                <div className="text-xs md:text-sm text-gray-600 mt-1 flex justify-end">
+                                  <span>{formatTimestamp(msg.timestamp)} · {msg.status}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-end">
+                                <svg height="13" width="8">
+                                  <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
+                                </svg>
+                              </div>
                             </div>
-                          )}
-                          <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
-                          <div className="text-xs md:text-sm text-gray-500 mt-1">
-                            <span className="font-light">{msg.footer_text}</span>
-                            <br />
-                            {new Date(msg.timestamp).toLocaleTimeString()} · {msg.status}
-                          </div>
-                        </div>
-                        <div className="flex items-end">
-                          <svg height="10" md:height="13" width="6" md:width="8">
-                            <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
-                          </svg>
-                        </div>
-                      </div>
-                      {msg.button_text && (
-                        <div className="flex justify-end items-center mb-2">
-                          <span className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center text-blue-500 text-sm md:text-base p-1 md:p-2">
-                            {msg.button_text}
-                          </span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex justify-start mb-2">
-                      <div className="flex items-end">
-                        <svg height="10" md:height="13" width="6" md:width="8">
-                          <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
-                        </svg>
-                      </div>
-                      <div className="bg-white p-2 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg ">
-                        {msg.media_type === 'image' && msg.media_url && (
-                          <div className="mb-2">
-                            <img
-                              src={`${msg.media_url}`}
-                              crossOrigin="anonymous"
-                              alt="Received media"
-                              className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                              }}
-                              loading="lazy"
-                            />
+                            {msg.button_text && (
+                              <div className="flex justify-end items-center mb-3">
+                                <span className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center text-blue-500 text-sm md:text-base p-2 shadow-sm">
+                                  {msg.button_text}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex justify-start mb-3">
+                            <div className="flex items-end">
+                              <svg height="13" width="8">
+                                <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
+                              </svg>
+                            </div>
+                            <div className="bg-white p-3 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg shadow-sm">
+                              {msg.media_type === 'image' && msg.media_url && (
+                                <div className="mb-2">
+                                  <img
+                                    src={`${msg.media_url}`}
+                                    crossOrigin="anonymous"
+                                    alt="Received media"
+                                    className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-cover"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                    }}
+                                    loading="lazy"
+                                  />
+                                </div>
+                              )}
+                              <span className="text-sm md:text-base break-all break-words whitespace-pre-wrap overflow-hidden">{msg.text_content}</span>
+                              <div className="text-xs md:text-sm text-gray-600 mt-1">
+                                {formatTimestamp(msg.timestamp)} · {msg.status}
+                              </div>
+                            </div>
                           </div>
                         )}
-                        <span className="text-sm md:text-base break-all break-words whitespace-pre-wrap overflow-hidden">{msg.text_content}</span>
-                        <div className="text-xs md:text-sm text-gray-500 mt-1">
-                          {new Date(msg.timestamp).toLocaleTimeString()} · {msg.status}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </li>
+                      </li>
+                    ))}
+                </React.Fragment>
               ))}
           </ul>
         </div>

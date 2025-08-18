@@ -25,6 +25,13 @@ import Order from './components/Orders/Order'
 import ProductView from './components/Catalogs/ProductView'
 import CreateProduct from './components/Catalogs/CreateProduct'
 import MetaCatalogSetup from './components/Catalogs/MetaCatalogSetup'
+
+
+// Segment 
+import SegmentManager from './components/Segment/SegmentManager'
+
+import AdvancedPage from './components/AdvancedPage'
+
 // Landing pages..
 import PrivacyPolicy from './components/LandingPage/PrivacyPolicy'
 import LandingPage from './components/LandingPage/LandingPage'
@@ -69,7 +76,9 @@ const validRoutes = [
   "/orders",
   "/products",
   "/products/create-pr",
-  "/meta-catalog-setup"
+  "/meta-catalog-setup",
+  "/Segment",
+  "/advanced"
 ];
  
 function AppContent() {
@@ -100,25 +109,25 @@ function AppContent() {
   (location.pathname.startsWith("/chats/") && location.pathname.split("/").length === 3) ||
   (location.pathname === "/chats" && new URLSearchParams(location.search).has("recipient"));
 
-
+  
   return (
     <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full h-screen' : 'min-h-screen'}`}>
       {!isLoginPage && !isRegisterPage && !notFoundPage && !isLandingPage && !(isMobile && isChatWindow) && (
         <div className="text-black">
-          <Sidebar>
-            <SidebarItem icon={<MessagesSquare size={20} />} text="Dashboard" to="/dashboard" />
-            <SidebarItem icon={<ContactRound size={20} />} text="Contacts" to="/contacts" />
-            <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
-            <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
-            <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
-            <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
-            <SidebarItem icon={<Utensils size={20} />} text="Orders" to="/orders" />
-            <SidebarItem icon={<CreditCard  size={20} />} text="subscriptions" to="/subscriptions" />
-            <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
-            <SidebarItem icon={<NotebookTabs size={20} />} text="my-usage" to="/my-usage-panel" />
-            <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
-            <SidebarItem icon={<MdViewCarousel size={20} />} text="Catalogs" to="/meta-catalog-setup" />
-          </Sidebar>
+        <Sidebar>
+          {/* Basic items */}
+          <SidebarItem icon={<MessagesSquare size={20} />} text="Dashboard" to="/dashboard" />
+          <SidebarItem icon={<ContactRound size={20} />} text="Contacts" to="/contacts" />
+          <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
+          <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
+          <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
+          <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
+          <SidebarItem icon={<CreditCard size={20} />} text="Subscriptions" to="/subscriptions" />
+          <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
+          <SidebarItem icon={<NotebookTabs size={20} />} text="My Usage" to="/my-usage-panel" />
+          <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
+          <SidebarItem icon={<MdViewCarousel size={20} />} text="Advanced" to="/advanced" />
+        </Sidebar>
         </div>
       )}
 
@@ -158,6 +167,10 @@ function AppContent() {
           <Route path="/products" element={<ProtectedRoute element={ProductView} />} />
           <Route path="/products/create-pr" element={<ProtectedRoute element={CreateProduct} />} />
           <Route path="/meta-catalog-setup" element={<MetaCatalogSetup />} />
+
+          <Route path="/Segment" element={<SegmentManager />} />
+          <Route path="/advanced" element={<ProtectedRoute element={AdvancedPage} />} />
+
 
         
           <Route path="*" element={<NotFound />} />
