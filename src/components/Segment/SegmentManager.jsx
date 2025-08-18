@@ -243,45 +243,60 @@ const SegmentManager = () => {
   };
  
   return (
-    <div className="max-w-7xl mx-auto p-6 max-h-screen overflow-y-auto">
+    <div className="max-w-full mx-auto p-4 sm:p-6 max-h-screen overflow-y-auto bg-gray-50">
+      {/* Toast Notification */}
       {toast.message && (
         <div
-          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-md shadow-lg ${
-            toast.type === 'error' ? 'bg-red-500 text-white' :
-            toast.type === 'success' ? 'bg-green-500 text-white' :
-            'bg-blue-500 text-white'
-          }`}
+          className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+            toast.type === 'error'
+              ? 'bg-red-600 text-white'
+              : toast.type === 'success'
+              ? 'bg-green-600 text-white'
+              : 'bg-blue-600 text-white'
+          } sm:max-w-sm w-[calc(100%-2rem)]`}
         >
-          {toast.message}
+          <div className="flex items-center justify-between">
+            <span className="text-sm sm:text-base">{toast.message}</span>
+            <button
+              onClick={() => toast.setMessage(null)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Audience Segments</h1>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Audience Segments</h1>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
+          className="mt-3 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
         >
           Create Segment
         </button>
       </div>
 
+      {/* Create/Edit Form */}
       {showCreateForm && (
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
+        <div className="bg-white shadow-lg rounded-lg mb-6">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               {editingSegment ? 'Edit Segment' : 'Create New Segment'}
             </h2>
           </div>
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="grid grid-cols-1 gap-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Segment Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleFormChange('name', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                   placeholder="Enter segment name"
                   required
                 />
@@ -292,22 +307,22 @@ const SegmentManager = () => {
                   value={formData.description}
                   onChange={(e) => handleFormChange('description', e.target.value)}
                   rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                   placeholder="Optional description"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Condition Logic</label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
+                <div className="flex flex-col sm:flex-row sm:space-x-4">
+                  <label className="flex items-center mb-2 sm:mb-0">
                     <input
                       type="radio"
                       value="AND"
                       checked={formData.rules.logic === 'AND'}
                       onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
-                      className="mr-2"
+                      className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                     />
-                    AND (All conditions must match)
+                    <span className="text-sm sm:text-base">AND (All conditions must match)</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -315,44 +330,51 @@ const SegmentManager = () => {
                       value="OR"
                       checked={formData.rules.logic === 'OR'}
                       onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
-                      className="mr-2"
+                      className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                     />
-                    OR (Any condition can match)
+                    <span className="text-sm sm:text-base">OR (Any condition can match)</span>
                   </label>
                 </div>
               </div>
               <div>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
                   <label className="block text-sm font-medium text-gray-700">Conditions</label>
                   <button
                     type="button"
                     onClick={addCondition}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm transition duration-200"
                   >
                     Add Condition
                   </button>
                 </div>
                 {formData.rules.conditions.map((condition, index) => (
-                  <div key={index} className="flex items-center space-x-3 mb-3 p-3 bg-gray-50 rounded-md">
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3 p-3 bg-gray-50 rounded-lg"
+                  >
                     <select
                       value={condition.field}
                       onChange={(e) => updateCondition(index, 'field', e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                     >
                       <option value="">Select field...</option>
                       {availableFields.map((field) => (
-                        <option key={field.key} value={field.key}>{field.label}</option>
+                        <option key={field.key} value={field.key}>
+                          {field.label}
+                        </option>
                       ))}
                     </select>
                     <select
                       value={condition.operator}
                       onChange={(e) => updateCondition(index, 'operator', e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                       disabled={!condition.field}
                     >
                       <option value="">Select operator...</option>
                       {getOperatorsForField(condition.field).map((op) => (
-                        <option key={op.key} value={op.key}>{op.label}</option>
+                        <option key={op.key} value={op.key}>
+                          {op.label}
+                        </option>
                       ))}
                     </select>
                     <input
@@ -360,13 +382,13 @@ const SegmentManager = () => {
                       value={condition.value}
                       onChange={(e) => updateCondition(index, 'value', e.target.value)}
                       placeholder="Enter value..."
-                      className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                     />
                     {formData.rules.conditions.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeCondition(index)}
-                        className="text-red-500 hover:text-red-700 p-1"
+                        className="text-red-500 hover:text-red-700 p-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -377,9 +399,9 @@ const SegmentManager = () => {
                 ))}
               </div>
               {previewData && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Preview</h4>
-                  <p className="text-blue-800">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">Preview</h4>
+                  <p className="text-blue-800 text-sm sm:text-base">
                     This segment will match <strong>{previewData.count}</strong> contacts
                   </p>
                   {previewData.preview_contacts && previewData.preview_contacts.length > 0 && (
@@ -396,7 +418,7 @@ const SegmentManager = () => {
                     <button
                       type="button"
                       onClick={() => fetchSegmentContacts(editingSegment ? editingSegment.segment_id : selectedSegmentId)}
-                      className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-md text-sm"
+                      className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm transition duration-200"
                     >
                       View All Contacts
                     </button>
@@ -404,36 +426,36 @@ const SegmentManager = () => {
                 </div>
               )}
               {showAllContacts && paginatedContacts.length > 0 && (
-                <div className="mt-6 bg-white shadow rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">All Matching Contacts</h4>
+                <div className="mt-6 bg-white shadow-lg rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">All Matching Contacts</h4>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Purchases</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tags</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Email</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Location</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Purchases</th>
+                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Tags</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {paginatedContacts.map((contact) => (
                           <tr key={contact.id}>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.full_name}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.phone_number}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.email || 'N/A'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.location || 'N/A'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.total_purchases}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{contact.tags.join(', ') || 'N/A'}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.full_name}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.phone_number}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.email || 'N/A'}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.location || 'N/A'}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.total_purchases}</td>
+                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.tags.join(', ') || 'N/A'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-600">
+                    <div className="mb-2 sm:mb-0">
                       Showing {pagination.page_size * (pagination.page - 1) + 1} to{' '}
                       {Math.min(pagination.page_size * pagination.page, pagination.total_count)} of{' '}
                       {pagination.total_count} contacts
@@ -442,14 +464,14 @@ const SegmentManager = () => {
                       <button
                         onClick={() => handlePageChange(pagination.page - 1)}
                         disabled={!pagination.has_previous}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md disabled:opacity-50"
+                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 transition duration-200"
                       >
                         Previous
                       </button>
                       <button
                         onClick={() => handlePageChange(pagination.page + 1)}
                         disabled={!pagination.has_next}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md disabled:opacity-50"
+                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 transition duration-200"
                       >
                         Next
                       </button>
@@ -458,18 +480,18 @@ const SegmentManager = () => {
                 </div>
               )}
             </div>
-            <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+            <div className="flex justify-end space-x-3 mt-6 pt-4 sm:pt-6 border-t">
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm sm:text-base transition duration-200"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm sm:text-base transition duration-200"
               >
                 {loading ? 'Saving...' : editingSegment ? 'Update Segment' : 'Create Segment'}
               </button>
@@ -478,50 +500,45 @@ const SegmentManager = () => {
         </div>
       )}
 
+      {/* Segments List */}
       {!showCreateForm && (
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white shadow-lg rounded-lg">
           {loading ? (
-            <div className="text-center py-8">Loading segments...</div>
+            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">Loading segments...</div>
           ) : segments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
               No segments found. Create your first segment to get started.
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {segments.map((segment) => (
-                <div key={segment.segment_id} className="p-6 hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
+                <div key={segment.segment_id} className="p-4 sm:p-6 hover:bg-gray-50 transition duration-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">{segment.name}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">{segment.name}</h3>
                       {segment.description && (
                         <p className="mt-1 text-sm text-gray-600">{segment.description}</p>
                       )}
-                      <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="mt-2 flex flex-wrap items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500">
                         <span>{segment.contact_count} contacts</span>
                         <span>Created {new Date(segment.created_at).toLocaleDateString()}</span>
                         <span>Logic: {segment.rules.logic}</span>
                         <span>{segment.rules.conditions.length} conditions</span>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 mt-3 sm:mt-0">
                       <button
                         onClick={() => handleEdit(segment)}
-                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium transition duration-200"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(segment.segment_id)}
-                        className="text-red-600 hover:text-red-900 text-sm font-medium"
+                        className="text-red-600 hover:text-red-900 text-sm font-medium transition duration-200"
                       >
                         Delete
                       </button>
-                      {/* <button
-                        onClick={() => fetchSegmentContacts(segment.segment_id)}
-                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                      >
-                        View Contacts
-                      </button> */}
                     </div>
                   </div>
                 </div>
