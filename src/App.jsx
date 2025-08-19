@@ -29,7 +29,7 @@ import MetaCatalogSetup from './components/Catalogs/MetaCatalogSetup'
 
 // Segment 
 import SegmentManager from './components/Segment/SegmentManager'
-
+import RFMPreview from './components/Segment/RFMPreview'
 import AdvancedPage from './components/AdvancedPage'
 
 // Landing pages..
@@ -78,7 +78,8 @@ const validRoutes = [
   "/products/create-pr",
   "/meta-catalog-setup",
   "/Segment",
-  "/advanced"
+  "/advanced",
+  "/rfm-preview"
 ];
  
 function AppContent() {
@@ -108,7 +109,7 @@ function AppContent() {
   const isChatWindow =
   (location.pathname.startsWith("/chats/") && location.pathname.split("/").length === 3) ||
   (location.pathname === "/chats" && new URLSearchParams(location.search).has("recipient"));
-
+  const [toast, setToast] = useState({ message: null, type: null });
   
   return (
     <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full h-screen' : 'min-h-screen'}`}>
@@ -170,6 +171,7 @@ function AppContent() {
 
           <Route path="/Segment" element={<SegmentManager />} />
           <Route path="/advanced" element={<ProtectedRoute element={AdvancedPage} />} />
+          <Route path="/rfm-preview" element={<RFMPreview toast={toast} setToast={setToast} />} />
 
 
         

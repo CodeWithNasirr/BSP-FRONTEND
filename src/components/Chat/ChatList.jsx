@@ -383,6 +383,7 @@ const ChatList = ({ onSelectConversation }) => {
           phone_number: selectedContact.recipient,
           full_name: selectedContact.user_name,
           location: purchaseForm.location,
+          amount: purchaseForm.amount,
         },
         {
           headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
@@ -390,7 +391,7 @@ const ChatList = ({ onSelectConversation }) => {
       );
       toast.success('Purchase marked successfully');
       setShowPurchaseModal(false);
-      setPurchaseForm({location: '' });
+      setPurchaseForm({amount:0 ,location: '' });
       setSelectedContact(null);
       fetchChatList(pageRef.current, searchQuery, selectedTags);
     } catch (error) {
@@ -554,12 +555,26 @@ const ChatList = ({ onSelectConversation }) => {
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  name="amount"
+                  value={purchaseForm.amount}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, amount: e.target.value })}
+                  placeholder="Enter Purchase Amount"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => {
                     setShowPurchaseModal(false);
-                    setPurchaseForm({location: '' });
+                    setPurchaseForm({amount:0,location: '' });
                     setSelectedContact(null);
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"

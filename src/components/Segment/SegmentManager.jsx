@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, } from 'react';
 import API_BASE_URL from '../../config';
-
+import { Link } from "react-router-dom"
 const SegmentManager = () => {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -241,6 +241,31 @@ const SegmentManager = () => {
       fetchSegmentContacts(selectedSegmentId, newPage, pagination.page_size);
     }
   };
+
+  const [loadingRFM, setLoadingRFM] = useState(false);
+  const handleRunRFM = async () => {
+    try {
+      setLoadingRFM(true); // ⏳ start loading
+      const response = await apiCall(`${API_BASE_URL}/api/segments/run-rfm/`, {
+        method: "POST",
+        body: JSON.stringify({}), // optional payload
+      });
+
+      showToast(response.message, "success");
+
+      // Refresh segments list
+      const segmentsResponse = await apiCall(`${API_BASE_URL}/api/segments/`);
+      setSegments(segmentsResponse.data || []);
+    } catch (error) {
+      showToast(
+        `${error.message || error} - Failed to run RFM segmentation`,
+        "error"
+      );
+    } finally {
+      setLoadingRFM(false); // ✅ stop loading
+    }
+  };
+
  
   return (
     <div className="max-w-full mx-auto p-4 sm:p-6 max-h-screen overflow-y-auto bg-gray-50">
@@ -258,9 +283,9 @@ const SegmentManager = () => {
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base">{toast.message}</span>
             <button
-              onClick={() => toast.setMessage(null)}
-              className="ml-2 text-white hover:text-gray-200"
-            >
+                onClick={() => setToast({ message: '', type: '' })}
+                className="ml-2 text-white hover:text-gray-200"
+              >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -272,12 +297,30 @@ const SegmentManager = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Audience Segments</h1>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="mt-3 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
-        >
-          Create Segment
-        </button>
+        <div className="flex space-x-2 mt-3 sm:mt-0">
+
+            <Link to={"/rfm-preview"}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
+          >
+            Preview RFM
+          </Link>
+
+          <button
+            onClick={handleRunRFM}
+            disabled={loadingRFM}
+            className={`${
+              loadingRFM ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            } text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm`}
+          >
+            {loadingRFM ? "Running..." : "Run RFM Segmentation"}
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
+          >
+            Create Segment
+          </button>
+        </div>
       </div>
 
       {/* Create/Edit Form */}

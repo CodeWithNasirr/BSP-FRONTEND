@@ -778,6 +778,7 @@ const Contacts = ({
     location: '',
     tags: '',
     total_purchases: 0,
+    total_spent:0,
   });
   const [activeDropdownId, setActiveDropdownId] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -918,6 +919,7 @@ const Contacts = ({
       location: formData.location,
       tags: formData.tags,
       total_purchases: formData.total_purchases,
+      total_spent : formData.total_spent,
     };
     const filteredData = Object.fromEntries(
       Object.entries(requestData).filter(([_, value]) => typeof value === "string" ? value.trim() !== "" : value != null)
@@ -942,6 +944,7 @@ const Contacts = ({
         location: '',
         tags: '',
         total_purchases: 0,
+        total_spent :0,
       });
       setShowAddContactForm(false);
     } catch (error) {
@@ -955,6 +958,7 @@ const Contacts = ({
         location: '',
         tags: '',
         total_purchases: 0,
+        total_spent : 0,
       });
     }
   };
@@ -970,6 +974,7 @@ const Contacts = ({
       location: formData.location,
       tags: formData.tags,
       total_purchases: formData.total_purchases,
+      total_spent : formData.total_spent,
     };
     const filteredData = Object.fromEntries(
       Object.entries(requestData).filter(([_, value]) => typeof value === "string" ? value.trim() !== "" : value != null)
@@ -994,6 +999,7 @@ const Contacts = ({
         location: '',
         tags: '',
         total_purchases: 0,
+        total_spent:0,
       });
       setSelectedContact(null);
     } catch (error) {
@@ -1027,6 +1033,7 @@ const Contacts = ({
       location: contact.location || '',
       tags: contact.tags?.join(', ') || '',
       total_purchases: contact.total_purchases || 0,
+      total_spent: contact.total_spent || 0,
     });
   };
 
@@ -1062,6 +1069,8 @@ const Contacts = ({
                       location: '',
                       tags: '',
                       total_purchases: 0,
+                      total_spent: 0,
+                      
                     });
                   }}
                 >
@@ -1278,6 +1287,18 @@ const Contacts = ({
                   onClick={(e) => {
                     e.preventDefault();
                     setShowAddContactForm(!showAddContactForm);
+                    setFormData({
+                      firstName: '',
+                      lastName: '',
+                      phone_number: '',
+                      email: '',
+                      group_name: '',
+                      location: '',
+                      tags: '',
+                      total_purchases: 0,
+                      total_spent: 0,
+                      
+                    });
                   }}
                 >
                   Add Contact
@@ -1427,6 +1448,20 @@ const Contacts = ({
                         className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
                         type="number"
                         min="0"
+                      />
+                    </div>
+                    <div className="sm:col-span-3">
+                      <label htmlFor="total_spent" className="block text-sm leading-6 text-gray-900">
+                        Total Spent (₹)
+                      </label>
+                      <input
+                        name="total_spent"
+                        value={formData.total_spent}
+                        onChange={handleChange}
+                        className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                        type="number"
+                        min="0"
+                        step="0.01"
                       />
                     </div>
                     <div className="sm:col-span-6">
@@ -1605,6 +1640,22 @@ const Contacts = ({
                         min="0"
                       />
                     </div>
+
+                     <div className="sm:col-span-3">
+                      <label htmlFor="total_spent" className="block text-sm leading-6 text-gray-900">
+                        Total Spent (₹)
+                      </label>
+                      <input
+                        name="total_spent"
+                        value={formData.total_spent}
+                        onChange={handleChange}
+                        className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+
                     <div className="sm:col-span-6">
                       <label htmlFor="group_name" className="block text-sm leading-6 text-gray-900">
                         Group
