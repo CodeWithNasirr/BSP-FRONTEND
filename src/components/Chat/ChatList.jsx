@@ -214,8 +214,8 @@ const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]); // Array of { tag: string, count: number }
-  const [showTags, setShowTags] = useState(false); // Toggle tag filter visibility
+  const [availableTags, setAvailableTags] = useState([]);
+  const [showTags, setShowTags] = useState(false);
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
   const [loading, setLoading] = useState(false);
@@ -223,7 +223,7 @@ const ChatList = ({ onSelectConversation }) => {
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [purchaseForm, setPurchaseForm] = useState({ amount: '', location: '' });
+  const [purchaseForm, setPurchaseForm] = useState({ amount: '', location: '', tags: [], tagInput: '' });
   const pageRef = useRef(page);
 
   // Sync ref with state
@@ -231,17 +231,20 @@ const ChatList = ({ onSelectConversation }) => {
     pageRef.current = page;
   }, [page]);
 
-  // Fetch available tags with counts
-  const fetchTags = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
-        headers: { Authorization: `Token ${token}` },
-      });
-      setAvailableTags(response.data.tags || []);
-    } catch (error) {
-      toast.error('Failed to fetch tags');
-    }
-  };
+  // Fetch available tags from ContactTagsView
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        setAvailableTags(response.data.tags.map((t) => t.tag));
+      } catch (error) {
+        toast.error('Failed to fetch tags');
+      }
+    };
+    fetchTags();
+  }, []);
 
   // Debounced fetchChatList
   const debouncedFetchChatList = useCallback(
@@ -320,7 +323,6 @@ const ChatList = ({ onSelectConversation }) => {
     };
 
     const ws = connectWebSocket();
-    fetchTags();
 
     return () => {
       if (ws) ws.close();
@@ -344,6 +346,33 @@ const ChatList = ({ onSelectConversation }) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  };
+
+  // Handle purchase tag input
+  const handlePurchaseTagInput = (e) => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      tagInput: e.target.value,
+    }));
+  };
+
+  // Add purchase tag
+  const addPurchaseTag = (tag) => {
+    if (tag && !purchaseForm.tags.includes(tag)) {
+      setPurchaseForm((prev) => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+        tagInput: '',
+      }));
+    }
+  };
+
+  // Remove purchase tag
+  const removePurchaseTag = (tag) => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }));
   };
 
   // Format timestamp
@@ -384,6 +413,7 @@ const ChatList = ({ onSelectConversation }) => {
           full_name: selectedContact.user_name,
           location: purchaseForm.location,
           amount: purchaseForm.amount,
+          tags: purchaseForm.tags,
         },
         {
           headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
@@ -391,7 +421,7 @@ const ChatList = ({ onSelectConversation }) => {
       );
       toast.success('Purchase marked successfully');
       setShowPurchaseModal(false);
-      setPurchaseForm({amount:0 ,location: '' });
+      setPurchaseForm({ amount: '', location: '', tags: [], tagInput: '' });
       setSelectedContact(null);
       fetchChatList(pageRef.current, searchQuery, selectedTags);
     } catch (error) {
@@ -417,7 +447,7 @@ const ChatList = ({ onSelectConversation }) => {
         </div>
         {showTags && (
           <div className="flex flex-wrap gap-2">
-            {availableTags.map(({ tag, count }) => (
+            {availableTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => handleTagChange(tag)}
@@ -427,7 +457,7 @@ const ChatList = ({ onSelectConversation }) => {
                     : 'bg-gray-200 text-gray-700'
                 }`}
               >
-                {tag} ({count})
+                {tag}
               </button>
             ))}
           </div>
@@ -543,7 +573,6 @@ const ChatList = ({ onSelectConversation }) => {
                   className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700">Location</label>
                 <input
@@ -568,13 +597,62 @@ const ChatList = ({ onSelectConversation }) => {
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Tags</label>
+                <div className="mt-1 flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md">
+                  {purchaseForm.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removePurchaseTag(tag)}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    value={purchaseForm.tagInput}
+                    onChange={handlePurchaseTagInput}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        addPurchaseTag(purchaseForm.tagInput.trim());
+                      }
+                    }}
+                    placeholder="Add tags (press Enter or comma)"
+                    className="flex-1 border-none focus:outline-none focus:ring-0 text-sm"
+                  />
+                </div>
+                {availableTags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {availableTags
+                      .filter((tag) => tag.toLowerCase().includes((purchaseForm.tagInput || '').toLowerCase()) && !purchaseForm.tags.includes(tag))
+                      .slice(0, 10)
+                      .map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => addPurchaseTag(tag)}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => {
                     setShowPurchaseModal(false);
-                    setPurchaseForm({amount:0,location: '' });
+                    setPurchaseForm({ amount: '', location: '', tags: [], tagInput: '' });
                     setSelectedContact(null);
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
