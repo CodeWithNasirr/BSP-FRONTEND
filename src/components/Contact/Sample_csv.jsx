@@ -3,8 +3,8 @@ import React from "react";
 const DownloadCSVTemplate = () => {
   const handleDownload = () => {
     const csvContent =
-      "full_name,phone_number,email,initial_name,source\n" +
-      "John Doe,9876543210,john@example.com,JD,CRM\n";
+      "full_name,phone_number,email,initial_name,source,location,tags,total_purchases,last_interaction,last_purchase_at,total_spent\n" +
+      "John Doe,9876543210,john@example.com,JD,CRM,Bhubaneswar,VIP,5,,,1000,\n"
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
