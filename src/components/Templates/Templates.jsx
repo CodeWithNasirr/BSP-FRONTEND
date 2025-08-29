@@ -1,98 +1,93 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate,Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from "react-toastify";
 import TemplateViewModal from "./TemplateViewModal.jsx";
 import RequireSubscription from "../Subscriptions/RequireSubscription.jsx";
+
 function Templates() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templates, setTemplates] = useState({ Data: [] }); // Initialize with empty Data array
+  const [loading, setLoading] = useState(true);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const token = localStorage.getItem("authToken");
+  const navigate = useNavigate();
 
   const handleViewTemplate = (template) => {
     setSelectedTemplate(template);
     setViewModalOpen(true);
   };
-  const token = localStorage.getItem("authToken");
-  const navigate = useNavigate();
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(true);
 
-  const [activeDropdownId, setActiveDropdownId] = useState(null);
   const toggleDropdown = (dropdownId) => {
     setActiveDropdownId(activeDropdownId === dropdownId ? null : dropdownId);
   };
 
+  // Fetch templates from API
+  const fetchTemplates = async () => {
+    // setLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/whatsapp/templates/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      setTemplates(response.data); // Update state with fetched templates
+      setLoading(false);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to fetch templates");
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
   const delete_template = async (template_name) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete "${template_name}"?`);
-    if (!confirmDelete) return; // If user cancels, exit function
-  
+    if (!confirmDelete) return;
+
     try {
       const response = await axios.delete(`${API_BASE_URL}/api/whatsapp/templates/${template_name}/`, {
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       toast.success(response.data.message, {
-        onClose: () => {
-          window.location.reload();
-        },
-        autoClose: 2000 // Close toast after 2 seconds
+        autoClose: 2000,
       });
+      // Refetch templates to update the list in real-time
+      await fetchTemplates();
     } catch (error) {
-      toast.error("Error: " + (error.response?.data?.error || error.message));
+      toast.error(error.response?.data?.error || error.message);
     }
   };
 
-  const handleSync = async (e) => {
+  const handleSync = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/api/whatsapp/templates/sync/`, {
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       toast.success(response.data.message, {
-        onClose: () => {
-          window.location.reload();
-        },
-        autoClose: 2000 // Close toast after 2 seconds
+        autoClose: 2000,
       });
+      // Refetch templates to update the list in real-time
+      await fetchTemplates();
     } catch (error) {
-      toast.error((error.response?.data?.error || error.message));
+      toast.error(error.response?.data?.error || error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  // Fetch templates from API
-  useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/api/whatsapp/templates/`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      .then((response) => {
-        setTemplates(response.data);
-        setLoading(false);
-        // console.log(templates.Data);
-      })
-      .catch((error) => {
-        toast.error(error.response.data.error);
-        // console.error("Error fetching templates:", error);
-        setLoading(false);
-      });
-  }, []);
-    <TemplateViewModal
-    isOpen={viewModalOpen}
-    onClose={() => setViewModalOpen(false)}
-    template={selectedTemplate}
-  />
 
 
 

@@ -19,6 +19,7 @@ function CreateTemplate() {
     template_category: "",
     header_type: "",
     header_text: "",
+    header_image_file_url: "",
     header_img_video_file_url: "",
     body_text: "",
     footer_text: "",
@@ -29,6 +30,7 @@ function CreateTemplate() {
     placeholder_mappings: {}, // Store variable to contact field mappings
     
   });
+
 
   const [variables, setVariables] = useState([]);
 
@@ -180,6 +182,7 @@ const resetFormData = () => {
     template_category: "",
     header_type: "",
     header_text: "",
+    header_image_file_url: "",
     header_img_video_file_url: "",
     body_text: "",
     footer_text: "",
@@ -191,7 +194,7 @@ const resetFormData = () => {
   });
 };
 
-  const {isConnected} = useContext(Context)
+  const {isConnected} = useContext(Context) 
   return (
     <RequireSubscription>
   <div className="main bg-zinc-50 min-h-screen px-4 sm:px-6">
@@ -370,158 +373,45 @@ const resetFormData = () => {
             </div>
 
             {activeButton === "TEXT" && (
-              <div className="Text py-2">
-                <input
-                  value={formData.header_text}
-                  onChange={handleChange}
-                  placeholder="Enter Heading text..."
-                  className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                  type="text"
-                  name="header_text"
-                  id=""
-                />
-              </div>
-            )}
-            {activeButton === "IMAGE" && (
-              <div className="Img flex justify-center px-4 sm:px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <input
-                  onChange={handleChange}
-                  type="file"
-                  className="sr-only"
-                  accept=".jpg, .png"
-                  id="file-upload"
-                  name="header_image_file_url"
-                />
-                <div className="text-center">
-                  <div>
-                    <label htmlFor="file-upload">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M14 9a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0Z"
-                        ></path>
-                        <path
-                          fill="currentColor"
-                          fillRule="evenodd"
-                          d="M7.268 4.658a54.647 54.647 0 0 1 9.465 0l1.51.132a3.138 3.138 0 0 1 2.831 2.66a30.604 30.604 0 0 1 0 9.1a3.138 3.138 0 0 1-2.831 2.66l-1.51.131c-3.15.274-6.316.274-9.465 0l-1.51-.131a3.138 3.138 0 0 1-2.832-2.66a30.601 30.601 0 0 1 0-9.1a3.138 3.138 0 0 1 2.831-2.66l1.51-.132Zm9.335 1.495a53.147 53.147 0 0 0-9.206 0l-1.51.131A1.638 1.638 0 0 0 4.41 7.672a29.101 29.101 0 0 0-.311 5.17L7.97 8.97a.75.75 0 0 1 1.09.032l3.672 4.13l2.53-.844a.75.75 0 0 1 .796.21l3.519 3.91a29.101 29.101 0 0 0 .014-8.736a1.638 1.638 0 0 0-1.478-1.388l-1.51-.131Zm2.017 11.435l-3.349-3.721l-2.534.844a.75.75 0 0 1-.798-.213l-3.471-3.905l-4.244 4.243c.049.498.11.996.185 1.491a1.638 1.638 0 0 0 1.478 1.389l1.51.131c3.063.266 6.143.266 9.206 0l1.51-.131c.178-.016.35-.06.507-.128Z"
-                          clipRule="evenodd"
-                        ></path>
-                      </svg>
-                    </label>
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                      >
-                        <span>
-                          Provide examples of the variables or media in the
-                          header
-                        </span>
+                    <div className="sm:col-span-6">
+                      <label htmlFor="header_text" className="block text-sm leading-6 text-gray-900">
+                        Header Text
                       </label>
+                      <input
+                        value={formData.header_text}
+                        onChange={handleChange}
+                        placeholder="Enter Heading text..."
+                        className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                        type="text"
+                        name="header_text"
+                      />
                     </div>
-                    <p className="text-xs text-gray-500">
-                      PNG or JPG files only
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {activeButton === "VIDEO" && (
-              <div className="Video flex justify-center px-4 sm:px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <input
-                  onChange={handleChange}
-                  type="file"
-                  className="sr-only"
-                  accept=".mp4"
-                  id="file-upload"
-                  name="header_video_file_url"
-                />
-                <div className="text-center">
-                  <div>
-                    <label htmlFor="file-upload">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          d="M2 11.5c0-3.287 0-4.931.908-6.038a4 4 0 0 1 .554-.554C4.57 4 6.212 4 9.5 4c3.287 0 4.931 0 6.038.908a4 4 0 0 1 .554.554C17 6.57 17 8.212 17 11.5v1c0 3.287 0 4.931-.908 6.038a4.001 4.001 0 0 1-.554.554C14.43 20 12.788 20 9.5 20c-3.287 0-4.931 0-6.038-.908a4 4 0 0 1-.554-.554C2 17.43 2 15.788 2 12.5v-1Zm15-2l.658-.329c1.946-.973 2.92-1.46 3.63-1.02c.712.44.712 1.528.712 3.703v.292c0 2.176 0 3.263-.711 3.703c-.712.44-1.685-.047-3.63-1.02L17 14.5v-5Z"
-                        ></path>
-                      </svg>
-                    </label>
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                      >
-                        <span>
-                          Provide examples of the variables or media in the
-                          header
-                        </span>
+                  )}
+
+                  {(activeButton === "IMAGE" || activeButton === "VIDEO") && (
+                    <div className="sm:col-span-6">
+                      <label htmlFor="header_img_video_file_url" className="block text-sm leading-6 text-gray-900">
+                        Upload {activeButton === "IMAGE" ? "Image" : "Video"}
                       </label>
+                      <input
+                        name={activeButton === "IMAGE" ? "header_image_file_url" : "header_img_video_file_url"}
+                        type="file"
+                        accept={activeButton === "IMAGE" ? "image/jpeg,image/png" : "video/mp4"}
+                        onChange={handleChange}
+                        className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                      />
+                      {activeButton === "IMAGE" && formData.header_image_file_url && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          Selected: {formData.header_image_file_url.name}
+                        </p>
+                      )}
+                      {activeButton === "VIDEO" && formData.header_img_video_file_url && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          Selected: {formData.header_img_video_file_url.name}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-500">MP4 files only</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {activeButton === "DOCUMENT" && (
-              <div className="Doc flex justify-center px-4 sm:px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <input
-                  onChange={handleChange}
-                  type="file"
-                  className="sr-only"
-                  accept=".pdf"
-                  id="file-upload"
-                  name="header_document_file_url"
-                />
-                <div className="text-center">
-                  <div>
-                    <label htmlFor="file-upload">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M18.53 9L13 3.47a.75.75 0 0 0-.53-.22H8A2.75 2.75 0 0 0 5.25 6v12A2.75 2.75 0 0 0 8 20.75h8A2.75 2.75 0 0 0 18.75 18V9.5a.75.75 0 0 0-.22-.5Zm-5.28-3.19l2.94 2.94h-2.94ZM16 19.25H8A1.25 1.25 0 0 1 6.75 18V6A1.25 1.25 0 0 1 8 4.75h3.75V9.5a.76.76 0 0 0 .75.75h4.75V18A1.25 1.25 0 0 1 16 19.25Z"
-                        ></path>
-                        <path
-                          fill="currentColor"
-                          d="M13.49 14.85a3.15 3.15 0 0 1-1.31-1.66a4.44 4.44 0 0 0 .19-2a.8.8 0 0 0-1.52-.19a5 5 0 0 0 .25 2.4A29 29 0 0 1 9.83 16c-.71.4-1.68 1-1.83 1.69c-.12.56.93 2 2.72-1.12a18.58 18.58 0 0 1 2.44-.72a4.72 4.72 0 0 0 2 .61a.82.82 0 0 0 .62-1.38c-.42-.43-1.67-.31-2.29-.23Zm-4.78 3a4.32 4.32 0 0 1 1.09-1.24c-.68 1.08-1.09 1.27-1.09 1.25Zm2.92-6.81c.26 0 .24 1.15.06 1.46a3.07 3.07 0 0 1-.06-1.45Zm-.87 4.88a14.76 14.76 0 0 0 .88-1.92a3.88 3.88 0 0 0 1.08 1.26a12.35 12.35 0 0 0-1.96.67Zm4.7-.18s-.18.22-1.33-.28c1.25-.08 1.46.21 1.33.29Z"
-                        ></path>
-                      </svg>
-                    </label>
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="file-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                      >
-                        <span>
-                          Provide examples of the variables or media in the
-                          header
-                        </span>
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500">PDF files only</p>
-                  </div>
-                </div>
-              </div>
-            )}
+                  )}
 
             <h2 className="text-slate-600">
               Body <span className="text-xs">(Required)</span>
