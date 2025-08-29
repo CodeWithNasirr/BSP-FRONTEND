@@ -9,12 +9,13 @@ import RequireSubscription from "../Subscriptions/RequireSubscription.jsx";
 function Templates() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  console.log(selectedTemplate)
   const [templates, setTemplates] = useState({ Data: [] }); // Initialize with empty Data array
   const [loading, setLoading] = useState(true);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const token = localStorage.getItem("authToken");
   const navigate = useNavigate();
-
+  console.log(templates)
   const handleViewTemplate = (template) => {
     setSelectedTemplate(template);
     setViewModalOpen(true);
