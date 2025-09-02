@@ -113,6 +113,7 @@ function CreateCampaigns() {
     const template = templates.find((t) => t.template_name === formData.template_name);
     setSelectedTemplate(template);
     setIsModalOpen(!!template); // Update modal visibility
+    console.log(template)
     if (template?.body_text) {
       const regex = /{{\d+}}/g;
       const matches = template.body_text.match(regex) || [];
@@ -388,6 +389,7 @@ function CreateCampaigns() {
                       variables={variables}
                       formData={formData}
                       setFormData={setFormData}
+                      template = {selectedTemplate}
                     />
 
                     {selectedTemplate && selectedTemplate.header_type?.toUpperCase() === 'IMAGE' && (
