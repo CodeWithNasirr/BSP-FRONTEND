@@ -1,6 +1,7 @@
-import React, { useState, useEffect, } from 'react';
+import React, { useState, useEffect } from 'react';
 import API_BASE_URL from '../../config';
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
+
 const SegmentManager = () => {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,8 +20,11 @@ const SegmentManager = () => {
     has_next: false,
     has_previous: false,
   });
-  const [showAllContacts, setShowAllContacts] = useState(false);
+  const [showContactsModal, setShowContactsModal] = useState(false);
   const [selectedSegmentId, setSelectedSegmentId] = useState(null);
+  const [selectedSegmentName, setSelectedSegmentName] = useState('');
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -99,22 +103,22 @@ const SegmentManager = () => {
     }
   };
 
-  const fetchSegmentContacts = async (segmentId, page = 1, pageSize = 20) => {
+  const fetchSegmentContacts = async (segmentId, segmentName, page = 1, pageSize = 20) => {
     try {
-      setLoading(true);
+      setContactsLoading(true);
       const response = await apiCall(
         `${API_BASE_URL}/api/segments/${segmentId}/contacts/?page=${page}&page_size=${pageSize}`
       );
       setPaginatedContacts(response.contacts || []);
       setPagination(response.pagination);
-      setShowAllContacts(true);
       setSelectedSegmentId(segmentId);
+      setSelectedSegmentName(segmentName);
+      setShowContactsModal(true);
     } catch (error) {
       showToast('Failed to fetch segment contacts', 'error');
       setPaginatedContacts([]);
-      setShowAllContacts(false);
     } finally {
-      setLoading(false);
+      setContactsLoading(false);
     }
   };
 
@@ -214,6 +218,12 @@ const SegmentManager = () => {
       });
       showToast('Segment deleted successfully', 'success');
       fetchSegments();
+      if (selectedSegmentId === segmentId) {
+        setShowContactsModal(false);
+        setPaginatedContacts([]);
+        setSelectedSegmentId(null);
+        setSelectedSegmentName('');
+      }
     } catch (error) {
       showToast('Failed to delete segment', 'error');
     }
@@ -231,62 +241,68 @@ const SegmentManager = () => {
     setEditingSegment(null);
     setShowCreateForm(false);
     setPreviewData(null);
-    setShowAllContacts(false);
-    setPaginatedContacts([]);
-    setSelectedSegmentId(null);
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.total_pages) {
-      fetchSegmentContacts(selectedSegmentId, newPage, pagination.page_size);
+    if (newPage >= 1 && newPage <= pagination.total_pages && selectedSegmentId) {
+      fetchSegmentContacts(selectedSegmentId, selectedSegmentName, newPage, pagination.page_size);
     }
   };
 
   const [loadingRFM, setLoadingRFM] = useState(false);
   const handleRunRFM = async () => {
     try {
-      setLoadingRFM(true); // ⏳ start loading
+      setLoadingRFM(true);
       const response = await apiCall(`${API_BASE_URL}/api/segments/run-rfm/`, {
         method: "POST",
-        body: JSON.stringify({}), // optional payload
+        body: JSON.stringify({}),
       });
-
       showToast(response.message, "success");
-
-      // Refresh segments list
-      const segmentsResponse = await apiCall(`${API_BASE_URL}/api/segments/`);
-      setSegments(segmentsResponse.data || []);
+      fetchSegments();
     } catch (error) {
       showToast(
         `${error.message || error} - Failed to run RFM segmentation`,
         "error"
       );
     } finally {
-      setLoadingRFM(false); // ✅ stop loading
+      setLoadingRFM(false);
     }
   };
 
- 
+  const closeContactsModal = () => {
+    setShowContactsModal(false);
+    setPaginatedContacts([]);
+    setSelectedSegmentId(null);
+    setSelectedSegmentName('');
+    setSearchTerm('');
+  };
+
+  // Filter segments based on search
+  const filteredSegments = segments.filter(segment =>
+    segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    segment.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="max-w-full mx-auto p-4 sm:p-6 max-h-screen overflow-y-auto bg-gray-50">
+    <div className="max-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Toast Notification */}
       {toast.message && (
         <div
-          className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg transition-all duration-300 transform ${
             toast.type === 'error'
-              ? 'bg-red-600 text-white'
+              ? 'bg-red-500 text-white'
               : toast.type === 'success'
-              ? 'bg-green-600 text-white'
-              : 'bg-blue-600 text-white'
-          } sm:max-w-sm w-[calc(100%-2rem)]`}
+              ? 'bg-green-500 text-white'
+              : 'bg-blue-500 text-white'
+          } max-w-sm animate-in slide-in-from-right`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm sm:text-base">{toast.message}</span>
+            <span className="font-medium">{toast.message}</span>
             <button
-                onClick={() => setToast({ message: '', type: '' })}
-                className="ml-2 text-white hover:text-gray-200"
-              >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              onClick={() => setToast({ message: '', type: '' })}
+              className="ml-4 text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -294,302 +310,539 @@ const SegmentManager = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Audience Segments</h1>
-        <div className="flex space-x-2 mt-3 sm:mt-0">
-
-            <Link to={"/rfm-preview"}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
-          >
-            Preview RFM
-          </Link>
-
-          <button
-            onClick={handleRunRFM}
-            disabled={loadingRFM}
-            className={`${
-              loadingRFM ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-            } text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm`}
-          >
-            {loadingRFM ? "Running..." : "Run RFM Segmentation"}
-          </button>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition duration-200 shadow-sm"
-          >
-            Create Segment
-          </button>
-        </div>
-      </div>
-
-      {/* Create/Edit Form */}
-      {showCreateForm && (
-        <div className="bg-white shadow-lg rounded-lg mb-6">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-              {editingSegment ? 'Edit Segment' : 'Create New Segment'}
-            </h2>
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+          <div className="sticky top-0 z-40 bg-gradient-to-r from-white to-gray-50 border-b border-gray-200">
+            {/* Top Action Bar */}
+        <div className="px-6 py-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Audience Segments
+              </h1>
+              <p className="text-gray-600">
+                Create and manage customer segments for targeted marketing
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/rfm-preview"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl font-medium transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Preview RFM
+              </Link>
+              <button
+                onClick={handleRunRFM}
+                disabled={loadingRFM}
+                className={`${
+                  loadingRFM ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transform hover:-translate-y-0.5"
+                } text-white px-6 py-3 rounded-xl font-medium transition duration-200 shadow-lg hover:shadow-xl`}
+              >
+                {loadingRFM ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5 inline-block mr-2" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Running...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Run RFM Segmentation
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-6 py-3 rounded-xl font-medium transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create Segment
+              </button>
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Segment Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleFormChange('name', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                  placeholder="Enter segment name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => handleFormChange('description', e.target.value)}
-                  rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                  placeholder="Optional description"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Condition Logic</label>
-                <div className="flex flex-col sm:flex-row sm:space-x-4">
-                  <label className="flex items-center mb-2 sm:mb-0">
+        </div>
+        </div>
+
+        {/* Create/Edit Form */}
+        {showCreateForm && (
+          <div className="bg-white shadow-2xl rounded-2xl mb-8 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-6">
+              <h2 className="text-2xl font-bold text-white">
+                {editingSegment ? 'Edit Segment' : 'Create New Segment'}
+              </h2>
+              <p className="text-indigo-100 mt-1">
+                {editingSegment ? 'Update your segment configuration' : 'Define conditions to create a targeted audience'}
+              </p>
+            </div>
+            <form onSubmit={handleSubmit} className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Segment Name *</label>
                     <input
-                      type="radio"
-                      value="AND"
-                      checked={formData.rules.logic === 'AND'}
-                      onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
-                      className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleFormChange('name', e.target.value)}
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Enter segment name"
+                      required
                     />
-                    <span className="text-sm sm:text-base">AND (All conditions must match)</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      value="OR"
-                      checked={formData.rules.logic === 'OR'}
-                      onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
-                      className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => handleFormChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Optional description"
                     />
-                    <span className="text-sm sm:text-base">OR (Any condition can match)</span>
-                  </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Condition Logic</label>
+                    <div className="flex space-x-6">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          value="AND"
+                          checked={formData.rules.logic === 'AND'}
+                          onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
+                          className="mr-3 h-5 w-5 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm font-medium">AND (All conditions must match)</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          value="OR"
+                          checked={formData.rules.logic === 'OR'}
+                          onChange={(e) => handleRulesChange({ ...formData.rules, logic: e.target.value })}
+                          className="mr-3 h-5 w-5 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm font-medium">OR (Any condition can match)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {previewData && (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+                      <h4 className="font-bold text-blue-900 mb-3 flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Live Preview
+                      </h4>
+                      <p className="text-blue-800 text-lg mb-4">
+                        This segment will match <strong className="text-2xl text-blue-900">{previewData.count}</strong> contacts
+                      </p>
+                      {previewData.preview_contacts && previewData.preview_contacts.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-blue-700">Sample contacts:</p>
+                          <div className="space-y-1">
+                            {previewData.preview_contacts.map((contact, i) => (
+                              <div key={i} className="text-sm text-blue-600 bg-white bg-opacity-50 px-3 py-2 rounded-lg">
+                                {contact.full_name} ({contact.phone_number})
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div>
-                <div className="flex justify-between items-center mb-3 sm:mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Conditions</label>
+
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-6">
+                  <label className="block text-sm font-semibold text-gray-700">Conditions</label>
                   <button
                     type="button"
                     onClick={addCondition}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm transition duration-200"
+                    className="bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 px-4 py-2 rounded-xl font-medium transition duration-200 flex items-center"
                   >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                    </svg>
                     Add Condition
                   </button>
                 </div>
-                {formData.rules.conditions.map((condition, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3 p-3 bg-gray-50 rounded-lg"
+                <div className="space-y-4">
+                  {formData.rules.conditions.map((condition, index) => (
+                    <div
+                      key={index}
+                      className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-2">Field</label>
+                          <select
+                            value={condition.field}
+                            onChange={(e) => updateCondition(index, 'field', e.target.value)}
+                            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                          >
+                            <option value="">Select field...</option>
+                            {availableFields.map((field) => (
+                              <option key={field.key} value={field.key}>
+                                {field.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-2">Operator</label>
+                          <select
+                            value={condition.operator}
+                            onChange={(e) => updateCondition(index, 'operator', e.target.value)}
+                            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                            disabled={!condition.field}
+                          >
+                            <option value="">Select operator...</option>
+                            {getOperatorsForField(condition.field).map((op) => (
+                              <option key={op.key} value={op.key}>
+                                {op.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-end space-x-2">
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-2">Value</label>
+                            <input
+                              type="text"
+                              value={condition.value}
+                              onChange={(e) => updateCondition(index, 'value', e.target.value)}
+                              placeholder="Enter value..."
+                              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                            />
+                          </div>
+                          {formData.rules.conditions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeCondition(index)}
+                              className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-all duration-200"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-8 pt-8 border-t-2 border-gray-200">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl font-medium transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  {loading ? 'Saving...' : editingSegment ? 'Update Segment' : 'Create Segment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Segments List */}
+        {!showCreateForm && (
+          <div className="bg-white shadow-2xl rounded-2xl flex flex-col h-[80vh]">
+          {/* Sticky Header */}
+            <div className="sticky top-0 z-30 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 rounded-t-2xl">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-xl font-bold text-gray-900">Your Segments</h2>
+                <div className="relative w-full sm:w-auto">
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <select
-                      value={condition.field}
-                      onChange={(e) => updateCondition(index, 'field', e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                    >
-                      <option value="">Select field...</option>
-                      {availableFields.map((field) => (
-                        <option key={field.key} value={field.key}>
-                          {field.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={condition.operator}
-                      onChange={(e) => updateCondition(index, 'operator', e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
-                      disabled={!condition.field}
-                    >
-                      <option value="">Select operator...</option>
-                      {getOperatorsForField(condition.field).map((op) => (
-                        <option key={op.key} value={op.key}>
-                          {op.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      value={condition.value}
-                      onChange={(e) => updateCondition(index, 'value', e.target.value)}
-                      placeholder="Enter value..."
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
-                    {formData.rules.conditions.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCondition(index)}
-                        className="text-red-500 hover:text-red-700 p-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search segments..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl 
+                              focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                              focus:border-indigo-500 transition-all duration-200
+                              w-full sm:w-64"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+            {loading ? (
+              <div className="text-center py-16">
+                <svg className="animate-spin w-8 h-8 mx-auto text-indigo-600 mb-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-gray-500 font-medium">Loading segments...</p>
+              </div>
+            ) : filteredSegments.length === 0 ? (
+              <div className="text-center py-16">
+                <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                  {searchTerm ? 'No segments found' : 'No segments yet'}
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  {searchTerm ? `No segments match "${searchTerm}"` : 'Create your first segment to get started with targeted marketing'}
+                </p>
+                {!searchTerm && (
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-6 py-3 rounded-xl font-medium transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    Create Your First Segment
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {filteredSegments.map((segment) => (
+                  <div key={segment.segment_id} className="p-6 hover:bg-gray-50 transition duration-200">
+                    <div className="flex flex-col lg:flex-row justify-between items-start">
+                      <div className="flex-1 mb-4 lg:mb-0">
+                        <div className="flex items-center mb-3">
+                          <h3 className="text-xl font-bold text-gray-900 mr-3">{segment.name}</h3>
+                          <span className="bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {segment.contact_count} contacts
+                          </span>
+                        </div>
+                        {segment.description && (
+                          <p className="text-gray-600 mb-3 leading-relaxed">{segment.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3a4 4 0 118 0v4m-4 0v5m0-5v5m0-5H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3" />
+                            </svg>
+                            Created {new Date(segment.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Logic: {segment.rules.logic}
+                          </div>
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                            {segment.rules.conditions.length} conditions
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => fetchSegmentContacts(segment.segment_id, segment.name)}
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          View Contacts
+                        </button>
+                        <button
+                          onClick={() => handleEdit(segment)}
+                          className="bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(segment.segment_id)}
+                          className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-              {previewData && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">Preview</h4>
-                  <p className="text-blue-800 text-sm sm:text-base">
-                    This segment will match <strong>{previewData.count}</strong> contacts
-                  </p>
-                  {previewData.preview_contacts && previewData.preview_contacts.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-sm text-blue-700 mb-1">Sample contacts:</p>
-                      <ul className="text-sm text-blue-600">
-                        {previewData.preview_contacts.map((contact, i) => (
-                          <li key={i}>• {contact.full_name} ({contact.phone_number})</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {previewData.count > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => fetchSegmentContacts(editingSegment ? editingSegment.segment_id : selectedSegmentId)}
-                      className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-sm transition duration-200"
-                    >
-                      View All Contacts
-                    </button>
-                  )}
+            )}
+          </div>
+        </div>
+        )}
+
+      
+        {/* Contacts Modal */}
+        {showContactsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+              
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white flex justify-between items-center sticky top-0 z-10">
+                <div>
+                  <h3 className="text-lg font-bold">Contacts in "{selectedSegmentName}"</h3>
+                  <p className="text-blue-100 text-sm">{pagination.total_count} total contacts found</p>
                 </div>
-              )}
-              {showAllContacts && paginatedContacts.length > 0 && (
-                <div className="mt-6 bg-white shadow-lg rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">All Matching Contacts</h4>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                <button
+                  onClick={closeContactsModal}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body with Scroll */}
+              <div className="p-4 overflow-y-auto flex-1">
+                {contactsLoading ? (
+                  <div className="text-center py-10">
+                    <svg className="animate-spin w-6 h-6 mx-auto text-indigo-600 mb-3" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0..." />
+                    </svg>
+                    <p className="text-gray-500 text-sm">Loading contacts...</p>
+                  </div>
+                ) : paginatedContacts.length === 0 ? (
+                  <div className="text-center py-10">
+                    <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M17 20h5v-2..." />
+                    </svg>
+                    <h3 className="text-base font-semibold text-gray-600 mb-1">No contacts found</h3>
+                    <p className="text-gray-500 text-sm">This segment doesn't have any matching contacts.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Email</th>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Location</th>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Purchases</th>
-                          <th className="px-3 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Tags</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Email</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Location</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Purchases</th>
+                          <th className="px-4 py-3 text-left font-semibold text-gray-700">Tags</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {paginatedContacts.map((contact) => (
-                          <tr key={contact.id}>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.full_name}</td>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.phone_number}</td>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.email || 'N/A'}</td>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.location || 'N/A'}</td>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900">{contact.total_purchases}</td>
-                            <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 hidden sm:table-cell">{contact.tags.join(', ') || 'N/A'}</td>
+                      <tbody>
+                        {paginatedContacts.map((contact, i) => (
+                          <tr key={contact.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            {/* Name + Avatar */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-2">
+                                  {contact.full_name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-medium text-gray-900">{contact.full_name}</span>
+                              </div>
+                            </td>
+                            
+                            {/* Phone */}
+                            <td className="px-4 py-3 text-gray-800 font-medium">{contact.phone_number}</td>
+
+                            {/* Email */}
+                            <td className="px-4 py-3 text-gray-600">{contact.email || "N/A"}</td>
+
+                            {/* Location */}
+                            <td className="px-4 py-3 text-gray-600">{contact.location || "N/A"}</td>
+
+                            {/* Purchases */}
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                {contact.total_purchases} purchases
+                              </span>
+                            </td>
+
+                            {/* Tags */}
+                            <td className="px-4 py-3 text-gray-600">
+                              {contact.tags && contact.tags.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {contact.tags.slice(0, 2).map((tag, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {contact.tags.length > 2 && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                      +{contact.tags.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                "N/A"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-sm text-gray-600">
-                    <div className="mb-2 sm:mb-0">
-                      Showing {pagination.page_size * (pagination.page - 1) + 1} to{' '}
-                      {Math.min(pagination.page_size * pagination.page, pagination.total_count)} of{' '}
-                      {pagination.total_count} contacts
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handlePageChange(pagination.page - 1)}
-                        disabled={!pagination.has_previous}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 transition duration-200"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => handlePageChange(pagination.page + 1)}
-                        disabled={!pagination.has_next}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 transition duration-200"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end space-x-3 mt-6 pt-4 sm:pt-6 border-t">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm sm:text-base transition duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm sm:text-base transition duration-200"
-              >
-                {loading ? 'Saving...' : editingSegment ? 'Update Segment' : 'Create Segment'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+                )}
+              </div>
 
-      {/* Segments List */}
-      {!showCreateForm && (
-        <div className="bg-white shadow-lg rounded-lg">
-          {loading ? (
-            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">Loading segments...</div>
-          ) : segments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
-              No segments found. Create your first segment to get started.
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {segments.map((segment) => (
-                <div key={segment.segment_id} className="p-4 sm:p-6 hover:bg-gray-50 transition duration-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">{segment.name}</h3>
-                      {segment.description && (
-                        <p className="mt-1 text-sm text-gray-600">{segment.description}</p>
-                      )}
-                      <div className="mt-2 flex flex-wrap items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500">
-                        <span>{segment.contact_count} contacts</span>
-                        <span>Created {new Date(segment.created_at).toLocaleDateString()}</span>
-                        <span>Logic: {segment.rules.logic}</span>
-                        <span>{segment.rules.conditions.length} conditions</span>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 mt-3 sm:mt-0">
-                      <button
-                        onClick={() => handleEdit(segment)}
-                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium transition duration-200"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(segment.segment_id)}
-                        className="text-red-600 hover:text-red-900 text-sm font-medium transition duration-200"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+              {/* Footer Pagination */}
+              <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  Showing <b>{pagination.page_size * (pagination.page - 1) + 1}</b> -{" "}
+                  <b>{Math.min(pagination.page_size * pagination.page, pagination.total_count)}</b> of{" "}
+                  <b>{pagination.total_count}</b>
+                </span>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.has_previous}
+                    className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.has_next}
+                    className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
+              </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };
