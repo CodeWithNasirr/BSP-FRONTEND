@@ -51,6 +51,11 @@ const ContextProvider = ({ children }) => {
 
 
 useEffect(() => {
+  if (!token) {
+    // No token = no user logged in, don't call protected APIs
+    setSubscriptionStatus({ is_active: false });
+    return;
+  }
   const checkSubscription = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/subscription-status/`, {
@@ -69,6 +74,7 @@ useEffect(() => {
 
 
 useEffect(() => {
+  if (!token) return; // 🚀 Prevent unauthorized calls
   const cachedUserInfo = localStorage.getItem("userInfo");
   const cachedStatus = localStorage.getItem("waStatus");
 

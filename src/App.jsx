@@ -21,6 +21,11 @@ import AuthSlider from './components/Authentications/AuthSlider'
 import Order from './components/Orders/Order'
 // import BillingDashboard from './components/BillingDashboard'
 
+
+// Rest pass
+import ResetPassword from './components/Authentications/ResetPassword'
+import ForgotPasswordForm from './components/Authentications/ForgotPasswordForm'
+
 // catalogs
 import ProductView from './components/Catalogs/ProductView'
 import CreateProduct from './components/Catalogs/CreateProduct'
@@ -87,6 +92,8 @@ function AppContent() {
   const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
   const isLandingPage = location.pathname === "/";
+  const isResetPasswordPage = location.pathname.startsWith("/reset-password");
+
   const [enableChatFlow, setEnableChatFlow] = useState(() => localStorage.getItem('chatFlowEnabled') === 'true');
   const dynamicRoutes = [...validRoutes, ...(enableChatFlow ? ['/chat-flow'] : [])];
 
@@ -113,7 +120,7 @@ function AppContent() {
   
   return (
     <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full h-screen' : 'min-h-screen'}`}>
-      {!isLoginPage && !isRegisterPage && !notFoundPage && !isLandingPage && !(isMobile && isChatWindow) && (
+      {!isLoginPage && !isRegisterPage && !notFoundPage && !isResetPasswordPage && !isLandingPage && !(isMobile && isChatWindow) && (
         <div className="text-black">
         <Sidebar>
           {/* Basic items */}
@@ -145,6 +152,9 @@ function AppContent() {
           
           <Route path="/login" element={<AuthSlider />} />
           <Route path="/register" element={<AuthSlider />} />
+          <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+          <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+          
           <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />
           <Route path="/templates" element={<ProtectedRoute element={Templates} />} />
           <Route path="/templates/create" element={<ProtectedRoute element={CreateTemplates} />} />

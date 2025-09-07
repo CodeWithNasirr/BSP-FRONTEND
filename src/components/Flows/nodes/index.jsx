@@ -3,6 +3,7 @@ import WaitNode from './WaitNode';
 import ConditionalNode from './ConditionalNode';
 import ApiNode from './ApiNode';
 import EndNode from './EndNode';
+import LeadCollectorNode from './LeadCollectorNode';
 // import MetaFlowNode from './MetaFlowNode';
 import CatalogCarouselNode from './CatalogCarouselNode';
 import Appointment_Booking from './Appointment_Booking';
@@ -38,4 +39,5 @@ export const nodeTypes = {
   // metaFlowNode: MetaFlowNode,
   catalogCarouselNode: CatalogCarouselNode, // ✅ Add this
   appointment: Appointment_Booking, // ✅ Add this
+  leadcollector: LeadCollectorNode, // ✅ Add this
 };
