@@ -77,7 +77,7 @@ const validRoutes = [
   "/subscriptions",
   "/my-usage-panel",
   // "/chat-flow",
-  "/wallet",
+  "/Credits",
   "/orders",
   "/products",
   "/products/create-pr",
@@ -131,7 +131,7 @@ function AppContent() {
           <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
           <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
           <SidebarItem icon={<CreditCard size={20} />} text="Subscriptions" to="/subscriptions" />
-          <SidebarItem icon={<CircleDollarSign size={20} />} text="Wallet" to="/Wallet" />
+          <SidebarItem icon={<CircleDollarSign size={20} />} text="Credits" to="/Credits" />
           <SidebarItem icon={<NotebookTabs size={20} />} text="My Usage" to="/my-usage-panel" />
           <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
           <SidebarItem icon={<MdViewCarousel size={20} />} text="Advanced" to="/advanced" />
@@ -173,7 +173,7 @@ function AppContent() {
           <Route path="/my-usage-panel" element={<ProtectedRoute element={MyUsagePanel} />} />
           <Route path="/chat-flow" element={<ProtectedRoute element={() => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} />
 
-          <Route path="/wallet" element={<ProtectedRoute element={Wallet} />} />
+          <Route path="/Credits" element={<ProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<ProtectedRoute element={Order} />} />
           <Route path="/products" element={<ProtectedRoute element={ProductView} />} />
           <Route path="/products/create-pr" element={<ProtectedRoute element={CreateProduct} />} />

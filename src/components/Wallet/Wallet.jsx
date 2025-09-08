@@ -138,10 +138,10 @@ const Wallet = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <div className="text-center">
             <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">
-              Wallet Balance
+              Credits Balance
             </h2>
             <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600 mt-1 sm:mt-2">
-              ₹{balance.toFixed(2)}
+              {balance.toFixed(2)}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
               Available for campaigns
@@ -149,7 +149,7 @@ const Wallet = () => {
           </div>
           <div className="text-center sm:text-right">
             <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-              Top Up Wallet
+              Top Up Credits
             </h3>
             <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 items-center">
               <input
@@ -202,7 +202,7 @@ const Wallet = () => {
                     Type
                   </th>
                   <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
-                    Amount
+                    Credits
                   </th>
                   <th className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">
                     Description
@@ -229,8 +229,8 @@ const Wallet = () => {
                       </span>
                     </td>
                     <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 sm:table-cell">
-                      <span className="sm:hidden font-medium">Amount: </span>
-                      ₹{Math.abs(transaction.amount).toFixed(2)}
+                      <span className="sm:hidden font-medium">Credits: </span>
+                      {Math.abs(transaction.amount).toFixed(2)}
                       {transaction.transaction_type === 'DEBIT' ? ' (Deducted)' : ' (Added)'}
                     </td>
                     <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 sm:table-cell">
