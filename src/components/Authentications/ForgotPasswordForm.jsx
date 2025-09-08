@@ -5,20 +5,25 @@ import { useNavigate } from "react-router-dom";
 
 import { toast } from "react-toastify";
 
-const ForgotPasswordForm = ({ onClose }) => {
+const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
   
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(`${API_BASE_URL}/forgot-password/`, { email });
+  e.preventDefault();
+  try {
+    const res = await axios.post(`${API_BASE_URL}/forgot-password/`, { email });
+    
+    if (res.status === 200) {
       toast.success("Password reset link sent to your email!");
-      onClose();
-    } catch (error) {
-      toast.error(error.response?.data?.errors || "Something went wrong");
+      navigate("/login"); // redirect instead of closing
     }
-  };
+  } catch (error) {
+    toast.error(
+      error.response?.data?.error || "Failed to send reset link. Please try again."
+    );
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
