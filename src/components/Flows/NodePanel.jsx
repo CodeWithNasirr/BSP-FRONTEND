@@ -14,7 +14,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = touchDragHandlers || {};
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 bg-white">
+    <div className="max-h-screen flex flex-col h-full p-4 sm:p-6 bg-white">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg sm:text-xl font-semibold">Flow Nodes</h3>
         <button 

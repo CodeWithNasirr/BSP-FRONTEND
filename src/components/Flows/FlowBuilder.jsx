@@ -237,7 +237,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
 
   return (
     <RequireSubscription>
-      <div className="min-h-screen flex flex-col">
+      <div className="max-h-screen flex flex-col">
         <div className="flex-grow flex flex-col sm:flex-row">
           {sidebarOpen && (
             <div className="fixed inset-y-0 left-0 w-64 sm:w-80 bg-white shadow-lg z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col">
