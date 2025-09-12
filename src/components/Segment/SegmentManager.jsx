@@ -80,9 +80,9 @@ const SegmentManager = () => {
     }
   };
 
-  const fetchFieldsAndOperators = async () => {
+  const fetchFieldsAndOperators = async (selectedField) => {
     try {
-      const response = await apiCall(`${API_BASE_URL}/api/segments/fields-operators/`);
+      const response = await apiCall(`${API_BASE_URL}/api/segments/fields-operators/?field=${selectedField}`);
       setAvailableFields(response.fields || []);
       setAvailableOperators(response.operators || []);
     } catch (error) {
@@ -489,7 +489,10 @@ const SegmentManager = () => {
                           <label className="block text-xs font-medium text-gray-600 mb-2">Field</label>
                           <select
                             value={condition.field}
-                            onChange={(e) => updateCondition(index, 'field', e.target.value)}
+                            onChange={(e) => {
+                              const selectedField = e.target.value;
+                              updateCondition(index, 'field', selectedField);
+                              fetchFieldsAndOperators(selectedField);}}
                             className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                           >
                             <option value="">Select field...</option>
