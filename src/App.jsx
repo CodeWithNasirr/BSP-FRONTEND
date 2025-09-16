@@ -1,4 +1,5 @@
-import React,{useState,useEffect} from 'react'
+import React,{useState,useEffect,useContext} from 'react'
+import { Context } from './components/context/Context'
 import Sidebar, { SidebarItem } from "./components/Sidebar"
 import Templates from "./components/Templates/Templates"
 import CreateTemplates from "./components/Templates/CreateTemplates"
@@ -89,6 +90,7 @@ const validRoutes = [
  
 function AppContent() {
   const location = useLocation();
+  const { userInfo, subscriptionStatus } = useContext(Context);
   const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
   const isLandingPage = location.pathname === "/";
@@ -118,6 +120,21 @@ function AppContent() {
   (location.pathname === "/chats" && new URLSearchParams(location.search).has("recipient"));
   const [toast, setToast] = useState({ message: null, type: null });
   
+  // Check if user is on BASIC plan
+  const isBasicPlan = subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
+
+  // Handle restricted access for BASIC plan
+  const handleRestrictedAccess = (feature) => {
+    if (isBasicPlan) {
+      toast.error(`Please upgrade your plan to access ${feature}.`, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return false;
+    }
+    return true;
+  };
+
   return (
     <main className={`flex ${isLoginPage || isRegisterPage || notFoundPage || (isMobile && isChatWindow) ? 'w-full h-screen' : 'min-h-screen'}`}>
       {!isLoginPage && !isRegisterPage && !notFoundPage && !isResetPasswordPage && !isLandingPage && !(isMobile && isChatWindow) && (
@@ -129,12 +146,28 @@ function AppContent() {
           <SidebarItem icon={<MessagesSquare size={20} />} text="Campaigns" to="/campaigns" />
           <SidebarItem icon={<MessageSquareMore size={20} />} text="Templates" to="/templates" />
           <SidebarItem icon={<MessageCircleMore size={20} />} text="Chats" to="/chats" />
-          <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
+          {/* <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" /> */}
+          {!isBasicPlan && (
+              <SidebarItem 
+                icon={<Workflow size={20} />} 
+                text="Flows" 
+                to="/chat-flow" 
+                onClick={() => handleRestrictedAccess("Flows")} 
+              />
+            )}
           <SidebarItem icon={<CreditCard size={20} />} text="Subscriptions" to="/subscriptions" />
           <SidebarItem icon={<CircleDollarSign size={20} />} text="Credits" to="/Credits" />
           <SidebarItem icon={<NotebookTabs size={20} />} text="My Usage" to="/my-usage-panel" />
           <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
-          <SidebarItem icon={<MdViewCarousel size={20} />} text="Advanced" to="/advanced" />
+          {/* <SidebarItem icon={<MdViewCarousel size={20} />} text="Advanced" to="/advanced" /> */}
+          {!isBasicPlan && (
+              <SidebarItem 
+                icon={<MdViewCarousel size={20} />} 
+                text="Advanced" 
+                to="/advanced" 
+                onClick={() => handleRestrictedAccess("Advanced")} 
+              />
+            )}
         </Sidebar>
         </div>
       )}
