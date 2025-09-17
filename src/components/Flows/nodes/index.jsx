@@ -10,6 +10,7 @@ import Appointment_Booking from './Appointment_Booking';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
+import BookingNode from './BookingNode';
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
  
@@ -32,6 +33,7 @@ export const nodeTypes = {
   waitNode: WaitNode,
   conditionalNode: ConditionalNode,
   apiNode: ApiNode,
+  bookingNode: BookingNode,
   endNode: EndNode,
   textButtonsNode: TextButtonsNode,
   imageTextButtonsNode:TextImageNode,

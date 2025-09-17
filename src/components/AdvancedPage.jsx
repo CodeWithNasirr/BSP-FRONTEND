@@ -6,6 +6,7 @@ import { Workflow, Utensils } from "lucide-react";
 export default function AdvancedPage() {
   const items = [
     { name: "Orders", icon: <Utensils size={30} />, path: "/orders" },
+    { name: "Booking", icon: <Utensils size={30} />, path: "/Booking" },
     { name: "Catalogs", icon: <MdViewCarousel size={30} />, path: "/meta-catalog-setup" },
     { name: "Segment", icon: <Workflow size={30} />, path: "/Segment" },
   ];

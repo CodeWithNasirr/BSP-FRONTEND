@@ -134,7 +134,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <p className="text-xs text-gray-500">Message with appointment</p>
           </div>
         </div> 
-        
+        {/* lead collector */}
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'leadcollector')}
@@ -149,7 +149,41 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <p className="text-xs text-gray-500">Message with leadcollector</p>
           </div>
         </div> 
+        {/*  */}
+        {/* Api node */}
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
+          onDragStart={(e) => onDragStart(e, 'apiNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'apiNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          draggable
+        >
+          <Image className="mr-3 text-blue-500" size={20} />
+          <div>
+            <h4 className="font-medium text-sm">apiNode</h4>
+            <p className="text-xs text-gray-500">Connect with apiNode</p>
+          </div>
+        </div> 
+        {/*  */}
+        {/* Booking Node */}
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
+          onDragStart={(e) => onDragStart(e, 'bookingNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'bookingNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          draggable
+        >
+          <Image className="mr-3 text-blue-500" size={20} />
+          <div>
+            <h4 className="font-medium text-sm">Booking Node</h4>
+            <p className="text-xs text-gray-500">Message with bookingNode</p>
+          </div>
+        </div> 
+        {/*  */}
 
+        {/* End node  */}
         <div 
           className="p-3 bg-node-end rounded-lg border border-red-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'endNode')}
@@ -164,6 +198,8 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <p className="text-xs text-gray-500">Terminate conversation flow</p>
           </div>
         </div>
+        {/*  */}
+
       </div>
 
       <div className="mt-auto pt-4 border-t border-gray-200">

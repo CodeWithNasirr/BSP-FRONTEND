@@ -20,6 +20,8 @@ import subscriptions from "./components/Subscriptions/subscriptions"
 import NotFound from './components/notfound'
 import AuthSlider from './components/Authentications/AuthSlider'
 import Order from './components/Orders/Order'
+import Booking from './components/Booking/Booking'
+
 // import BillingDashboard from './components/BillingDashboard'
 
 
@@ -85,7 +87,8 @@ const validRoutes = [
   "/meta-catalog-setup",
   "/Segment",
   "/advanced",
-  "/rfm-preview"
+  "/rfm-preview",
+  "/Booking"
 ];
  
 function AppContent() {
@@ -208,6 +211,7 @@ function AppContent() {
 
           <Route path="/Credits" element={<ProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<ProtectedRoute element={Order} />} />
+          <Route path="/Booking" element={<ProtectedRoute element={Booking} />} />
           <Route path="/products" element={<ProtectedRoute element={ProductView} />} />
           <Route path="/products/create-pr" element={<ProtectedRoute element={CreateProduct} />} />
           <Route path="/meta-catalog-setup" element={<MetaCatalogSetup />} />
