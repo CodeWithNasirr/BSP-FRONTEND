@@ -87,7 +87,7 @@ const RegisterForm = ({ isActive }) => {
           </button>
         </div>
 
-        <button type='submit' className="rounded-2xl border cursor-pointer border-[#4bb6b7] bg-[#4bb6b7] text-white font-bold my-2 px-20 py-3 uppercase text-sm sm:text-base">
+        <button type='submit' className="rounded-2xl border cursor-pointer border-[#4bb6b7] bg-[#4bb6b7] text-white font-bold my-2 px-5 py-3 uppercase text-sm sm:text-base">
           Register
         </button>
       </form>

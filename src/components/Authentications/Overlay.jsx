@@ -31,7 +31,7 @@ const Overlay = ({ isRightPanelActive, setIsRightPanelActive }) => {
           <button
             onMouseDown={() => navigate("/login")}
             className="bg-[rgba(225,225,225,0.2)] border-2 cursor-pointer border-white text-white font-bold rounded-2xl uppercase flex items-center
-              px-8 py-2 text-xs sm:px-20 sm:py-3 sm:text-base"
+              px-8 py-2 text-xs sm:px-20 sm:py-3 sm:text-base "
           >
             Login
             <i className="lni lni-arrow-left ml-2 transition-opacity duration-300 opacity-0 hover:opacity-100"></i>
