@@ -11,7 +11,8 @@ import ConnectWhatsAppForm from './components/ConnectForm';
 import Dashboard from './components/Dashboard';
 import CreateCampaigns from './components/Campaigns/CreateCampaigns';
 import ProtectedRoute from './components/Protected_Route';
-import Whatsapp_details from './components/Whatsapp_details';
+// import Whatsapp_details from './components/Whatsapp_details';
+import WhatsAppSettings from './components/Whatsapp_details';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
@@ -284,7 +285,7 @@ function AppContent() {
             path="/whatsapp-setting"
             element={
               <ProtectedRoute
-                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Whatsapp_details />)}
+                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <WhatsAppSettings />)}
               />
             }
           />
