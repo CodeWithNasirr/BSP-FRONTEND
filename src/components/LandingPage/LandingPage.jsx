@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'; 
 import { SiWhatsapp } from "react-icons/si";
 import { assest } from '../../assets/assets';
-import PricingPlans from '../Subscriptions/Subscriptions';
+import Subscriptions from '../Subscriptions/Subscriptions';
 import { Link } from 'react-router-dom';
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -300,7 +300,7 @@ export default function LandingPage() {
           
       {/* Price Section */}
       <section id='pricing' className='relative bg-gradient-to-b from-green-50 to-white py-10'>
-        <PricingPlans/>
+        <Subscriptions/>
       </section>
 
       {/* Stats Section */}
