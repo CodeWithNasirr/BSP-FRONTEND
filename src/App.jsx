@@ -15,7 +15,7 @@ import WhatsAppSettings from './components/WhatsAppSettings';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
-import NotFound from './components/notfound';
+import NotFound from './components/NotFound';
 import AuthSlider from './components/Authentications/AuthSlider';
 import Order from './components/Orders/Order';
 // import Booking from './components/Booking/Booking';
