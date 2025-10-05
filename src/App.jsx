@@ -15,7 +15,7 @@ import WhatsAppSettings from './components/WhatsAppSettings';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
-import NotFound from './components/NotFound';
+import Notfound from './components/notfound';
 import AuthSlider from './components/Authentications/AuthSlider';
 import Order from './components/Orders/Order';
 // import Booking from './components/Booking/Booking';
@@ -48,7 +48,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
-// import ChatList from './components/Chat/ChatList';
+
 import MainChat from './components/Chat/MainChat';
 
 // Define valid routes
@@ -407,7 +407,7 @@ function AppContent() {
             <Route path="reports" element={<div>Reports Coming Soon...</div>} />
             <Route path="settings" element={<div>Settings Page</div>} />
           </Route>
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Notfound />} />
         </Routes>
       </div>
     </main>
