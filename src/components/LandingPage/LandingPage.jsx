@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'; 
 import { SiWhatsapp } from "react-icons/si";
 import { assest } from '../../assets/assets';
-import Subscriptions from '../Subscriptions/Subscriptions';
+import Subscriptions from '../Subscriptions/Subscription';
 import { Link } from 'react-router-dom';
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
