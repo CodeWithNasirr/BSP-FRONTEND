@@ -9,13 +9,13 @@ import RequireSubscription from "../Subscriptions/RequireSubscription.jsx";
 function Templates() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  console.log(selectedTemplate)
+
   const [templates, setTemplates] = useState({ Data: [] }); // Initialize with empty Data array
   const [loading, setLoading] = useState(true);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const token = localStorage.getItem("authToken");
   const navigate = useNavigate();
-  console.log(templates)
+  
   const handleViewTemplate = (template) => {
     setSelectedTemplate(template);
     setViewModalOpen(true);
@@ -223,13 +223,13 @@ function Templates() {
                 {activeDropdownId === index && (
                   <div className="absolute right-0 origin-top-right z-10 mt-2 w-32 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-opacity-5 focus:outline-none">
                     <div className="px-1 py-1" role="none">
-                      <Link
-                        to="#"
+                      <button
+                      
                         onClick={() => handleViewTemplate(template)}
                         className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
                       >
                         View
-                      </Link>
+                      </button>
                       <button
                         className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
                         onClick={() => delete_template(template.template_name)}

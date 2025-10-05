@@ -1,11 +1,12 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useContext } from 'react'; 
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify';
-
+import { Context } from '../context/Context';
 const LoginForm = ({ isActive }) => {
   const navigate = useNavigate();
+  const { setUserInfo } = useContext(Context);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,23 +30,38 @@ const LoginForm = ({ isActive }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(`${API_BASE_URL}/login/`, formData);
-      toast.success(response.data.Message, {
-        onClose: () => window.location.reload(),
-        autoClose: 2000
+      const token = response.data.Token;
+      localStorage.setItem('authToken', token);
+
+      // Fetch user profile to get role
+      const profileResponse = await axios.get(`${API_BASE_URL}/user/profile/`, {
+        headers: { Authorization: `Token ${token}` },
       });
-      localStorage.setItem("authToken", response.data.Token);
-      navigate('/dashboard');
+      const { username, role } = profileResponse.data;
+      setUserInfo({ username, role });
+
+      toast.success(response.data.Message, {
+        // onClose: () => window.location.reload(),
+        autoClose: 2000,
+      });
+
+      // Redirect based on role
+      if (role === 'staff') {
+        navigate('/staff-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       if (error.response && error.response.data.errors) {
         toast.error(error.response.data.errors);
       } else {
-        alert("An unexpected error occurred.");
+        toast.error('An unexpected error occurred.');
       }
-      setFormData({ username: "", password: "" });
+      setFormData({ username: '', password: '' });
     }
   };
 

@@ -135,7 +135,7 @@ const BookingNode = ({ data, selected }) => {
   useEffect(() => {
     const fetchServiceTypes = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/service-types/`, {
+        const response = await axios.get(`${API_BASE_URL}/service-types/`, {
           headers: { Authorization: `Token ${token}` }
         });
         setServiceTypes(response.data);

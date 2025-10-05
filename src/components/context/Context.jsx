@@ -6,19 +6,18 @@ import { toast } from 'react-toastify'
 export const Context = createContext();
 
 const ContextProvider = ({ children }) => {
-  const [userInfo,setUserInfo]=useState({username:"",email:"",api_provider:""})
+  const [userInfo,setUserInfo]=useState({username:"",email:"",api_provider:"",role:""})
   const [loadingUser, setLoadingUser] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
-  const [templates, setTemplates] = useState([]);
-  const [group, setGroup] = useState([]);
-  const [contact, setContacts] = useState([]); // New state for individual contacts
+  
   const token = localStorage.getItem("authToken");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
- 
+  // console.log(userInfo)
+  
   const fetchDashboard = async () => {
     if (!token) return;
     try {
-      const [userRes, statusRes] = await Promise.all([
+      const [userRes, statusRes,staff] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/dashboard/`, {
           headers: {
             Authorization: `Token ${token}`,
@@ -31,15 +30,30 @@ const ContextProvider = ({ children }) => {
             'Content-Type': 'application/json',
           },
         }),
+        axios.get(`${API_BASE_URL}/user/profile/`, {
+          headers: {
+            Authorization: `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
       ]);
+      // ✅ Merge both user info and role into one object
+      const mergedUserInfo = {
+        ...userRes.data,    // username, email, contacts, templates, etc.
+        role: staff.data.role,  // admin or staff
+      };
 
-      setUserInfo(userRes.data);
+      setUserInfo(mergedUserInfo);
       setIsConnected(statusRes.data.is_connected);
 
-      localStorage.setItem("userInfo", JSON.stringify({
-        username: userRes.data.username,
-        email: userRes.data.email,
-      }));
+      localStorage.setItem(
+        "userInfo",
+        JSON.stringify({
+          username: mergedUserInfo.username,
+          email: mergedUserInfo.email,
+          role: mergedUserInfo.role,
+        })
+      );
 
       localStorage.setItem("waStatus", JSON.stringify(statusRes.data.is_connected));
     } catch (error) {
@@ -98,42 +112,6 @@ useEffect(() => {
 
   if (!token) return;
 
-  // const fetchDashboard = async () => {
-  //   try {
-  //     const [userRes, statusRes] = await Promise.all([
-  //       axios.get(`${API_BASE_URL}/api/dashboard/`, {
-  //         headers: {
-  //           Authorization: `Token ${token}`,
-  //           'Content-Type': 'application/json',
-  //         },
-  //       }),
-  //       axios.get(`${API_BASE_URL}/api/whatsapp/status/`, {
-  //         headers: {
-  //           Authorization: `Token ${token}`,
-  //           'Content-Type': 'application/json',
-  //         },
-  //       }),
-  //     ]);
-  //     setUserInfo(userRes.data);
-  //     setIsConnected(statusRes.data.is_connected);
-
-  //     localStorage.setItem(
-  //       "userInfo",
-  //       JSON.stringify({
-  //         username: userRes.data.username,
-  //         email: userRes.data.email,
-  //       })
-  //     );
-  //     localStorage.setItem(
-  //       "waStatus",
-  //       JSON.stringify(statusRes.data.is_connected)
-  //     );
-  //   } catch (error) {
-  //     toast.error("Failed to refresh dashboard data 🥲");
-  //   } finally {
-  //     setLoadingUser(false);
-  //   }
-  // };
 
   fetchDashboard();
 }, [token]);
@@ -144,8 +122,6 @@ useEffect(() => {
   const value = {
     setSubscriptionStatus,
     subscriptionStatus,
-    group,
-    contact,
     isConnected,
     userInfo,
     setUserInfo,

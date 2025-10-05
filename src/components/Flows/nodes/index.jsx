@@ -6,6 +6,7 @@ import EndNode from './EndNode';
 import LeadCollectorNode from './LeadCollectorNode';
 // import MetaFlowNode from './MetaFlowNode';
 import CatalogCarouselNode from './CatalogCarouselNode';
+import PaymentMethodNode from './PaymentMethodNode';
 import Appointment_Booking from './Appointment_Booking';
 import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
@@ -42,4 +43,5 @@ export const nodeTypes = {
   catalogCarouselNode: CatalogCarouselNode, // ✅ Add this
   appointment: Appointment_Booking, // ✅ Add this
   leadcollector: LeadCollectorNode, // ✅ Add this
+  paymentMethodNode: PaymentMethodNode, // ✅ Add this
 };
