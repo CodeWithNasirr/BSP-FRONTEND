@@ -67,7 +67,7 @@ const plans = [
   },
 ];
 
-const Subscriptions = () => {
+const Subscription = () => {
   const [billing, setBilling] = useState('monthly');
   const { userInfo, subscriptionStatus, setSubscriptionStatus } = useContext(Context);
   const [selectedPlan, setSelectedPlan] = useState('BASIC');
@@ -401,4 +401,4 @@ const Subscriptions = () => {
   );
 };
 
-export default Subscriptions;
+export default Subscription;

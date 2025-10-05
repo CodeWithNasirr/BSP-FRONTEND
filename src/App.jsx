@@ -14,7 +14,8 @@ import ProtectedRoute from './components/Protected_Route';
 import WhatsAppSettings from './components/WhatsAppSettings';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
-import Subscriptions from './components/Subscriptions/Subscriptions';
+
+import Subscription from './components/Subscriptions/Subscriptions';
 import Notfound from './components/notfound';
 import AuthSlider from './components/Authentications/AuthSlider';
 import Order from './components/Orders/Order';
@@ -308,7 +309,7 @@ function AppContent() {
             path="/subscriptions"
             element={
               <ProtectedRoute
-                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Subscriptions />)}
+                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Subscription />)}
               />
             }
           />
