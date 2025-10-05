@@ -18,8 +18,7 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem('authToken');
   const { userInfo } = useContext(Context);
-  console.log(jobId)
-  console.log(serviceTypes)
+  
   // ✅ Pre-fill the form with jobId data (jobId is actually the job object)
   useEffect(() => {
     if (jobId) {
@@ -43,19 +42,23 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
           headers: { Authorization: `Token ${token}` },
         });
         setServiceTypes(serviceResponse.data);
-        const staffResponse = await axios.get(`${API_BASE_URL}/staff/list/`, {
-          headers: { Authorization: `Token ${token}` },
-        });
-        setStaffList(staffResponse.data);
+        // ✅ Conditionally fetch staff list only if not staff
+        if (userInfo?.role !== 'staff') {
+          const staffResponse = await axios.get(`${API_BASE_URL}/staff/list/`, {
+            headers: { Authorization: `Token ${token}` },
+          });
+          setStaffList(staffResponse.data);
+        }
       } catch (err) {
         console.error('Error fetching data:', err);
-        setServiceTypes([{ id: 1, name: 'Laptop Repair', detail_fields: ['device_brand', 'model', 'serial_number', 'issue'] }]);
-        setStaffList([{ id: 1, username: 'Mike Chen' }, { id: 2, username: 'Lisa Park' }]);
+
       }
       setLoading(false);
     };
     fetchData();
   }, [token]);
+
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };

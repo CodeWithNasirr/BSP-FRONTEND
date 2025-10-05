@@ -64,13 +64,13 @@ const StaffJobsPage = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'In Progress': 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
-      'Completed': 'bg-green-500/20 text-green-400 border border-green-500/30',
-      'Received': 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
-      'Pending': 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-      'new': 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
+      'In Progress': 'bg-orange-500/20 text-orange-400',
+      'Completed': 'bg-green-500/20 text-green-400',
+      'Recieved': 'bg-purple-500/20 text-purple-400',
+      'Pending': 'bg-purple-500/20 text-purple-400',
+      new: 'bg-blue-500/20 text-blue-400',
     };
-    return colors[status] || 'bg-gray-500/20 text-gray-400 border border-gray-500/30';
+    return colors[status] || 'bg-gray-500/20 text-gray-400';
   };
 
   const filteredJobs = jobs.filter(
