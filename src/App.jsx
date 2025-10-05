@@ -13,7 +13,6 @@ import CreateCampaigns from './components/Campaigns/CreateCampaigns';
 import ProtectedRoute from './components/Protected_Route';
 import Whatsapp_details from './components/Whatsapp_details';
 import WhatsAppScraper from './components/scrap';
-import main_chat from './components/Chat/Main_chat';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
 import NotFound from './components/notfound';
