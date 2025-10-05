@@ -11,7 +11,7 @@ import ConnectWhatsAppForm from './components/ConnectForm';
 import Dashboard from './components/Dashboard';
 import CreateCampaigns from './components/Campaigns/CreateCampaigns';
 import ProtectedRoute from './components/Protected_Route';
-import WhatsAppSettings from './components/Whatsapp_details';
+import WhatsAppSettings from './components/WhatsAppSettings';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
