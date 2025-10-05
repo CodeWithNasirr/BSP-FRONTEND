@@ -49,7 +49,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
 // import ChatList from './components/Chat/ChatList';
-import MainChat from './components/Chat/Main_chat';
+import MainChat from './components/Chat/MainChat';
 
 // Define valid routes
 const validRoutes = [
