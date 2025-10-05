@@ -12,13 +12,13 @@ import Dashboard from './components/Dashboard';
 import CreateCampaigns from './components/Campaigns/CreateCampaigns';
 import ProtectedRoute from './components/Protected_Route';
 import Whatsapp_details from './components/Whatsapp_details';
-import WhatsAppScraper from './components/scrap';
+// import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
 import Subscriptions from './components/Subscriptions/Subscriptions';
 import NotFound from './components/notfound';
 import AuthSlider from './components/Authentications/AuthSlider';
 import Order from './components/Orders/Order';
-import Booking from './components/Booking/Booking';
+// import Booking from './components/Booking/Booking';
 import DashboardPage from './components/Booking/DashboardPage';
 import B_Sidebar from './components/Booking/B_Sidebar';
 import StaffPage from './components/Booking/StaffPage';
@@ -48,7 +48,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
-import ChatList from './components/Chat/ChatList';
+// import ChatList from './components/Chat/ChatList';
 import MainChat from './components/Chat/Main_chat';
 
 // Define valid routes
