@@ -12,7 +12,7 @@ const ChatWindow = ({ recipient }) => {
   const chatContainerRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
   const { subscriptionStatus } = useContext(Context);
-
+  const [isConversationExpired, setIsConversationExpired] = useState(false);
   // Get allowed file types based on subscription plan
   const getAllowedFileTypes = () => {
     const plan = subscriptionStatus?.plan?.toUpperCase();
@@ -136,6 +136,7 @@ const ChatWindow = ({ recipient }) => {
             // WebSocket connection successful
           } else if (data.message?.action === 'new_message') {
             const newMessage = data.message.data;
+            // console.log('Received new message via WebSocket:', newMessage);
             if (newMessage.recipient === recipient) {
               setMessages((prev) =>
                 prev.some((msg) => msg.message_id === newMessage.message_id)
@@ -173,33 +174,52 @@ const ChatWindow = ({ recipient }) => {
 
   // Fetch initial messages and reset on recipient change
   useEffect(() => {
-    setMessages([]);
+  setMessages([]);
+  setIsConversationExpired(false);
 
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const uniqueMessages = response.data.Data.reduce((acc, msg) => {
-          if (!acc.some((m) => msg.message_id && m.message_id === msg.message_id)) {
-            acc.push(msg);
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = response.data;
+      const uniqueMessages = data.Data.reduce((acc, msg) => {
+        if (!acc.some((m) => msg.message_id && m.message_id === msg.message_id)) {
+          acc.push(msg);
+        }
+        return acc;
+      }, []);
+      setMessages(uniqueMessages);
+
+      // Check expiration
+      if (data.expired === true) {
+        setIsConversationExpired(true);
+      } else {
+        // fallback: check from last message if backend didn't send `expired`
+        if (uniqueMessages.length > 0) {
+          const lastMsg = uniqueMessages.reduce((a, b) =>
+            new Date(a.timestamp) > new Date(b.timestamp) ? a : b
+          );
+          const diffHours = (Date.now() - new Date(lastMsg.timestamp)) / (1000 * 60 * 60);
+          if (diffHours > 24) {
+            setIsConversationExpired(true);
           }
-          return acc;
-        }, []);
-        setMessages(uniqueMessages);
-      } catch (error) {
-        console.error('Initial chat fetch failed:', error);
-        alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
+        }
       }
-    };
-
-    if (recipient) {
-      fetchMessages();
+    } catch (error) {
+      console.error('Initial chat fetch failed:', error);
+      alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
     }
-  }, [recipient, token]);
+  };
+
+  if (recipient) {
+    fetchMessages();
+  }
+}, [recipient, token]);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -489,128 +509,166 @@ const ChatWindow = ({ recipient }) => {
           </ul>
         </div>
 
-        {/* Chat Input */}
-        <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-sm p-2 md:p-3">
-          <form
-            id="chat_message_form"
-            className="w-full flex items-center gap-2"
-            onSubmit={handleSubmit}
-          >
-            {allowedFiles.types.length > 0 && (
-              <label
-                htmlFor="file-upload"
-                className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition"
-                title={`Upload ${allowedFiles.description}`}
-              >
-                <svg
-                  className="w-4 md:w-5 h-4 md:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                  />
-                </svg>
-              </label>
-            )}
-            
-            <input
-              onChange={handleFileChange}
-              type="file"
-              className="sr-only"
-              accept={allowedFiles.accept}
-              id="file-upload"
-              name="url"
-              disabled={allowedFiles.types.length === 0}
-            />
-
-            <input
-              value={formData.message_text}
-              onChange={handleChange}
-              type="text"
-              name="message_text"
-              placeholder="Type your message..."
-              maxLength="150"
-              className="flex-1 px-2 md:px-4 py-1 md:py-2 bg-gray-100 rounded-full text-sm md:text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            <input type="hidden" name="recipient" value={recipient} onChange={handleChange} />
-
-            <button
-              type="submit"
-              disabled={isSending}
-              className="flex items-center px-2 md:px-4 py-1 md:py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm md:text-base font-medium rounded-full transition disabled:opacity-50"
+      {/* Chat Input */}
+      <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-sm p-2 md:p-3">
+        {isConversationExpired ? (
+          // Show 24-hour Expired Notice
+          <div className="bg-yellow-100 text-yellow-800 text-center py-2 px-3 text-sm border-t border-yellow-300">
+            ⚠️ This conversation has expired. You can no longer send free-form messages after 24 hours.
+          </div>
+        ) : (
+          <>
+            <form
+              id="chat_message_form"
+              className="w-full flex items-center gap-2"
+              onSubmit={handleSubmit}
             >
-              {isSending ? (
-                <>
-                  <svg className="w-3 md:w-4 h-3 md:h-4 mr-1 md:mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l5-5-5-5v4a12 12 0 00-12 12h4z" />
+              {allowedFiles.types.length > 0 && (
+                <label
+                  htmlFor="file-upload"
+                  className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition"
+                  title={`Upload ${allowedFiles.description}`}
+                >
+                  <svg
+                    className="w-4 md:w-5 h-4 md:h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                    />
                   </svg>
-                  Sending...
-                </>
-              ) : (
-                'Send'
+                </label>
               )}
-            </button>
-          </form>
 
-          {/* File Preview */}
-          {selectedFile && (
-            <div className="mt-2 md:mt-4 bg-gray-50 border rounded-lg p-2 md:p-3">
-              <p className="text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">
-                Selected {getFileCategory(selectedFile.type)}: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-              </p>
-              
-              {filePreview && (
-                <img src={filePreview} alt="Preview" className="w-full h-auto rounded-lg mb-2 md:mb-3 max-h-40" />
-              )}
-              
-              {!filePreview && (
-                <div className="mb-2 md:mb-3 p-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center text-gray-600">
-                    <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+              <input
+                onChange={handleFileChange}
+                type="file"
+                className="sr-only"
+                accept={allowedFiles.accept}
+                id="file-upload"
+                name="url"
+                disabled={allowedFiles.types.length === 0}
+              />
+
+              <input
+                value={formData.message_text}
+                onChange={handleChange}
+                type="text"
+                name="message_text"
+                placeholder="Type your message..."
+                maxLength="150"
+                className="flex-1 px-2 md:px-4 py-1 md:py-2 bg-gray-100 rounded-full text-sm md:text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input
+                type="hidden"
+                name="recipient"
+                value={recipient}
+                onChange={handleChange}
+              />
+
+              <button
+                type="submit"
+                disabled={isSending}
+                className="flex items-center px-2 md:px-4 py-1 md:py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm md:text-base font-medium rounded-full transition disabled:opacity-50"
+              >
+                {isSending ? (
+                  <>
+                    <svg
+                      className="w-3 md:w-4 h-3 md:h-4 mr-1 md:mr-2 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l5-5-5-5v4a12 12 0 00-12 12h4z"
+                      />
                     </svg>
-                    <p className="text-sm">{selectedFile.name}</p>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={cancelFile}
-                  type="button"
-                  className="px-2 md:px-3 py-1 text-sm md:text-base text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmFileSend}
-                  type="button"
-                  disabled={isSending}
-                  className="px-2 md:px-3 py-1 text-sm md:text-base text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSending ? 'Sending...' : `Send ${getFileCategory(selectedFile.type)}`}
-                </button>
-              </div>
-            </div>
-          )}
+                    Sending...
+                  </>
+                ) : (
+                  'Send'
+                )}
+              </button>
+            </form>
 
-          {/* Plan limitations notice */}
-          {subscriptionStatus?.plan && (
-            <div className="mt-2 text-xs text-gray-500 text-center">
-              {subscriptionStatus.plan.toUpperCase()} Plan: {allowedFiles.description} allowed
-              {allowedFiles.types.length === 0 && (
-                <span className="text-orange-600"> - Upgrade to send files</span>
-              )}
-            </div>
-          )}
-        </div>
+            {/* File Preview */}
+            {selectedFile && (
+              <div className="mt-2 md:mt-4 bg-gray-50 border rounded-lg p-2 md:p-3">
+                <p className="text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">
+                  Selected {getFileCategory(selectedFile.type)}: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                </p>
+
+                {filePreview ? (
+                  <img
+                    src={filePreview}
+                    alt="Preview"
+                    className="w-full h-auto rounded-lg mb-2 md:mb-3 max-h-40"
+                  />
+                ) : (
+                  <div className="mb-2 md:mb-3 p-4 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-center text-gray-600">
+                      <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <p className="text-sm">{selectedFile.name}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={cancelFile}
+                    type="button"
+                    className="px-2 md:px-3 py-1 text-sm md:text-base text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmFileSend}
+                    type="button"
+                    disabled={isSending}
+                    className="px-2 md:px-3 py-1 text-sm md:text-base text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isSending ? 'Sending...' : `Send ${getFileCategory(selectedFile.type)}`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Plan limitations notice */}
+            {subscriptionStatus?.plan && (
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                {subscriptionStatus.plan.toUpperCase()} Plan: {allowedFiles.description} allowed
+                {allowedFiles.types.length === 0 && (
+                  <span className="text-orange-600"> - Upgrade to send files</span>
+                )}
+              </div>
+            )}
+            </>
+  )}
+</div>
+
+                  
+          
       </div>
     </RequireSubscription>
   );
