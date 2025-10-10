@@ -120,7 +120,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
           </div>
         </div> 
 
-        <div 
+        {/* <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'appointment')}
           onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'appointment')}
@@ -133,7 +133,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <h4 className="font-medium text-sm">appointment</h4>
             <p className="text-xs text-gray-500">Message with appointment</p>
           </div>
-        </div> 
+        </div>  */}
         {/* lead collector */}
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"

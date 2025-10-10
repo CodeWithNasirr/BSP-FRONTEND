@@ -49,7 +49,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
-
+import { toast } from 'react-toastify';
 import MainChat from './components/Chat/MainChat';
 
 // Define valid routes
@@ -118,7 +118,7 @@ function AppContent() {
   const isChatWindow =
     (location.pathname.startsWith('/chats/') && location.pathname.split('/').length === 3) ||
     (location.pathname === '/chats' && new URLSearchParams(location.search).has('recipient'));
-
+    const [toast, setToast] = useState({ message: null, type: null });
   const isBasicPlan = subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
 
   const handleRestrictedAccess = (feature) => {
