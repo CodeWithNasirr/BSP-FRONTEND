@@ -11,6 +11,7 @@ import ConnectWhatsAppForm from './components/ConnectForm';
 import Dashboard from './components/Dashboard';
 import CreateCampaigns from './components/Campaigns/CreateCampaigns';
 import ProtectedRoute from './components/Protected_Route';
+import FullProtectedRoute from './components/FullProtectedRoute';
 import WhatsAppSettings from './components/WhatsAppSettings';
 // import WhatsAppScraper from './components/scrap';
 import ChatWindow from './components/Chat/ChatWindow';
@@ -51,7 +52,6 @@ import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import MainChat from './components/Chat/MainChat';
-
 // Define valid routes
 const validRoutes = [
   '/',
@@ -106,6 +106,7 @@ function AppContent() {
   const match = matchRoutes(dynamicRoutes.map((path) => ({ path })), location);
   const isValidRoute = !!match;
   const notFoundPage = !isLoginPage && !isRegisterPage && !isValidRoute;
+  const [canShowSidebar, setCanShowSidebar] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
@@ -121,16 +122,6 @@ function AppContent() {
     const [toast, setToast] = useState({ message: null, type: null });
   const isBasicPlan = subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
 
-  const handleRestrictedAccess = (feature) => {
-    if (isBasicPlan) {
-      toast.error(`Please upgrade your plan to access ${feature}.`, {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-      return false;
-    }
-    return true;
-  };
 
   // Redirect staff to /staff-dashboard if they try to access unauthorized routes
   const isStaff = userInfo?.role === 'staff';
@@ -145,6 +136,24 @@ function AppContent() {
   if (isStaff && !isRouteAllowed && !isLoginPage && !isRegisterPage && !isResetPasswordPage && !isLandingPage) {
     return <Navigate to="/staff-dashboard" replace />;
   }
+  
+  // Check if the current route is restricted for the plan
+  useEffect(() => {
+    if (!subscriptionStatus) {
+      setCanShowSidebar(false); // wait until subscription is loaded
+      return;
+    }
+
+    // Define plan-restricted routes
+    const restrictedRoutes = ['/advanced', '/chat-flow'];
+
+    const isRestricted = restrictedRoutes.some((path) => location.pathname.startsWith(path));
+    const isBasicPlan = subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
+
+    // If user is basic and route is restricted, hide sidebar
+    setCanShowSidebar(!(isRestricted && isBasicPlan));
+  }, [location.pathname, subscriptionStatus]);
+
 
   return (
     <main
@@ -155,7 +164,7 @@ function AppContent() {
         !notFoundPage &&
         !isResetPasswordPage &&
         !isLandingPage &&
-        !(isMobile && isChatWindow) && (
+        !(isMobile && isChatWindow) && canShowSidebar &&  (
           <div className="text-black">
             <Sidebar>
               {isStaff ? (
@@ -172,7 +181,7 @@ function AppContent() {
                       icon={<Workflow size={20} />}
                       text="Flows"
                       to="/chat-flow"
-                      onClick={() => handleRestrictedAccess('Flows')}
+                
                     />
                   )}
                   <SidebarItem icon={<CreditCard size={20} />} text="Subscriptions" to="/subscriptions" />
@@ -184,7 +193,7 @@ function AppContent() {
                       icon={<MdViewCarousel size={20} />}
                       text="Advanced"
                       to="/advanced"
-                      onClick={() => handleRestrictedAccess('Advanced')}
+                      
                     />
                   )}
                 </>
@@ -211,16 +220,16 @@ function AppContent() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Dashboard />)}
               />
             }
           />
-          <Route path="/staff-dashboard" element={<ProtectedRoute element={StaffJobsPage} />} />
+          <Route path="/staff-dashboard" element={<FullProtectedRoute element={StaffJobsPage} />} />
           <Route
             path="/templates"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Templates />)}
               />
             }
@@ -228,7 +237,7 @@ function AppContent() {
           <Route
             path="/templates/create"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <CreateTemplates />)}
               />
             }
@@ -236,7 +245,7 @@ function AppContent() {
           <Route
             path="/campaigns"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Campaigns />)}
               />
             }
@@ -244,7 +253,7 @@ function AppContent() {
           <Route
             path="/campaigns/create"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <CreateCampaigns />)}
               />
             }
@@ -252,7 +261,7 @@ function AppContent() {
           <Route
             path="/campaigns/:id"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Campaigns_Details />)}
               />
             }
@@ -260,7 +269,7 @@ function AppContent() {
           <Route
             path="/contacts"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <ContactManagement />)}
               />
             }
@@ -268,7 +277,7 @@ function AppContent() {
           <Route
             path="/bulk-upload"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <BulkImportContacts />)}
               />
             }
@@ -276,7 +285,7 @@ function AppContent() {
           <Route
             path="/connect-form"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <ConnectWhatsAppForm />)}
               />
             }
@@ -284,7 +293,7 @@ function AppContent() {
           <Route
             path="/whatsapp-setting"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <WhatsAppSettings />)}
               />
             }
@@ -292,7 +301,7 @@ function AppContent() {
           <Route
             path="/chats"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <MainChat />)}
               />
             }
@@ -300,7 +309,7 @@ function AppContent() {
           <Route
             path="/chats/:id"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <ChatWindow />)}
               />
             }
@@ -308,7 +317,7 @@ function AppContent() {
           <Route
             path="/subscriptions"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Subscription />)}
               />
             }
@@ -316,7 +325,7 @@ function AppContent() {
           <Route
             path="/my-usage-panel"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <MyUsagePanel />)}
               />
             }
@@ -324,7 +333,7 @@ function AppContent() {
           <Route
             path="/chat-flow"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <FlowBuilder setEnableChatFlow={setEnableChatFlow} />)}
               />
             }
@@ -332,7 +341,7 @@ function AppContent() {
           <Route
             path="/Credits"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Wallet />)}
               />
             }
@@ -340,7 +349,7 @@ function AppContent() {
           <Route
             path="/orders"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <Order />)}
               />
             }
@@ -348,7 +357,7 @@ function AppContent() {
           <Route
             path="/products"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <ProductView />)}
               />
             }
@@ -356,7 +365,7 @@ function AppContent() {
           <Route
             path="/products/create-pr"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <CreateProduct />)}
               />
             }
@@ -364,31 +373,27 @@ function AppContent() {
           <Route
             path="/meta-catalog-setup"
             element={
-              <ProtectedRoute
-                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <MetaCatalogSetup />)}
+              isStaff ? <Navigate to="/staff-dashboard" replace /> : <FullProtectedRoute element={MetaCatalogSetup} featureName="catalog" requirePlanCheck={true}/>}
               />
-            }
-          />
-          <Route
+            
+           <Route
             path="/Segment"
             element={
-              <ProtectedRoute
-                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <SegmentManager />)}
+              isStaff ? <Navigate to="/staff-dashboard" replace /> : <FullProtectedRoute element={SegmentManager} featureName="Segment" requirePlanCheck={true} />}
               />
-            }
-          />
+      
           <Route
             path="/advanced"
             element={
-              <ProtectedRoute
-                element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <AdvancedPage />)}
-              />
+              isStaff
+                ? <Navigate to="/staff-dashboard" replace />
+                : <FullProtectedRoute element={AdvancedPage} featureName="Advanced" requirePlanCheck={true} />
             }
           />
           <Route
             path="/rfm-preview"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <RFMPreview toast={toast} setToast={setToast} />)}
               />
             }
@@ -396,7 +401,7 @@ function AppContent() {
           <Route
             path="/booking"
             element={
-              <ProtectedRoute
+              <FullProtectedRoute
                 element={() => (isStaff ? <Navigate to="/staff-dashboard" replace /> : <B_Sidebar />)}
               />
             }
