@@ -8,7 +8,7 @@ const plans = [
   {
     name: 'BASIC',
     monthly: 499,
-    yearly: 3299,
+    yearly: 4999,
     included_messages: 1000,
     gradient: 'from-green-500 to-green-600',
     disabled: false,
