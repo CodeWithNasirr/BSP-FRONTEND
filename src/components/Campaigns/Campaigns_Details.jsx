@@ -1,236 +1,255 @@
 import React, { useEffect, useState } from "react";
-import { data, Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
-import { NavLink } from "react-router-dom";
-import { assest } from "../../assets/assets";
 import RequireSubscription from "../Subscriptions/RequireSubscription";
-
+import { assest } from "../../assets/assets";
+import TemplateViewModal from "../Templates/TemplateViewModal.jsx";
 const CampaignDetails = () => {
   const { id } = useParams();
   const token = localStorage.getItem("authToken");
 
   const [Campaign, setCampaign] = useState(null);
-  const [template, setTemplate] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  const fetchCampaignDetails = async (url = `${API_BASE_URL}/api/campaigns/${id}/`) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(url, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      const Data = response.data;
+      setCampaign(Data);
+      setSelectedTemplate(Data.Templates || []);
+      setPagination(Data.Msg_Pagination || {});
+    } catch (error) {
+      console.error("Error fetching campaign details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCampaignDetails = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/campaigns/${id}/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const Data = response.data
-        // console.log("API response:", Data)
-        setCampaign(Data);
-        setTemplate(Data.Templates || []);
-     
-      } catch (error) {
-        console.error("Error fetching campaign details:", error);
-      }
-    };
-
     fetchCampaignDetails();
-  }, [id, token]);
+  }, [id]);
 
-  if (!Campaign) return <p>Loading campaign details...</p>;
-
-  return (
-   <RequireSubscription>
-  <div className="max-h-[100vh] flex flex-col w-full min-w-0">
-    <div className="p-4 sm:p-8 rounded-[5px] h-full overflow-y-auto capitalize">
-      <div className="flex flex-col sm:flex-row justify-between">
-        <div>
-          <h2 className="text-xl mb-1">Campaign details</h2>
-          <p className="mb-6 flex items-center text-sm leading-6">
-            <span className="ml-1 mt-1">Ref.: {Campaign.campaign_id}</span>
-          </p>
-        </div>
-        <div className="space-x-2 flex flex-col  gap-2 sm:gap-2 ">
-          <Link
-            href={``}
-            className="rounded-md cursor-not-allowed bg-gray-400 bg-secondary px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
-          >
-            Export as CSV
-          </Link>
-          <Link
-            className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
-            to="/campaigns"
-          >
-            Back
-          </Link>
-        </div>
-      </div>
-      <div className="flex flex-col sm:md:flex sm:md:flex-row sm:md:space-x-4">
-        <div className="w-full sm:md:w-[70%]">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-0 w-full mb-8 rounded-lg">
-            {["Messages", "Sent", "Delivered", "Read", "Failed"].map(
-              (label, index) => (
-                <div
-                  key={index}
-                  className="w-full text-center bg-white py-4 sm:py-8 border"
-                >
-                  <h2 className="text-lg sm:text-xl">
-                    {index === 0
-                      ? `${Campaign.total_message}`
-                      : 0 || index === 1
-                      ? `${Campaign.total_sent}`
-                      : 0 || index === 2
-                      ? `${Campaign.total_delivered}`
-                      : 0 || index === 3
-                      ? `${Campaign.total_read}`
-                      : 0 || index === 4
-                      ? `${Campaign.total_failed}`
-                      : 0}
-                  </h2>
-                  <h4 className="text-xs sm:text-sm">{label}</h4>
-                </div>
-              )
-            )}
+  if (!Campaign) return <div className="flex items-center justify-center min-h-screen bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading your Campaigns...</p>
           </div>
-          {/* <div className="bg-white flex items-center shadow-sm h-10 w-full sm:w-80 rounded-[0.5rem] mb-6 text-sm">
-            <span className="pl-3">🔍</span>
-            <input
-              type="text"
-              className="outline-none px-4 w-full"
-              placeholder="Search Campaigns"
-            />
-          </div> */}
-          <div className="bg-slate-100 sm:bg-white rounded-[0.5rem] overflow-x-auto">
+        </div>;
+
+return (
+  <RequireSubscription>
+    <div className="max-h-[100vh] flex flex-col w-full min-w-0">
+      <div className="p-4 sm:p-8 rounded-[5px] h-full overflow-y-auto capitalize">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <div>
+            <h2 className="text-xl mb-1">Campaign details</h2>
+            <p className="text-sm text-gray-600">
+              Ref.: {Campaign.campaign_id}
+            </p>
+          </div>
+
+          {/* Buttons on right side */}
+          <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+            <Link
+              href="#"
+              className="rounded-md cursor-not-allowed bg-gray-400 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
+            >
+              Export as CSV
+            </Link>
+            <Link
+              className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm text-center"
+              to="/campaigns"
+            >
+              Back
+            </Link>
+
+            <button
+              onClick={() => {
+                setSelectedTemplate(Campaign.Templates);
+                setViewModalOpen(true);
+              }}
+              className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 text-sm font-semibold rounded-md shadow-sm"
+            >
+              View Template
+            </button>
+          </div>
+        </div>
+
+        {/* Campaign Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-0 w-full mb-8 rounded-lg">
+          {["Messages", "Sent", "Delivered", "Read", "Failed"].map(
+            (label, index) => (
+              <div
+                key={index}
+                className="w-full text-center bg-white py-4 sm:py-8 border"
+              >
+                <h2 className="text-lg sm:text-xl font-semibold">
+                  {[
+                    Campaign.total_message,
+                    Campaign.total_sent,
+                    Campaign.total_delivered,
+                    Campaign.total_read,
+                    Campaign.total_failed,
+                  ][index] || 0}
+                </h2>
+                <h4 className="text-xs sm:text-sm text-gray-600">{label}</h4>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="bg-slate-100 sm:bg-white rounded-[0.5rem] overflow-x-auto">
+          {loading ? (
+            <p className="text-center py-4">Loading...</p>
+          ) : (
             <table className="w-full min-w-[600px]">
-              <thead className="table-header-group">
-                <tr className="text-sm">
-                  <th className="font-normal pl-4 py-4 text-left hidden sm:table-cell">
-                    Contact
-                  </th>
+              <thead>
+                <tr className="text-sm text-gray-700 border-b">
+                  <th className="font-normal pl-4 py-4 text-left hidden sm:table-cell">Contact</th>
                   <th className="font-normal py-4 text-left">Phone</th>
-                  <th className="font-normal py-4 text-left hidden sm:table-cell">
-                    Last Updated
-                  </th>
-                  <th className="font-normal py-4 text-left sm:table-cell hidden">
-                    Status
-                  </th>
+                  <th className="font-normal py-4 text-left hidden sm:table-cell">Last Updated</th>
+                  <th className="font-normal py-4 text-left hidden sm:table-cell">Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {Array.isArray(Campaign.Msg_Status) &&
-                Campaign.Msg_Status.length > 0 ? (
+                <tbody>
+                {Array.isArray(Campaign.Msg_Status) && Campaign.Msg_Status.length > 0 ? (
                   Campaign.Msg_Status.map((item, index) => (
                     <tr
                       key={index}
                       className="hover:bg-slate-50 border-[#d1d5db] text-sm"
                     >
+                      {/* Contact */}
                       <td className="pl-4 py-4 hidden sm:table-cell">
-                        {item.user_name == "null" ? "unknown" : item.user_name}
+                        {item.user_name === "null" ? "unknown" : item.user_name}
                       </td>
+
+                      {/* Phone */}
                       <td className="py-4 sm:pl-0 pl-4">
                         <div className="sm:hidden flex flex-col overflow-x-hidden">
                           <span className="font-medium">+{item.recipient_id}</span>
                           <span className="text-gray-600">
-                            {Campaign.Msg_Status && Campaign.Msg_Status.length > 0
+                            {item.timestamp
                               ? new Date(item.timestamp).toLocaleString()
                               : "No timestamp available"}
                           </span>
+
+                          {/* Status (Mobile) */}
                           <span
-                            className={`px-2  py-1 text-xs rounded-md mt-1 ${
+                            tabIndex="0"
+                            className={`relative group px-2 py-1 text-xs rounded-md mt-1 ${
                               item.status === "read"
                                 ? "bg-green-700"
                                 : item.status === "failed" || item.status === "sent"
                                 ? "bg-red-700"
                                 : "bg-green-700"
-                            } text-white inline-block`}
+                            } text-white cursor-pointer inline-block`}
                           >
                             {item.status}
+
+                            {/* Tooltip */}
+                            {item.status === "failed" && item.failed_reason && (
+                              <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 bg-gray-800 text-white text-xs rounded-md p-2 shadow-lg z-10 block sm:hidden">
+                                {item.failed_reason}
+                              </span>
+                            )}
                           </span>
                         </div>
+
                         <span className="hidden sm:block">+{item.recipient_id}</span>
                       </td>
+
+                      {/* Timestamp */}
                       <td className="py-4 hidden sm:table-cell">
-                        {Campaign.Msg_Status && Campaign.Msg_Status.length > 0
+                        {item.timestamp
                           ? new Date(item.timestamp).toLocaleString()
                           : "No timestamp available"}
                       </td>
+
+                      {/* Status (Desktop) */}
                       <td className="py-4 hidden sm:table-cell">
                         <span
-                          className={`px-2 py-1 text-xs rounded-md ${
+                          tabIndex="0"
+                          className={`relative group px-2 py-1 text-xs rounded-md ${
                             item.status === "read"
                               ? "bg-green-700"
                               : item.status === "failed" || item.status === "sent"
                               ? "bg-red-700"
                               : "bg-green-700"
-                          } text-white`}
+                          } text-white cursor-pointer`}
                         >
                           {item.status}
+
+                          {/* Tooltip for failed reason */}
+                           {item.status === "failed" && item.failed_reason && (
+                            <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block group-focus:block w-60 bg-gray-800 text-white text-xs rounded-md p-2 shadow-lg z-10">
+                              {item.failed_reason}
+                            </span>
+                          )}
                         </span>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="4"
-                      className="text-center py-4 text-gray-500"
-                    >
+                    <td colSpan="4" className="text-center py-4 text-gray-500">
                       No message status available
                     </td>
                   </tr>
                 )}
               </tbody>
+            
             </table>
-          </div>
+          )}
         </div>
-        <div className="w-full sm:md:w-[30%] mt-4 sm:mt-0">
-          <div className="w-full rounded-lg bg-white pt-4 pb-8 border px-4 space-y-1">
-            <h2 className="mb-2">Campaign details</h2>
-            <div className="text-sm bg-slate-100 p-3 rounded-lg">
-              <h3>Campaign name</h3>
-              <p>{Campaign.campaigns_name}</p>
-            </div>
-            <div className="text-sm bg-slate-100 p-3 rounded-lg">
-              <h3>Template</h3>
-              <p>{Campaign.template_name}</p>
-            </div>
-            <div className="text-sm bg-slate-100 p-3 rounded-lg">
-              <h3>Time scheduled</h3>
-              <p>
-                {Campaign.Msg_Status && Campaign.Msg_Status.length > 0
-                  ? new Date(
-                      Campaign.Msg_Status[0].timestamp
-                    ).toLocaleString()
-                  : "No timestamp available"}
-              </p>
-            </div>
+
+        {/* Pagination Controls */}
+        {pagination.total_pages > 1 && (
+          <div className="flex justify-center items-center mt-4 gap-4">
+            <button
+              disabled={!pagination.previous}
+              onClick={() => fetchCampaignDetails(pagination.previous)}
+              className={`px-3 py-1 border rounded ${
+                !pagination.previous ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              ← Previous
+            </button>
+            <span>
+              Page {pagination.current_page} of {pagination.total_pages}
+            </span>
+            <button
+              disabled={!pagination.next}
+              onClick={() => fetchCampaignDetails(pagination.next)}
+              className={`px-3 py-1 border rounded ${
+                !pagination.next ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Next →
+            </button>
           </div>
-          <div className="w-full border pt-4 px-4 space-y-1 rounded-xl shadow-md bg-cover bg-center mt-4" style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}>
-            <div className="flex justify-start">
-              <div className="flex items-end">
-                <svg height="13" width="8">
-                  <path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" />
-                </svg>
-              </div>
-              <div className="rounded-r-lg rounded-tl-lg text-md bg-white py-2 pl-3">
-                <h1 className="font-semibold">{template.header_text}</h1>
-                <span className="text-sm w-full">{template.body_text}</span>
-                <div className="text-xs text-gray-500 mt-1">
-                  <span className="font-light">{template.footer_text}</span>
-                  <br />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-start items-center py-2">
-              <span className="bg-white rounded-l-lg rounded-tr-lg w-full text-center text-blue-500">
-                {template.button_text}
-              </span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Template Modal */}
+      <TemplateViewModal
+        isOpen={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        template={selectedTemplate}
+      />
     </div>
-  </div>
-</RequireSubscription>
-  );
+  </RequireSubscription>
+);
+
 };
 
 export default CampaignDetails;
