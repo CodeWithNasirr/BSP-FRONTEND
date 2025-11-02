@@ -40,6 +40,8 @@ const Contacts = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [segments, setSegments] = useState([]);
   const [selectedSegment, setSelectedSegment] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const updateLocalStorageUserInfo = (key, value) => {
     const storedUserInfo = localStorage.getItem("userInfo");
@@ -48,11 +50,11 @@ const Contacts = ({
     parsed[key] = value;
     localStorage.setItem("userInfo", JSON.stringify(parsed));
   };
-
+  // console.log(groups)
   const fetchContactsAndGroups = debounce(async (pageNum, search = '', segmentId = '') => {
     try {
       const [contactsRes, groupsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/contacts/?page=${pageNum}&search=${encodeURIComponent(search)}&segment=${segmentId}`, {
+        axios.get(`${API_BASE_URL}/api/contacts/?page=${pageNum}&search=${encodeURIComponent(search)}&segment=${segmentId}&group=${selectedGroup}`, {
           headers: { Authorization: `Token ${token}` },
         }),
         axios.get(`${API_BASE_URL}/api/add-group/`, { headers: { Authorization: `Token ${token}` } }),
@@ -80,8 +82,8 @@ const Contacts = ({
       if (parsed.contacts) setContacts(parsed.contacts);
     }
 
-    fetchContactsAndGroups(c_page, searchQuery, selectedSegment);
-  }, [c_page, searchQuery, selectedSegment, token]);
+    fetchContactsAndGroups(c_page, searchQuery, selectedSegment,selectedGroup);
+  }, [c_page, searchQuery, selectedSegment,selectedGroup, token]);
 
   useEffect(() => {
     async function fetchSegments() {
@@ -102,7 +104,7 @@ const Contacts = ({
         data: { contact_id },
       });
       toast.success(response.data.message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}`, {
+      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}&group=${selectedGroup}`, {
         headers: { Authorization: `Token ${token}` },
       });
       setContacts(contactsRes.data.results || []);
@@ -122,7 +124,7 @@ const Contacts = ({
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
       });
       toast.success(response.data.Message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}`, {
+      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}&group=${selectedGroup}`, {
         headers: { Authorization: `Token ${token}` },
       });
       setContacts(contactsRes.data.results || []);
@@ -142,7 +144,7 @@ const Contacts = ({
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
       });
       toast.success(response.data.Message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}`, {
+      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}&group=${selectedGroup}`, {
         headers: { Authorization: `Token ${token}` },
       });
       setContacts(contactsRes.data.results || []);
@@ -241,7 +243,7 @@ const Contacts = ({
         headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
       });
       toast.success(response.data.Message);
-      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}`, {
+      const contactsRes = await axios.get(`${API_BASE_URL}/api/contacts/?page=${c_page}&search=${encodeURIComponent(searchQuery)}&segment=${selectedSegment}&group=${selectedGroup}`, {
         headers: { Authorization: `Token ${token}` },
       });
       setContacts(contactsRes.data.results || []);
@@ -301,171 +303,174 @@ const Contacts = ({
   return (
     <div className="max-h-screen md:h-screen flex flex-col w-full min-w-0">
       <div className="md:bg-inherit bg-white md:flex md:flex-grow capitalize">
-        <div className="md:w-[30%] flex-col max-h-full bg-white border-r border-slate-200 md:flex">
-          <div className="px-4 pt-4">
-            <div className="flex justify-between mt-2">
-              <div className="flex space-x-1 text-xl">
-                <h2>Contacts</h2>
-                <span className="text-slate-500">{contacts.length}</span>
-              </div>
-              <div className="flex space-x-2 items-center">
-                <a
-                  title="Add Contact"
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowAddContactForm(!showAddContactForm);
-                    setSelectedContact(null);
-                    setFormData({
-                      firstName: '',
-                      lastName: '',
-                      phone_number: '',
-                      email: '',
-                      group_name: '',
-                      location: '',
-                      tags: '',
-                      total_purchases: 0,
-                      total_spent: 0,
-                      
-                    });
-                  }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                  >
-                    <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
-                      <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12Zm10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z"></path>
-                      <path d="M13 7a1 1 0 1 0-2 0v4H7a1 1 0 1 0 0 2h4v4a1 1 0 1 0 2 0v-4h4a1 1 0 1 0 0-2h-4V7Z"></path>
-                    </g>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
+        <div className="md:w-[30%] flex flex-col max-h-full bg-white border-r border-slate-200">
+  {/* HEADER */}
+  <div className="px-4 pt-4 flex justify-between items-center">
+    <div className="flex space-x-1 text-xl items-center">
+      <h2 className="font-semibold">Contacts</h2>
+      <span className="text-slate-500">({contacts.length})</span>
+    </div>
+    <button
+      title="Add Contact"
+      onClick={() => {
+        setShowAddContactForm(true);
+        setSelectedContact(null);
+        setFormData({
+          firstName: '',
+          lastName: '',
+          phone_number: '',
+          email: '',
+          group_name: '',
+          location: '',
+          tags: '',
+          total_purchases: 0,
+          total_spent: 0,
+        });
+      }}
+      className="text-blue-600 hover:bg-blue-50 p-2 rounded-full"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+        <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
+          <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12Zm10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z"></path>
+          <path d="M13 7a1 1 0 1 0-2 0v4H7a1 1 0 1 0 0 2h4v4a1 1 0 1 0 2 0v-4h4a1 1 0 1 0 0-2h-4V7Z"></path>
+        </g>
+      </svg>
+    </button>
+  </div>
 
-          <div className="px-4 pb-2">
-            <div className="border border-[#f0f2f5] rounded-md mt-6 flex items-center py-[2px]">
-              <span className="pl-3 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m15 15l6 6m-11-4a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z"
-                  ></path>
-                </svg>
-              </span>
-              <input
-                type="text"
-                className="w-full outline-none rounded-xl py-2 pl-2 mr-2 text-sm"
-                placeholder="Search name or phone or email"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm leading-6 text-gray-900">Filter by Segment</label>
-              <select
-                value={selectedSegment}
-                onChange={(e) => { setSelectedSegment(e.target.value); setC_Page(1); }}
-                className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset ring-gray-300 sm:text-sm"
-              >
-                <option value="">All</option>
-                {segments.map((seg) => (
-                  <option key={seg.segment_id} value={seg.segment_id}>{seg.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+  {/* SEARCH BAR */}
+  <div className="px-4 pb-2 mt-4 flex items-center border border-gray-200 rounded-md">
+    <span className="pl-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+        <path
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="m15 15l6 6m-11-4a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z"
+        ></path>
+      </svg>
+    </span>
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={handleSearchChange}
+      placeholder="Search by name, phone, or email"
+      className="w-full py-2 px-2 text-sm outline-none rounded-md"
+    />
+    <button
+      onClick={() => setShowFilters(!showFilters)}
+      className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+      title="Toggle Filters"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"></polygon>
+      </svg>
+    </button>
+  </div>
 
-          <div className="flex justify-between px-4 border-b border-slate-200 pb-2">
-            <div className="flex items-center space-x-2">
-              <label htmlFor="myCheckbox" className="cursor-pointer flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="myCheckbox"
-                  checked={isContSelected}
-                  onChange={handleSelectAll}
-                  className="w-4 h-4 border border-gray-400 rounded-md"
-                />
-                <span className="text-sm">Select all {selectedContacts.length}</span>
-              </label>
-            </div>
-            <div className="relative inline-block text-left">
-              <button
-                className="p-2 hover:bg-gray-200 cursor-pointer rounded-full"
-                onClick={() => toggleDropdown(true)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M12 16a2 2 0 0 1 2 0a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m0-6a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m0-6a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2Z"
-                  ></path>
-                </svg>
-              </button>
-              {activeDropdownId && (
-                <div className="absolute right-0 origin-top-right z-10 mt-2 w-32 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-opacity-5 focus:outline-none">
-                  <div className="px-1 py-1" role="none">
-                    <Link
-                      to=""
-                      className="text-black hover:bg-blue-600 hover:text-white flex w-full rounded-md px-2 py-2 text-sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (selectedContacts.length === 1) {
-                          const contact = contacts.find((c) => c.id === selectedContacts[0]);
-                          viewContact(contact);
-                        }
-                      }}
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      className="text-black hover:bg-blue-600 hover:text-white cursor-pointer flex w-full rounded-md px-2 py-2 text-sm text-left"
-                      onClick={() => deleteContact(selectedContacts)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+  {/* FILTERS */}
+  {showFilters && (
+    <div className="px-4 pb-4 space-y-4 border-b border-gray-200">
+      <div>
+        <label className="block text-sm text-gray-700 mb-1">Filter by Segment</label>
+        <select
+          value={selectedSegment}
+          onChange={(e) => { setSelectedSegment(e.target.value); setC_Page(1); }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All</option>
+          {segments.map((seg) => (
+            <option key={seg.segment_id} value={seg.segment_id}>{seg.name}</option>
+          ))}
+        </select>
+      </div>
 
-          <div className="h-[5vh]">
-            <div className="flex justify-between text-sm border-b border-slate-200">
-              <button
-                onClick={() => setActiveTab("contact")}
-                className={`pt-3 w-1/2 text-center pb-1 cursor-pointer ${activeTab === "contact" ? "bg-slate-50 border-b-2 border-slate-700" : ""}`}
-              >
-                All Contacts
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("group");
-                  setSelectedContacts([]);
-                  setContAllSelected(false);
-                }}
-                className={`pt-3 w-1/2 text-center pb-1 cursor-pointer ${activeTab === "group" ? "bg-slate-50 border-b-2 border-slate-700" : ""}`}
-              >
-                Group
-              </button>
-            </div>
-          </div>
+      <div>
+        <label className="block text-sm text-gray-700 mb-1">Filter by Group</label>
+        <select
+          value={selectedGroup}
+          onChange={(e) => { setSelectedGroup(e.target.value); setC_Page(1); }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>{group.group_name}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )}
+
+  {/* BULK ACTIONS */}
+  <div className="flex justify-between px-4 py-2 border-b border-gray-200">
+    <label className="flex items-center space-x-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={isContSelected}
+        onChange={handleSelectAll}
+        className="w-4 h-4 border border-gray-400 rounded-md"
+      />
+      <span className="text-sm">Select all ({selectedContacts.length})</span>
+    </label>
+
+    {/* Dropdown */}
+    <div className="relative">
+      <button
+        className="p-2 hover:bg-gray-100 rounded-full"
+        onClick={() => toggleDropdown(!activeDropdownId)}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+          <path fill="currentColor"
+            d="M12 16a2 2 0 0 1 2 0a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m0-6a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m0-6a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2Z">
+          </path>
+        </svg>
+      </button>
+      {activeDropdownId && (
+        <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-md z-20">
+          <button
+            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-600 hover:text-white rounded-t-md"
+            onClick={() => {
+              if (selectedContacts.length === 1) {
+                const contact = contacts.find((c) => c.id === selectedContacts[0]);
+                viewContact(contact);
+              }
+            }}
+          >
+            Edit
+          </button>
+          <button
+            className="w-full text-left px-3 py-2 text-sm hover:bg-red-600 hover:text-white rounded-b-md"
+            onClick={() => deleteContact(selectedContacts)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* TABS */}
+  <div className="flex justify-between text-sm border-b border-gray-200">
+    <button
+      onClick={() => setActiveTab("contact")}
+      className={`w-1/2 py-3 text-center ${activeTab === "contact" ? "bg-slate-50 border-b-2 border-slate-700" : ""}`}
+    >
+      All Contacts
+    </button>
+    <button
+      onClick={() => {
+        setActiveTab("group");
+        setSelectedContacts([]);
+        setContAllSelected(false);
+      }}
+      className={`w-1/2 py-3 text-center ${activeTab === "group" ? "bg-slate-50 border-b-2 border-slate-700" : ""}`}
+    >
+      Groups
+    </button>
+  </div>
 
           {loading ? (
             <div className="text-center my-30 animate-pulse">Loading contacts...</div>
