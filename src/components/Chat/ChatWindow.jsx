@@ -7,7 +7,7 @@ import { Context } from '../context/Context';
 
 const ChatWindow = ({ recipient }) => {
   const [messages, setMessages] = useState([]);
-  console.log(messages)
+  // console.log(messages)
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
   const chatContainerRef = useRef(null);
