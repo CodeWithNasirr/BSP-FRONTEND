@@ -31,6 +31,7 @@
     "sitemap": "^8.0.0",
     "uuid": "^11.1.0",
     "websocket": "^1.0.35",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.4"
   },
   "devDependencies": {

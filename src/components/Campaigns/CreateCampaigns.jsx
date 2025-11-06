@@ -98,15 +98,40 @@ function CreateCampaigns() {
   };
 
   // Handle file input change
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file && file.type.startsWith('image/')) {
+  //     setMediaFile(file);
+  //   } else {
+  //     toast.error('Please upload a valid image');
+  //     setMediaFile(null);
+  //   }
+  // };
+  
+  // Handle file input change
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // ✅ Validate image type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload a valid image file (JPEG, PNG, etc.)');
+        setMediaFile(null);
+        return;
+      }
+
+      // ✅ Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        toast.error('Image size should not exceed 5MB');
+        setMediaFile(null);
+        return;
+      }
+
+      // ✅ If valid
       setMediaFile(file);
-    } else {
-      toast.error('Please upload a valid image');
-      setMediaFile(null);
-    }
-  };
+      toast.success(`Image "${file.name}" selected successfully`);
+    };
 
   // Extract variables from selected template
   useEffect(() => {
