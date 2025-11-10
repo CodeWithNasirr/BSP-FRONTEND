@@ -4,12 +4,14 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { toast } from 'react-toastify';
 import debounce from 'lodash/debounce';
+import MarkPurchaseModal from './MarkPurchaseModal';
 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
+
   const [showTags, setShowTags] = useState(false);
   const [socket, setSocket] = useState(null);
   const token = localStorage.getItem('authToken');
@@ -20,12 +22,12 @@ const ChatList = ({ onSelectConversation }) => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [purchaseForm, setPurchaseForm] = useState({ amount: '', location: '', tags: [], tagInput: '' });
   const pageRef = useRef(page);
-
+ 
   // Sync ref with state
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
-
+  
   // Fetch available tags from ContactTagsView
   useEffect(() => {
     const fetchTags = async () => {
@@ -33,13 +35,33 @@ const ChatList = ({ onSelectConversation }) => {
         const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
           headers: { Authorization: `Token ${token}` },
         });
-        setAvailableTags(response.data.tags.map((t) => t.tag));
+
+        // Response example: response.data.tags = [{ tag: "VIP", count: 10 }, { tag: "New", count: 5 }]
+        const tagsWithCounts = response.data.tags.map((t) => ({
+          name: t.tag,
+          count: t.count,
+        }));
+
+        setAvailableTags(tagsWithCounts);
       } catch (error) {
         toast.error('Failed to fetch tags');
       }
     };
     fetchTags();
   }, []);
+
+  const handleOpenPurchaseModal = (contact) => {
+    setSelectedContact(contact);
+    setPurchaseForm({
+      amount: '',
+      location: '',
+      tags: contact.tags || [],
+      tagInput: '',
+    });
+    setShowPurchaseModal(true);
+  };
+
+
 
   // Debounced fetchChatList
   const debouncedFetchChatList = useCallback(
@@ -48,7 +70,7 @@ const ChatList = ({ onSelectConversation }) => {
     }, 300),
     []
   );
-
+  
   // Fetch chat list with tag filtering
   const fetchChatList = async (pageNum = 1, query = searchQuery, tags = selectedTags) => {
     // setLoading(true);
@@ -143,33 +165,6 @@ useEffect(() => {
     );
   };
 
-  // Handle purchase tag input
-  const handlePurchaseTagInput = (e) => {
-    setPurchaseForm((prev) => ({
-      ...prev,
-      tagInput: e.target.value,
-    }));
-  };
-
-  // Add purchase tag
-  const addPurchaseTag = (tag) => {
-    if (tag && !purchaseForm.tags.includes(tag)) {
-      setPurchaseForm((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tag],
-        tagInput: '',
-      }));
-    }
-  };
-
-  // Remove purchase tag
-  const removePurchaseTag = (tag) => {
-    setPurchaseForm((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((t) => t !== tag),
-    }));
-  };
-
   // Format timestamp
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
@@ -196,36 +191,6 @@ useEffect(() => {
     }
   };
 
-  // Handle mark purchase submission
-  const handleMarkPurchase = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/contacts/mark-purchase/`,
-        {
-          phone_number: selectedContact.recipient,
-          full_name: selectedContact.user_name,
-          location: purchaseForm.location,
-          amount: purchaseForm.amount,
-          tags: purchaseForm.tags,
-        },
-        {
-          headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
-        }
-      );
-      toast.success('Purchase marked successfully');
-      setShowPurchaseModal(false);
-      setPurchaseForm({ amount: '', location: '', tags: [], tagInput: '' });
-      setSelectedContact(null);
-      fetchChatList(pageRef.current, searchQuery, selectedTags);
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to mark purchase');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Search and Tag Filter */}
@@ -242,17 +207,17 @@ useEffect(() => {
         </div>
         {showTags && (
           <div className="flex flex-wrap gap-2">
-            {availableTags.map((tag) => (
+            {availableTags.map((tagObj) => (
               <button
-                key={tag}
-                onClick={() => handleTagChange(tag)}
+                key={tagObj.name}
+                onClick={() => handleTagChange(tagObj.name)}
                 className={`px-2 py-1 rounded-full text-sm ${
-                  selectedTags.includes(tag)
+                  selectedTags.includes(tagObj.name)
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-200 text-gray-700'
                 }`}
               >
-                {tag}
+                {tagObj.name} ({tagObj.count})
               </button>
             ))}
           </div>
@@ -304,8 +269,7 @@ useEffect(() => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedContact(conv);
-                        setShowPurchaseModal(true);
+                        handleOpenPurchaseModal(conv);
                       }}
                       className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                     >
@@ -352,7 +316,23 @@ useEffect(() => {
       </div>
 
       {/* Mark Purchase Modal */}
-      {showPurchaseModal && (
+      <MarkPurchaseModal
+          show={showPurchaseModal}
+          onClose={() => {
+            setShowPurchaseModal(false);
+            setPurchaseForm({ amount: '', location: '', tags: [], tagInput: '' });
+            setSelectedContact(null);
+          }}
+          contact={selectedContact}
+          purchaseForm={purchaseForm}
+          setPurchaseForm={setPurchaseForm}
+          availableTags={availableTags}
+          fetchChatList={() => fetchChatList(pageRef.current, searchQuery, selectedTags)}
+          token={token}
+          loading={loading}
+          setLoading={setLoading}
+        />
+      {/* {showPurchaseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -427,16 +407,16 @@ useEffect(() => {
                 {availableTags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {availableTags
-                      .filter((tag) => tag.toLowerCase().includes((purchaseForm.tagInput || '').toLowerCase()) && !purchaseForm.tags.includes(tag))
+                      .filter((tagObj) => tagObj.name.toLowerCase().includes((purchaseForm.tagInput || '').toLowerCase()) && !purchaseForm.tags.includes(tagObj.name))
                       .slice(0, 10)
-                      .map((tag) => (
+                      .map((tagObj) => (
                         <button
-                          key={tag}
+                          key={tagObj.name}
                           type="button"
-                          onClick={() => addPurchaseTag(tag)}
+                          onClick={() => addPurchaseTag(tagObj.name)}
                           className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200"
                         >
-                          {tag}
+                          {tagObj.name} ({tagObj.count})
                         </button>
                       ))}
                   </div>
@@ -465,7 +445,7 @@ useEffect(() => {
             </form>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

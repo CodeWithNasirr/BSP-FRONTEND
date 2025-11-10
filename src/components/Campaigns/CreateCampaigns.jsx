@@ -54,27 +54,74 @@ function CreateCampaigns() {
     };
     fetchData();
   }, [token]);
+  
+
+
+  // 🧠 Auto re-validate whenever relevant state changes
+  useEffect(() => {
+    // pass `variables` (derived from selectedTemplate) so validator knows which variables are required
+    const isFormComplete = validateForm(formData, scheduleType, selectedTemplate, mediaFile, variables);
+    setIsDisabled(!isFormComplete);
+  }, [formData, scheduleType, selectedTemplate, mediaFile, variables]);
+
+  // 2) Centralized validator: accepts explicit requiredVariables array (derived from selectedTemplate)
+  const validateForm = (formData, scheduleType, selectedTemplate, mediaFile, requiredVariables = []) => {
+    // Only treat variables as required when the template actually defines them (requiredVariables length > 0)
+    const hasEmptyVariables =
+      requiredVariables.length > 0 &&
+      requiredVariables.some((varToken) => {
+        // if your keys in variable_values are like "{{1}}", then use varToken directly; if they are "1", adjust accordingly
+        const val = formData.variable_values?.[varToken];
+        return val === '' || val === null || val === undefined;
+      });
+
+  
+    // 🔹 Media validation — use same condition as your render logic
+    const templateRequiresMedia = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(
+      selectedTemplate?.header_type?.toUpperCase()
+    );
+    const mediaMissing = templateRequiresMedia && !mediaFile;
+    const isFormComplete =
+      formData.template_name.trim() !== '' &&
+      formData.campaigns_name.trim() !== '' &&
+      formData.recipients.trim() !== '' &&
+      !hasEmptyVariables &&
+      !mediaMissing &&
+      (scheduleType === 'immediate' ||
+        (scheduleType === 'scheduled' && formData.scheduled_time?.trim() !== ''));
+
+    return isFormComplete;
+  };
+
+
+
+
 
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => {
       const updatedData = { ...prevData, [name]: value };
-      const template = templates.find((t) => t.template_name === updatedData.template_name);
-      // Open modal only when template_name changes and a template is selected
-      if (name === 'template_name' && template) {
-        setSelectedTemplate(template);
-        setIsModalOpen(true);
-      } else if (name === 'template_name' && !template) {
-        setSelectedTemplate(null);
-        setIsModalOpen(false);
+
+      // local candidate template (useful if name === 'template_name')
+      const candidateTemplate = templates.find((t) => t.template_name === updatedData.template_name) || selectedTemplate;
+
+      // derive required variables for candidateTemplate (same parsing as in useEffect)
+      let candidateVariables = variables;
+      if (name === 'template_name') {
+        if (candidateTemplate?.body_text) {
+          const regex = /{{\d+}}/g;
+          candidateVariables = [...new Set(candidateTemplate.body_text.match(regex) || [])];
+        } else {
+          candidateVariables = [];
+        }
       }
-      const isFormComplete =
-        updatedData.template_name.trim() !== '' &&
-        updatedData.campaigns_name.trim() !== '' &&
-        updatedData.recipients.trim() !== '' &&
-        (scheduleType === 'immediate' || (scheduleType === 'scheduled' && updatedData.scheduled_time.trim() !== ''));
+
+      // validate using candidateTemplate and candidateVariables
+      const isFormComplete = validateForm(updatedData, scheduleType, candidateTemplate, mediaFile, candidateVariables);
       setIsDisabled(!isFormComplete);
+
+      // don't setSelectedTemplate here — the useEffect above will do it from updatedData.template_name
       return updatedData;
     });
   };
@@ -87,38 +134,47 @@ function CreateCampaigns() {
 
   // Handle schedule type change
   const handleScheduleTypeChange = (e) => {
-    setScheduleType(e.target.value);
-    setFormData((prev) => ({ ...prev, scheduled_time: '' }));
-    const isFormComplete =
-      formData.template_name.trim() !== '' &&
-      formData.campaigns_name.trim() !== '' &&
-      formData.recipients.trim() !== '' &&
-      (e.target.value === 'immediate' || formData.scheduled_time.trim() !== '');
-    setIsDisabled(!isFormComplete);
-  };
+    const newSchedule = e.target.value; // ✅ store new schedule type 
+    setScheduleType(newSchedule);
+    
+    // ✅ Safely update form data and validate
+    setFormData((prev) => {
+      const updatedData = { ...prev, scheduled_time: '' }; // clear scheduled_time when type changes
+  
+      const isFormComplete = validateForm(updatedData, newSchedule, selectedTemplate, mediaFile);
+      setIsDisabled(!isFormComplete);
 
-  // Handle file input change
-  // const handleFileChange = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file && file.type.startsWith('image/')) {
-  //     setMediaFile(file);
-  //   } else {
-  //     toast.error('Please upload a valid image');
-  //     setMediaFile(null);
-  //   }
-  // };
+      return updatedData;
+    });
+
+  };
   
   // Handle file input change
     const handleFileChange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // ✅ Validate image type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please upload a valid image file (JPEG, PNG, etc.)');
-        setMediaFile(null);
-        return;
-      }
+      const headerType = selectedTemplate?.header_type?.toUpperCase();
+
+        // 🔹 Determine allowed MIME prefix or extensions based on header type
+        const isValidType =
+          (headerType === 'IMAGE' && file.type.startsWith('image/')) ||
+          (headerType === 'VIDEO' && file.type.startsWith('video/')) ||
+          (headerType === 'DOCUMENT' &&
+            (file.type === 'application/pdf' ||
+              file.type === 'application/msword' ||
+              file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+              file.type === 'text/plain' ||
+              file.type === 'application/vnd.ms-excel' ||
+              file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+              file.type === 'application/vnd.ms-powerpoint' ||
+              file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'));
+
+        if (!isValidType) {
+          toast.error(`Please upload a valid ${headerType?.toLowerCase()} file.`);
+          setMediaFile(null);
+          return;
+        }
 
       // ✅ Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
@@ -131,6 +187,14 @@ function CreateCampaigns() {
       // ✅ If valid
       setMediaFile(file);
       toast.success(`Image "${file.name}" selected successfully`);
+
+      // ✅ Use central validation after setting media
+      setFormData((prev) => {
+        const isFormComplete = validateForm(prev, scheduleType, selectedTemplate, file);
+        setIsDisabled(!isFormComplete);
+        return prev;
+
+      });
     };
 
   // Extract variables from selected template
@@ -138,7 +202,7 @@ function CreateCampaigns() {
     const template = templates.find((t) => t.template_name === formData.template_name);
     setSelectedTemplate(template);
     setIsModalOpen(!!template); // Update modal visibility
-    console.log(template)
+    // console.log(template)
     if (template?.body_text) {
       const regex = /{{\d+}}/g;
       const matches = template.body_text.match(regex) || [];
@@ -417,21 +481,34 @@ function CreateCampaigns() {
                       template = {selectedTemplate}
                     />
 
-                    {selectedTemplate && selectedTemplate.header_type?.toUpperCase() === 'IMAGE' && (
-                      <div className="sm:col-span-6">
-                        <label htmlFor="media_file" className="block text-sm leading-6 text-gray-900">
-                          Upload Image
-                        </label>
-                        <input
-                          name="media_file"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                        />
-                        {mediaFile && <p className="text-sm text-gray-600 mt-2">Selected: {mediaFile.name}</p>}
-                      </div>
-                    )}
+                   {selectedTemplate && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(selectedTemplate.header_type?.toUpperCase()) && (
+                    <div className="sm:col-span-6">
+                      <label htmlFor="media_file" className="block text-sm leading-6 text-gray-900">
+                        {selectedTemplate.header_type?.toUpperCase() === 'IMAGE' && 'Upload Image'}
+                        {selectedTemplate.header_type?.toUpperCase() === 'VIDEO' && 'Upload Video'}
+                        {selectedTemplate.header_type?.toUpperCase() === 'DOCUMENT' && 'Upload Document'}
+                      </label>
+
+                      <input
+                        name="media_file"
+                        type="file"
+                        accept={
+                          selectedTemplate.header_type?.toUpperCase() === 'IMAGE'
+                            ? 'image/*'
+                            : selectedTemplate.header_type?.toUpperCase() === 'VIDEO'
+                            ? 'video/*'
+                            : '.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx'
+                        }
+                        onChange={handleFileChange}
+                        className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
+                      />
+
+                      {mediaFile && (
+                        <p className="text-sm text-gray-600 mt-2">Selected: {mediaFile.name}</p>
+                      )}
+                    </div>
+                  )}
+
                   </div>
                 </div>
               )}

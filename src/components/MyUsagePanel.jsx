@@ -26,7 +26,7 @@ export default function MyUsagePanel() {
   if (!usage) return <div className="p-4 text-center">Loading usage...</div>;
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow space-y-6">
+    <div className="max-h-screen p-6 bg-white rounded-xl shadow space-y-6">
       <h2 className="text-2xl font-bold text-center">📈 Monthly WhatsApp Usage</h2>
 
       <div className="text-gray-600 text-center">
