@@ -1005,23 +1005,23 @@ const ChatWindow = ({ recipient }) => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (newButtonTitle.trim() && interactiveButtons.length < 4) {
+                      if (newButtonTitle.trim() && interactiveButtons.length < 3) {
                         setInteractiveButtons([...interactiveButtons, { id: `btn${Date.now()}`, title: newButtonTitle.trim() }]);
                         setNewButtonTitle('');
-                      } else if (interactiveButtons.length >= 4) {
+                      } else if (interactiveButtons.length >= 3) {
                         alert('Max 4 buttons allowed');
                       } else {
                         alert('Enter a button title');
                       }
                     }}
-                    disabled={interactiveButtons.length >= 4 || !newButtonTitle.trim()}
+                    disabled={interactiveButtons.length >= 3 || !newButtonTitle.trim()}
                     className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md transition-colors shadow-sm min-h-[40px] disabled:cursor-not-allowed"
                   >
                     + Add Button
                   </button>
                 </div>
                 {interactiveButtons.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">Max 4 buttons. Send to dispatch interactive message.</p>
+                  <p className="text-xs text-gray-500 mt-1">Max 3 buttons. Send to dispatch interactive message.</p>
                 )}
               </div>
             )}
