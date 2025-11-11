@@ -24,7 +24,7 @@ const ChatWindow = ({ recipient }) => {
   const [availableFlows, setAvailableFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [selectedSessionId, setSessionFlowId] = useState(null);
-
+  console.log(isFlowPaused)
   const [showFlowSelector, setShowFlowSelector] = useState(false);
   const [interactiveButtons, setInteractiveButtons] = useState([]);
   const [isInteractiveMode, setIsInteractiveMode] = useState(false);
@@ -159,7 +159,8 @@ const ChatWindow = ({ recipient }) => {
             setActiveFlow(data);
             setSelectedFlowId(data.flow || null);
             setSessionFlowId(data.id || null);
-            setIsFlowPaused(data.completed || false);
+            // console.log(data);
+            setIsFlowPaused(data.context.paused || false);
           } else {
             // ✅ No active session
             setActiveFlow(null);
