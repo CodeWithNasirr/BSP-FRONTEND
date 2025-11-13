@@ -24,7 +24,7 @@ const ChatWindow = ({ recipient }) => {
   const [availableFlows, setAvailableFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [selectedSessionId, setSessionFlowId] = useState(null);
-  console.log(isFlowPaused)
+  // console.log(isFlowPaused)
   const [showFlowSelector, setShowFlowSelector] = useState(false);
   const [interactiveButtons, setInteractiveButtons] = useState([]);
   const [isInteractiveMode, setIsInteractiveMode] = useState(false);
@@ -46,14 +46,14 @@ const ChatWindow = ({ recipient }) => {
         return {
           types: ['image/jpeg', 'image/png', 'video/mp4', 'video/avi', 'video/mov', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
           accept: 'image/jpeg,image/png,video/mp4,video/avi,video/mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          maxSize: 25 * 1024 * 1024,
+          maxSize: 5 * 1024 * 1024,
           description: 'Images, Videos, Documents'
         };
       case 'BUSINESS PRO':
         return {
           types: ['image/jpeg', 'image/png', 'video/mp4', 'video/avi', 'video/mov', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
           accept: 'image/jpeg,image/png,video/mp4,video/avi,video/mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          maxSize: 50 * 1024 * 1024,
+          maxSize: 5 * 1024 * 1024,
           description: 'All media types'
         };
       default:
