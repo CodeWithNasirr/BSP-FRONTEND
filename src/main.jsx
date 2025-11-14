@@ -10,3 +10,15 @@ createRoot(document.getElementById('root')).render(
     </ContextProvider>
   </StrictMode>,
 )
+
+
+// 🔥 REGISTER SERVICE WORKER FOR PWA NOTIFICATIONS
+if ("serviceWorker" in navigator && "PushManager" in window) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").then((reg) => {
+      console.log("Service Worker Registered");
+    }).catch((err) => {
+      console.error("Service Worker registration failed:", err);
+    });
+  });
+}

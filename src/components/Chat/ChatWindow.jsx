@@ -331,20 +331,21 @@ const ChatWindow = ({ recipient }) => {
           return acc;
         }, []);
         setMessages(uniqueMessages);
-
-        if (data.expired === true) {
-          setIsConversationExpired(true);
-        } else {
-          if (uniqueMessages.length > 0) {
-            const lastMsg = uniqueMessages.reduce((a, b) =>
-              new Date(a.timestamp) > new Date(b.timestamp) ? a : b
-            );
-            const diffHours = (Date.now() - new Date(lastMsg.timestamp)) / (1000 * 60 * 60);
-            if (diffHours > 24) {
-              setIsConversationExpired(true);
-            }
-          }
-        }
+        
+        setIsConversationExpired(data.expired);
+        // if (data.expired === true) {
+        //   setIsConversationExpired(true);
+        // } else {
+        //   if (uniqueMessages.length > 0) {
+        //     const lastMsg = uniqueMessages.reduce((a, b) =>
+        //       new Date(a.timestamp) > new Date(b.timestamp) ? a : b
+        //     );
+        //     const diffHours = (Date.now() - new Date(lastMsg.timestamp)) / (1000 * 60 * 60);
+        //     if (diffHours > 24) {
+        //       setIsConversationExpired(true);
+        //     }
+        //   }
+        // }
       } catch (error) {
         console.error('Initial chat fetch failed:', error);
         alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);

@@ -5,6 +5,7 @@ import { Context } from "./context/Context";
 import { toast } from 'react-toastify';
 import API_BASE_URL from '../config'; // Adjust the path as needed
 
+
 const Dashboard = () => { 
   const navigate = useNavigate();
   const { userInfo, isConnected, loadingUser,fetchDashboard,} = useContext(Context);
@@ -19,6 +20,109 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [transactionPage, setTransactionPage] = useState(1);
   const [transactionPagination, setTransactionPagination] = useState({ next: null, previous: null, count: 0 });
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+
+    useEffect(() => {
+      async function checkExistingSub() {
+        if (!("serviceWorker" in navigator)) return;
+
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setNotificationsEnabled(!!sub);
+      }
+      checkExistingSub();
+    }, []);
+    const enablePush = async () => {
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            toast.info("Please allow notifications in your browser.");
+            return;
+          }
+          if (Notification.permission === "denied") {
+            toast.info("Notifications are blocked in your browser settings.");
+          }
+
+          const reg = await navigator.serviceWorker.ready;
+
+          // fetch VAPID key
+          const vapidResp = await fetch(`${API_BASE_URL}/api/vapid-public-key/`, {
+            headers: { Authorization: `Token ${token}` }
+          });
+          const { vapid_public_key } = await vapidResp.json();
+
+          // Convert base64 -> uint8array
+          const convert = (base64String) => {
+            const padding = "=".repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; i++) {
+              outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+          };
+
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convert(vapid_public_key),
+          });
+
+          // save subscription to backend
+          await fetch(`${API_BASE_URL}/api/save-subscription/`, {
+            method: "POST",
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(sub)
+          });
+
+          setNotificationsEnabled(true);
+          toast.success("Notifications Enabled");
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to enable notifications");
+        }
+      };
+    
+
+    const disablePush = async () => {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+
+          if (!sub) {
+            toast.info("Notifications are already disabled.");
+            return;
+          }
+
+          // Unsubscribe from browser
+          await sub.unsubscribe();
+
+          // Remove from backend
+          await fetch(`${API_BASE_URL}/api/delete-subscription/`, {
+            method: "POST",
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ endpoint: sub.endpoint })
+          });
+
+          setNotificationsEnabled(false);
+          toast.success("Notifications Disabled");
+        } catch (err) {
+          console.error(err);
+          toast.error("Could not disable notifications");
+        }
+      };
+
+
+
+
 
   // Fetch wallet balance
   const fetchWalletBalance = async () => {
@@ -289,6 +393,21 @@ const Dashboard = () => {
               >
                 {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
               </button>
+            {notificationsEnabled ? (
+                  <button
+                    onClick={disablePush}
+                    className="m-2 bg-red-500 text-white text-sm px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Disable Notifications
+                  </button>
+                ) : (
+                  <button
+                    onClick={enablePush}
+                    className="m-2 bg-blue-500 text-white text-sm px-3 py-1 rounded hover:bg-blue-600"
+                  >
+                    Enable Notifications
+                  </button>
+                )}
             </div>
 
             {/* Dashboard Cards */}
