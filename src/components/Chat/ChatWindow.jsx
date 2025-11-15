@@ -11,6 +11,7 @@ const ChatWindow = ({ recipient }) => {
 
   const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
+  
   const token = localStorage.getItem('authToken');
   const chatContainerRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
@@ -265,27 +266,66 @@ const ChatWindow = ({ recipient }) => {
       newSocket.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          if (data.type === 'connection_success') {
-            // WebSocket connection successful
-          } else if (data.message?.action === 'new_message') {
-            const newMessage = data.message.data;
-            if (newMessage.recipient === recipient) {
-              setMessages((prev) =>
-                prev.some((msg) => msg.message_id === newMessage.message_id)
-                  ? prev
-                  : [...prev, newMessage]
+
+          // All backend WS messages come in "data.message"
+          const msg = data.message;
+          if (!msg) return;
+
+          const action = msg.action;
+          const payload = msg.data;
+
+          // ========== NEW MESSAGE ==========
+          if (action === "new_message") {
+            if (!payload) return;
+
+          //   setMessages((prev) =>
+          //     prev.some((m) => m.message_id === payload.message_id)
+          //       ? prev
+          //       : [...prev, payload]
+          //   );
+          //   return;
+          // }
+          setMessages(prev => {
+            // If optimistic message exists → replace it
+            const hasTemp = prev.some(m => m.temp_id);
+
+            if (hasTemp) {
+              return prev.map(m =>
+                m.temp_id ? { ...payload, temp_id: null } : m
               );
             }
-          }
-          //  else if (data.flow_update) {
-          //   // ========== NEW: Handle Flow Updates via WebSocket ==========
-          //   setActiveFlow(data.flow_update);
-          //   setIsFlowPaused(data.flow_update.paused || false);
-          // }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+
+            // Otherwise append new real message
+            if (prev.some(m => m.message_id === payload.message_id)) return prev;
+            return [...prev, payload];
+          });
+
+          return;
         }
-      };
+
+          // ========== UPDATE STATUS ==========
+          if (action === "update_status") {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.message_id === payload.message_id
+                  ? { ...m, status: payload.status }
+                  : m
+              )
+            );
+            return;
+          }
+
+          // ========== REFRESH CHATLIST ==========
+          // if (action === "refresh_chatlist") {
+          //   console.log("Chatlist needs refresh");
+          //   return;
+          // }
+
+        } catch (error) {
+          console.error("WS parse error:", error);
+        }
+      
+      }
 
       newSocket.onclose = (e) => {
         setTimeout(() => {
@@ -333,19 +373,7 @@ const ChatWindow = ({ recipient }) => {
         setMessages(uniqueMessages);
         
         setIsConversationExpired(data.expired);
-        // if (data.expired === true) {
-        //   setIsConversationExpired(true);
-        // } else {
-        //   if (uniqueMessages.length > 0) {
-        //     const lastMsg = uniqueMessages.reduce((a, b) =>
-        //       new Date(a.timestamp) > new Date(b.timestamp) ? a : b
-        //     );
-        //     const diffHours = (Date.now() - new Date(lastMsg.timestamp)) / (1000 * 60 * 60);
-        //     if (diffHours > 24) {
-        //       setIsConversationExpired(true);
-        //     }
-        //   }
-        // }
+       
       } catch (error) {
         console.error('Initial chat fetch failed:', error);
         alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
@@ -425,66 +453,74 @@ const ChatWindow = ({ recipient }) => {
       alert('Please enter a message, select a file, or add buttons');
       return;
     }
+  
+    const tempId = "temp_" + Date.now();
+
+    // ⭐ Show message instantly
+    const optimisticMessage = {
+      id: tempId,
+      temp_id: tempId,
+      message_id: null,
+      text_content: formData.message_text,
+      media_url: selectedFile ? URL.createObjectURL(selectedFile) : null,
+      buttons: interactiveButtons,
+      direction: "OUTBOUND",
+      status: "sent",
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // ⭐ Clear UI instantly
+    setFormData({ url: "", message_text: "", recipient: "" });
+    cancelFile();
+    setInteractiveButtons([]);
+    setIsInteractiveMode(false);
+
     setIsSending(true);
 
     try {
+      // === SEND VIA API ===
       if (selectedFile) {
         const fileFormData = new FormData();
-        fileFormData.append('recipient', recipient);
-        fileFormData.append('message_text', formData.message_text);
-        fileFormData.append('url', selectedFile);
+        fileFormData.append("recipient", recipient);
+        fileFormData.append("message_text", optimisticMessage.text_content);
+        fileFormData.append("url", selectedFile);
 
-        // ✅ include buttons if interactiveButtons exist
         if (interactiveButtons.length > 0) {
-          fileFormData.append('buttons', JSON.stringify(interactiveButtons));
+          fileFormData.append("buttons", JSON.stringify(interactiveButtons));
         }
-        
-        await axios.post(
-          `${API_BASE_URL}/api/whatsapp/send-message/`,
-          fileFormData,
-          {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
+
+        await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, fileFormData, {
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
       } else {
-        const updatedFormData = {
+        const body = {
           recipient,
-          message_text: formData.message_text,
-          url: ''
+          message_text: optimisticMessage.text_content,
+          buttons: interactiveButtons.length > 0 ? interactiveButtons : undefined,
+          url: "",
         };
-        // ✅ include buttons when present
-        if (interactiveButtons.length > 0) {
-          updatedFormData.buttons = interactiveButtons;
-        }
 
-        await axios.post(
-          `${API_BASE_URL}/api/whatsapp/send-message/`,
-          updatedFormData,
-          {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, body, {
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
       }
-
-      setFormData({
-        url: '',
-        message_text: '',
-        recipient: ''
-      });
-      cancelFile();
-
-      // ✅ Reset interactive state
-      setInteractiveButtons([]);
-      setIsInteractiveMode(false);
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert(`Error: ${error.response?.data?.error || 'Something went wrong'}`);
+      console.error("Error sending message:", error);
+
+      // ⭐ Mark optimistic message as failed
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "failed" } : m))
+      );
+
+      alert(error.response?.data?.error || "Something went wrong");
     } finally {
       setIsSending(false);
     }
@@ -910,40 +946,17 @@ const ChatWindow = ({ recipient }) => {
               />
 
               <button
-                type="submit"
-                disabled={isSending ||(isInteractiveMode? !formData.message_text.trim() || interactiveButtons.length === 0
-                      : (!formData.message_text.trim() && !selectedFile)
-                  )
-                }
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-full transition-colors shadow-sm min-h-[44px] min-w-[60px]"
-              >
-                {isSending ? (
-                  <>
-                    <svg
-                      className="w-4 h-4 mr-2 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l5-5-5-5v4a12 12 0 00-12 12h4z"
-                      />
-                    </svg>
-                    Sending...
-                  </>
-                ) : (
-                  'Send'
-                )}
-              </button>
+                  type="submit"
+                  disabled={
+                        isInteractiveMode
+                            ? !formData.message_text.trim() || interactiveButtons.length === 0
+                            : (!formData.message_text.trim() && !selectedFile)
+                    }
+                  className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-full transition-colors shadow-sm min-h-[44px] min-w-[60px]"
+                >
+                  Send
+                </button>
+
 
               {!isInteractiveMode && (
                 <button

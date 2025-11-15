@@ -33,6 +33,7 @@ const Dashboard = () => {
       }
       checkExistingSub();
     }, []);
+    
     const enablePush = async () => {
         try {
           const permission = await Notification.requestPermission();

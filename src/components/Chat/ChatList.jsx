@@ -1,55 +1,412 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+// import React, { useEffect, useState, useRef, useCallback } from 'react';
+// import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
+// import axios from 'axios';
+// import API_BASE_URL from '../../config';
+// import { toast } from 'react-toastify';
+// import debounce from 'lodash/debounce';
+// import MarkPurchaseModal from './MarkPurchaseModal';
+// import { useEffectEvent } from 'react';
+
+
+// const ChatList = ({ onSelectConversation }) => {
+  // const [conversations, setConversations] = useState([]);
+  // const [searchQuery, setSearchQuery] = useState('');
+  // const [selectedTags, setSelectedTags] = useState([]);
+  // const [availableTags, setAvailableTags] = useState([]);
+
+  // const [showTags, setShowTags] = useState(false);
+  // const [socket, setSocket] = useState(null);
+  // const token = localStorage.getItem('authToken');
+  // const [loading, setLoading] = useState(false);
+  // const [page, setPage] = useState(1);
+  // const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
+  // const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  // const [selectedContact, setSelectedContact] = useState(null);
+  // const [purchaseForm, setPurchaseForm] = useState({ amount: '', location: '', tags: [], tagInput: '' });
+  // const pageRef = useRef(page);
+
+
+//   // Sync ref with state
+//   useEffect(() => {
+//     pageRef.current = page;
+//   }, [page]);
+  
+//   // Fetch available tags from ContactTagsView
+//   useEffect(() => {
+//     const fetchTags = async () => {
+//       try {
+//         const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
+//           headers: { Authorization: `Token ${token}` },
+//         });
+
+//         // Response example: response.data.tags = [{ tag: "VIP", count: 10 }, { tag: "New", count: 5 }]
+//         const tagsWithCounts = response.data.tags.map((t) => ({
+//           name: t.tag,
+//           count: t.count,
+//         }));
+
+//         setAvailableTags(tagsWithCounts);
+//       } catch (error) {
+//         toast.error('Failed to fetch tags');
+//       }
+//     };
+//     fetchTags();
+//   }, []);
+
+//   const handleOpenPurchaseModal = (contact) => {
+//     setSelectedContact(contact);
+//     setPurchaseForm({
+//       amount: '',
+//       location: '',
+//       tags: contact.tags || [],
+//       tagInput: '',
+//     });
+//     setShowPurchaseModal(true);
+//   };
+
+
+
+//   // Debounced fetchChatList
+//   const debouncedFetchChatList = useCallback(
+//     debounce((pageNum, query, tags) => {
+//       fetchChatList(pageNum, query, tags);
+//     }, 300),
+//     []
+//   );
+  
+//   // Fetch chat list with tag filtering
+//   const fetchChatList = async (pageNum = 1, query = searchQuery, tags = selectedTags) => {
+//     // setLoading(true);
+//     try {
+//       const tagsQuery = tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : '';
+//       const response = await axios.get(
+//         `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(query)}${tagsQuery}`,
+//         {
+//           headers: {
+//             Authorization: `Token ${token}`,
+//             'Content-Type': 'application/json',
+//           },
+//         }
+//       );
+
+//       const chatData = response.data;
+//       setConversations(chatData.results || []);
+//       setPagination({
+//         next: chatData.next,
+//         previous: chatData.previous,
+//         count: chatData.count,
+//       });
+//     } catch (error) {
+//       toast.error('Failed to fetch chat list');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // WebSocket connection
+//     useEffect(() => {
+//       if (!token) return;
+
+//       let reconnectTimeout;
+
+//       const connectWebSocket = () => {
+//         const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+//         const backendHost = API_BASE_URL.replace(/^https?:\/\//, '');
+//         const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
+//         const newSocket = new WebSocket(wsUrl);
+
+//         newSocket.onopen = () => setSocket(newSocket);
+
+//         newSocket.onmessage = (e) => {
+//           try {
+//             const data = JSON.parse(e.data);
+//             if (data.message?.action === 'refresh_chatlist') {
+//               fetchChatList(pageRef.current, searchQuery, selectedTags);
+//             }
+//           } catch (error) {
+//             // console.error('Error parsing WebSocket message:', error);
+//           }
+//         };
+
+//         newSocket.onclose = () => {
+//           reconnectTimeout = setTimeout(connectWebSocket, 3000);
+//         };
+
+//         newSocket.onerror = (err) => {
+//           // console.error('ChatList WebSocket error:', err);
+//           newSocket.close();
+//         };
+
+//         return newSocket;
+//       };
+
+//       const ws = connectWebSocket();
+
+//       return () => {
+//         if (ws) ws.close();
+//         if (reconnectTimeout) clearTimeout(reconnectTimeout);
+//       };
+//     }, [token]);
+
+
+//   // Fetch chats on page, searchQuery, or selectedTags change
+//   useEffect(() => {
+//     if (token) {
+//       debouncedFetchChatList(page, searchQuery, selectedTags);
+//     }
+//   }, [page, searchQuery, selectedTags, token, debouncedFetchChatList]);
+
+//   // Reset to page 1 when search query or tags change
+//   useEffect(() => {
+//     setPage(1);
+//   }, [searchQuery, selectedTags]);
+
+//   // Handle tag selection
+//   const handleTagChange = (tag) => {
+//     setSelectedTags((prev) =>
+//       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+//     );
+//   };
+
+//   // Format timestamp
+//   const formatTimestamp = (timestamp) => {
+//     if (!timestamp) return '';
+//     const date = new Date(timestamp);
+//     const today = new Date();
+//     const yesterday = new Date(today);
+//     yesterday.setDate(today.getDate() - 1);
+
+//     const isToday = date.toDateString() === today.toDateString();
+//     const isYesterday = date.toDateString() === yesterday.toDateString();
+
+//     if (isToday) {
+//       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+//     } else if (isYesterday) {
+//       return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+//     } else {
+//       return date.toLocaleDateString('en-US', {
+//         month: 'short',
+//         day: 'numeric',
+//         year: 'numeric',
+//         hour: '2-digit',
+//         minute: '2-digit',
+//       });
+//     }
+//   };
+
+
+
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";``
+import axios from "axios";
+import { useEffectEvent } from "react";
+import debounce from "lodash/debounce";
+import { toast } from "react-toastify";
+import API_BASE_URL from "../../config";
 import { MagnifyingGlassIcon, Bars3Icon } from '@heroicons/react/24/solid';
-import axios from 'axios';
-import API_BASE_URL from '../../config';
-import { toast } from 'react-toastify';
-import debounce from 'lodash/debounce';
 import MarkPurchaseModal from './MarkPurchaseModal';
 
 const ChatList = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-
   const [showTags, setShowTags] = useState(false);
   const [socket, setSocket] = useState(null);
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem("authToken");
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [page, setPage] = useState(1);
+  
+
+  
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  
   const [purchaseForm, setPurchaseForm] = useState({ amount: '', location: '', tags: [], tagInput: '' });
+
+  const [pagination, setPagination] = useState({
+    next: null,
+    previous: null,
+    count: 0,
+  });
+
+  // --- Refs for stability ---
   const pageRef = useRef(page);
+  const tagsRef = useRef(selectedTags);
+  const searchRef = useRef(searchQuery);
 
-
-  // Sync ref with state
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
-  
-  // Fetch available tags from ContactTagsView
+
   useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
+    tagsRef.current = selectedTags;
+    searchRef.current = searchQuery;
+  }, [selectedTags, searchQuery]);
+
+  // -----------------------------
+  // 🎯 Stable Effect Event: Fetch Chat List
+  // -----------------------------
+  const fetchChatListEvent = useEffectEvent(async (pageNum, query, tags) => {
+    try {
+      // setLoading(true);
+
+      const tagsQuery =
+        tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(","))}` : "";
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(
+          query
+        )}${tagsQuery}`,
+        {
           headers: { Authorization: `Token ${token}` },
-        });
+        }
+      );
 
-        // Response example: response.data.tags = [{ tag: "VIP", count: 10 }, { tag: "New", count: 5 }]
-        const tagsWithCounts = response.data.tags.map((t) => ({
-          name: t.tag,
-          count: t.count,
-        }));
+      const chatData = response.data;
+      setConversations(chatData.results || []);
+      setPagination({
+        next: chatData.next,
+        previous: chatData.previous,
+        count: chatData.count,
+      });
+    } catch (err) {
+      toast.error("Failed to fetch chat list");
+    } finally {
+      setLoading(false);
+    }
+  });
 
-        setAvailableTags(tagsWithCounts);
-      } catch (error) {
-        toast.error('Failed to fetch tags');
-      }
+  // Debounced version (stable across renders)
+  const debouncedFetchChatList = useRef(
+    debounce((pageNum, query, tags) => {
+      fetchChatListEvent(pageNum, query, tags);
+    }, 300)
+  ).current;
+
+  // Trigger list fetch
+  useEffect(() => {
+    if (!token) return;
+
+    debouncedFetchChatList(page, searchQuery, selectedTags);
+  }, [page, searchQuery, selectedTags, token]);
+
+  // Reset page on search or tag change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedTags]);
+
+  // -----------------------------
+  // 🎯 Stable WebSocket Message Handler
+  // -----------------------------
+  const handleWsMessage = useEffectEvent((data) => {
+    if (data.message?.action === "refresh_chatlist") {
+      fetchChatListEvent(
+        pageRef.current,
+        searchRef.current,
+        tagsRef.current
+      );
+    }
+  });
+
+  // -----------------------------
+  // 🔌 WebSocket Connection (Stable)
+  // -----------------------------
+  useEffect(() => {
+    if (!token) return;
+
+    let ws;
+    let pingInterval;
+    let isMounted = true;
+
+    const wsProtocol =
+      window.location.protocol === "https:" ? "wss://" : "ws://";
+    const backendHost = API_BASE_URL.replace(/^https?:\/\//, "");
+    const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
+
+    const connectWebSocket = () => {
+      if (!isMounted) return;
+
+      ws = new WebSocket(wsUrl);
+      setSocket(ws);
+
+      ws.onopen = () => {
+        // Send keepalive every 20s
+        pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "pong" }));
+          }
+        }, 20000);
+      };
+
+      ws.onmessage = (e) => {
+        if (!isMounted) return;
+        const data = JSON.parse(e.data || "{}");
+
+        if (data.type === "ping") {
+          ws.send(JSON.stringify({ type: "pong" }));
+        }
+
+        handleWsMessage(data); // 🎯 stable effect event
+      };
+
+      ws.onclose = () => {
+        if (!isMounted) return;
+        setTimeout(connectWebSocket, 2000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
     };
-    fetchTags();
-  }, []);
+
+    connectWebSocket();
+
+    return () => {
+      isMounted = false;
+      if (pingInterval) clearInterval(pingInterval);
+      if (ws) ws.close();
+    };
+  }, [token]);
+
+  // -----------------------------
+  // Tag selection
+  // -----------------------------
+  const handleTagChange = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+
+  const fetchTagsEvent = useEffectEvent(async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/contacts/tags/`, {
+        headers: { Authorization: `Token ${token}` },
+      });
+
+      const tagsWithCounts = response.data.tags.map((t) => ({
+        name: t.tag,
+        count: t.count,
+      }));
+
+      setAvailableTags(tagsWithCounts);
+    } catch (error) {
+      toast.error("Failed to fetch tags");
+    }
+  });
+
+  useEffect(() => {
+    if (!token) return;
+    fetchTagsEvent();   // ← always latest function
+  }, [token]);
+
 
   const handleOpenPurchaseModal = (contact) => {
     setSelectedContact(contact);
@@ -62,113 +419,8 @@ const ChatList = ({ onSelectConversation }) => {
     setShowPurchaseModal(true);
   };
 
-
-
-  // Debounced fetchChatList
-  const debouncedFetchChatList = useCallback(
-    debounce((pageNum, query, tags) => {
-      fetchChatList(pageNum, query, tags);
-    }, 300),
-    []
-  );
-  
-  // Fetch chat list with tag filtering
-  const fetchChatList = async (pageNum = 1, query = searchQuery, tags = selectedTags) => {
-    // setLoading(true);
-    try {
-      const tagsQuery = tags.length > 0 ? `&tags=${encodeURIComponent(tags.join(','))}` : '';
-      const response = await axios.get(
-        `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(query)}${tagsQuery}`,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const chatData = response.data;
-      setConversations(chatData.results || []);
-      setPagination({
-        next: chatData.next,
-        previous: chatData.previous,
-        count: chatData.count,
-      });
-    } catch (error) {
-      toast.error('Failed to fetch chat list');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // WebSocket connection
-useEffect(() => {
-  if (!token) return;
-
-  let reconnectTimeout;
-
-  const connectWebSocket = () => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const backendHost = API_BASE_URL.replace(/^https?:\/\//, '');
-    const wsUrl = `${wsProtocol}${backendHost}/ws/chatlist/?token=${token}`;
-    const newSocket = new WebSocket(wsUrl);
-
-    newSocket.onopen = () => setSocket(newSocket);
-
-    newSocket.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.message?.action === 'refresh_chatlist') {
-          fetchChatList(pageRef.current, searchQuery, selectedTags);
-        }
-      } catch (error) {
-        // console.error('Error parsing WebSocket message:', error);
-      }
-    };
-
-    newSocket.onclose = () => {
-      reconnectTimeout = setTimeout(connectWebSocket, 3000);
-    };
-
-    newSocket.onerror = (err) => {
-      // console.error('ChatList WebSocket error:', err);
-      newSocket.close();
-    };
-
-    return newSocket;
-  };
-
-  const ws = connectWebSocket();
-
-  return () => {
-    if (ws) ws.close();
-    if (reconnectTimeout) clearTimeout(reconnectTimeout);
-  };
-}, [token]);
-
-
-  // Fetch chats on page, searchQuery, or selectedTags change
-  useEffect(() => {
-    if (token) {
-      debouncedFetchChatList(page, searchQuery, selectedTags);
-    }
-  }, [page, searchQuery, selectedTags, token, debouncedFetchChatList]);
-
-  // Reset to page 1 when search query or tags change
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, selectedTags]);
-
-  // Handle tag selection
-  const handleTagChange = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  // Format timestamp
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
+    if (!timestamp) return "";
     const date = new Date(timestamp);
     const today = new Date();
     const yesterday = new Date(today);
@@ -178,19 +430,23 @@ useEffect(() => {
     const isYesterday = date.toDateString() === yesterday.toDateString();
 
     if (isToday) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } else if (isYesterday) {
-      return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Yesterday ${date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
     } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     }
   };
+
 
   return (
     <div className="flex flex-col h-full overflow-auto">

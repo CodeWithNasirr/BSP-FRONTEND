@@ -13,6 +13,7 @@ self.addEventListener("push", function (event) {
     badge: "logo.png",
     data: { url: data.url || '/' },
     vibrate: [200, 100, 200],
+    renotify: true,
   };
 
     event.waitUntil(self.registration.showNotification(data.title, options));
