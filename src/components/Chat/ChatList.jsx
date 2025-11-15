@@ -584,7 +584,7 @@ const ChatList = ({ onSelectConversation }) => {
           purchaseForm={purchaseForm}
           setPurchaseForm={setPurchaseForm}
           availableTags={availableTags}
-          fetchChatList={() => fetchChatList(pageRef.current, searchQuery, selectedTags)}
+          fetchChatList={() => fetchChatListEvent(pageRef.current, searchQuery, selectedTags)}
           token={token}
           loading={loading}
           setLoading={setLoading}
