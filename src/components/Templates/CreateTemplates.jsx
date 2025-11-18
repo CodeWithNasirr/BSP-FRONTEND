@@ -16,7 +16,10 @@ import {
 
 function CreateTemplate() {
   const navigate = useNavigate();
-  const [activeButton, setActiveButton] = useState(null);
+  
+  const [activeHeader, setActiveHeader] = useState(null);
+  const [activeBottomButton, setActiveBottomButton] = useState(null);
+
   const [isDisabled, setIsDisabled] = useState(true);
   const token = localStorage.getItem("authToken");
   const [loading, setLoading] = useState(false);
@@ -83,22 +86,19 @@ function CreateTemplate() {
     }));
   };
 
-  const headerButtonClick = (btn) => {
-    setActiveButton(btn);
-     setFormData((prev) => ({
-      ...prev,
-      header_type: "",
-      header_text: "",
-      header_media_url: "",
-      // header_media_url: "",
-    }));
-    setFormData((prev) => ({ ...prev, header_type: btn }));
-
-  };
+const headerButtonClick = (btn) => {
+  setActiveHeader(btn);
+  setFormData(prev => ({
+    ...prev,
+    header_type: btn,
+    header_text: "",
+    header_media_url: "",
+  }));
+};
 
   // New function to clear header selection
   const clearHeader = () => {
-    setActiveButton(null);
+    setActiveHeader(null);
     setFormData((prev) => ({
       ...prev,
       header_type: "",
@@ -111,10 +111,11 @@ function CreateTemplate() {
   const [isVisible, setIsVisible] = useState(true);
 
   const bottomButtonClick = (type) => {
-    setActiveButton(type);
+    setActiveBottomButton(type);
     setIsVisible(true);
-    setFormData((prev) => ({ ...prev, button_type: type }));
+    setFormData(prev => ({ ...prev, button_type: type }));
   };
+  
 
   const addButton = (type) => {
     
@@ -176,7 +177,7 @@ function CreateTemplate() {
         button_type: "",
     }));
 
-    setActiveButton(null);
+    setActiveBottomButton(null);
   };
 
   const removeButton = (index) => {
@@ -287,7 +288,7 @@ function CreateTemplate() {
       button_number: "",
       placeholder_mappings: {},
     });
-    setActiveButton(null);
+    setActiveBottomButton(null);
     setIsVisible(true);
   };
 
@@ -461,14 +462,14 @@ function CreateTemplate() {
                       type="button"
                       key={btn}
                       className={`text-center py-2 text-sm text-slate-800 m-1 
-                        ${activeButton === btn ? "bg-white shadow rounded-lg" : ""}
+                        ${activeHeader === btn ? "bg-white shadow rounded-lg" : ""}
                         cursor-pointer`}
                       onMouseDown={() => headerButtonClick(btn)}
                     >
                       {btn}
                     </button>
                   ))}
-                  {activeButton && (
+                  {activeHeader && (
                     <button
                       type="button"
                       className="text-center py-2 text-sm text-slate-800 m-1 bg-red-100 hover:bg-red-200 rounded-lg cursor-pointer"
@@ -479,7 +480,7 @@ function CreateTemplate() {
                   )}
                 </div>
 
-                {activeButton === "TEXT" && (
+                {activeHeader === "TEXT" && (
                   <div className="sm:col-span-6">
                     <label htmlFor="header_text" className="block text-sm leading-6 text-gray-900">
                       Header Text
@@ -495,19 +496,19 @@ function CreateTemplate() {
                   </div>
                 )}
 
-                {["IMAGE", "VIDEO", "DOCUMENT"].includes(activeButton) && (
+                {["IMAGE", "VIDEO", "DOCUMENT"].includes(activeHeader) && (
                 <div className="sm:col-span-6">
                   <label className="block text-sm leading-6 text-gray-900">
-                    Upload {activeButton}
+                    Upload {activeHeader}
                   </label>
 
                   <input
                     name="header_media_url"
                     type="file"
                     accept={
-                      activeButton === "IMAGE"
+                      activeHeader === "IMAGE"
                         ? "image/jpeg,image/png"
-                        : activeButton === "VIDEO"
+                        : activeHeader === "VIDEO"
                         ? "video/mp4"
                         : "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv"
                     }
@@ -697,7 +698,7 @@ function CreateTemplate() {
 
 
 
-                {activeButton === "PHONE_CALL" && isVisible && (
+                {activeBottomButton === "PHONE_CALL" && isVisible && (
                   <div className="mt-4 mb-8">
                     <div className="bg-[#f9f9fa] p-3 rounded-lg">
 
@@ -705,7 +706,7 @@ function CreateTemplate() {
                         <span className="text-sm text-gray-900">Call Phone Number</span>
                         <button
                           type="button"
-                          onMouseDown={() => setActiveButton(null)}
+                          onMouseDown={() => setActiveBottomButton(null)}
                           className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
                         >
                           ✕
@@ -751,7 +752,7 @@ function CreateTemplate() {
                 )}
 
 
-                {activeButton === "CALLBACK" && isVisible && (
+                {activeBottomButton === "CALLBACK" && isVisible && (
                 <div className="mt-4 mb-8">
                   <div className="bg-[#f9f9fa] p-4 rounded-lg">
 
@@ -759,7 +760,7 @@ function CreateTemplate() {
                       <span className="text-sm text-gray-900">Website URL</span>
                       <button
                         type="button"
-                        onMouseDown={() => setActiveButton(null)}
+                        onMouseDown={() => setActiveBottomButton(null)}
                         className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
                       >
                       ✕
@@ -805,7 +806,7 @@ function CreateTemplate() {
               )}
 
 
-                {activeButton === "QUICK-REPLIES" && isVisible && (
+                {activeBottomButton === "QUICK-REPLIES" && isVisible && (
                 <div className="mt-4 mb-8">
                   <div className="bg-[#f9f9fa] p-4 rounded-lg">
 
@@ -813,7 +814,7 @@ function CreateTemplate() {
                       <span className="text-sm text-gray-900">Quick Reply Button</span>
                       <button
                         type="button"
-                        onMouseDown={() => setActiveButton(null)}
+                        onMouseDown={() => setActiveBottomButton(null)}
                         className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
                       >
                         ✕
@@ -873,7 +874,7 @@ function CreateTemplate() {
                     {formData.header_media_url && (
                       <div className="mb-2">
 
-                        {activeButton === "IMAGE" && (
+                        {activeHeader === "IMAGE" && (
                           <img
                             src={URL.createObjectURL(formData.header_media_url)}
                             alt="Preview"
@@ -881,7 +882,7 @@ function CreateTemplate() {
                           />
                         )}
 
-                        {activeButton === "VIDEO" && (
+                        {activeHeader === "VIDEO" && (
                           <video
                             src={URL.createObjectURL(formData.header_media_url)}
                             controls
@@ -889,7 +890,7 @@ function CreateTemplate() {
                           />
                         )}
 
-                        {activeButton === "DOCUMENT" && (
+                        {activeHeader === "DOCUMENT" && (
                           <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg border w-[220px]">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
