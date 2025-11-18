@@ -42,7 +42,7 @@ function CreateTemplate() {
     // XXXXX
     placeholder_mappings: {},
   });
-
+  console.log("Form Data:", formData);
   const [variables, setVariables] = useState([]);
 
   // Function to extract variables like {{1}}, {{2}}, etc.
@@ -118,7 +118,11 @@ const headerButtonClick = (btn) => {
   
 
   const addButton = (type) => {
-    
+      // 🚨 25 Character Limit
+    if (formData.button_text.trim().length > 25) {
+      toast.error("Button text must be 25 characters or less.");
+      return;
+    }
     // 1️⃣ META BUTTON LIMIT RULES
     const quickRepliesCount = formData.buttons.filter(b => b.type === "QUICK-REPLIES").length;
     const callbackCallCount = formData.buttons.filter(b =>

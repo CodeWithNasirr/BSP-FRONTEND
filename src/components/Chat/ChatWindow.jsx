@@ -604,29 +604,32 @@ const ChatWindow = ({ recipient }) => {
 
   // ========== NEW: Render Interactive Buttons ==========
     const renderInteractiveButtons = (msg) => {
-    if (!msg.buttons || msg.buttons.length === 0) return null;
+      if (!msg.buttons || msg.buttons.length === 0) return null;
 
-    const isReadOnly = !!msg.button_text; // disable click if message has button_text
+      const isReadOnly = !!msg.button_text; 
 
-    return (
-      <div className="flex flex-wrap gap-2 mt-2">
-        {msg.buttons.map((btn, index) => (
-          <button
-            key={btn.id || index}
-            // onClick={isReadOnly ? null : () => handleButtonClick(btn, msg.message_id)}
-            disabled={isReadOnly}
-            className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
-              isReadOnly
-                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            {btn.title}
-          </button>
-        ))}
-      </div>
-    );
-  };
+      return (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {msg.buttons.map((btn, index) => {
+            const label = btn.title || btn.text || "Button";  // 🔥 MAIN LOGIC
+            
+            return (
+              <button
+                key={btn.id || index}
+                disabled={isReadOnly}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
+                  isReadOnly
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600 text-white"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      );
+    };
 
   const renderMessageButtons = (msg) => {
   if (!msg.buttons || msg.buttons.length === 0) return null;
