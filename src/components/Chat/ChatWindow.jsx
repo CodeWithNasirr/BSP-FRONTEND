@@ -628,6 +628,34 @@ const ChatWindow = ({ recipient }) => {
     );
   };
 
+  const renderMessageButtons = (msg) => {
+  if (!msg.buttons || msg.buttons.length === 0) return null;
+  const isReadOnly = !!msg.button_text; // disable click if message has button_text
+  
+  return (
+    <div className="flex justify-end mb-3">
+      <div className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center p-3 shadow-sm">
+        <div className="flex flex-wrap justify-center gap-2">
+          {msg.buttons.map((btn, index) => (
+          <button
+            key={btn.id || index}
+            // onClick={isReadOnly ? null : () => handleButtonClick(btn, msg.message_id)}
+            disabled={isReadOnly}
+            className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
+              isReadOnly
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {btn.title}
+          </button>
+        ))}
+        </div>
+      </div>
+    </div>
+  );
+  };
+
 
   const groupedMessages = messages.reduce((acc, msg) => {
     const date = new Date(msg.timestamp).toDateString();
@@ -837,7 +865,7 @@ const ChatWindow = ({ recipient }) => {
                                 </svg>
                               </div>
                             </div>
-                            {msg.button_text && (
+                            {/* {msg.button_text && (
                                 <div className="flex justify-end items-center mb-3">
                                   <div className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center p-3 shadow-sm">
                                     <div className="flex flex-wrap justify-center gap-2">
@@ -854,7 +882,8 @@ const ChatWindow = ({ recipient }) => {
                                     </div>
                                   </div>
                                 </div>
-                              )}
+                              )} */}
+                              {/* {renderMessageButtons(msg)} */}
 
                           </>
                         ) : (

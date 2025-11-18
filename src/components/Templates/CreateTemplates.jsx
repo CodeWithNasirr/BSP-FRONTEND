@@ -7,6 +7,12 @@ import { Link } from "react-router-dom";
 import { Context } from "../context/Context";
 import { assest } from "../../assets/assets";
 import RequireSubscription from "../Subscriptions/RequireSubscription";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable
+} from "@hello-pangea/dnd";
+
 
 function CreateTemplate() {
   const navigate = useNavigate();
@@ -14,20 +20,23 @@ function CreateTemplate() {
   const [isDisabled, setIsDisabled] = useState(true);
   const token = localStorage.getItem("authToken");
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({  
     template_name: "",
     template_language: "",
     template_category: "",
     header_type: "",
     header_text: "",
-    header_image_file_url: "",
-    header_img_video_file_url: "",
+    header_media_url: "",
+    // header_media_url: "",
     body_text: "",
     footer_text: "",
+    buttons: [] ,
+    // XXXXX
     button_type: "",
     button_text: "",
     button_url: "",
     button_number: "",
+    // XXXXX
     placeholder_mappings: {},
   });
 
@@ -76,7 +85,15 @@ function CreateTemplate() {
 
   const headerButtonClick = (btn) => {
     setActiveButton(btn);
+     setFormData((prev) => ({
+      ...prev,
+      header_type: "",
+      header_text: "",
+      header_media_url: "",
+      // header_media_url: "",
+    }));
     setFormData((prev) => ({ ...prev, header_type: btn }));
+
   };
 
   // New function to clear header selection
@@ -86,8 +103,8 @@ function CreateTemplate() {
       ...prev,
       header_type: "",
       header_text: "",
-      header_image_file_url: "",
-      header_img_video_file_url: "",
+      header_media_url: "",
+      // header_media_url: "",
     }));
   };
 
@@ -98,6 +115,79 @@ function CreateTemplate() {
     setIsVisible(true);
     setFormData((prev) => ({ ...prev, button_type: type }));
   };
+
+  const addButton = (type) => {
+    
+    // 1️⃣ META BUTTON LIMIT RULES
+    const quickRepliesCount = formData.buttons.filter(b => b.type === "QUICK-REPLIES").length;
+    const callbackCallCount = formData.buttons.filter(b =>
+        b.type === "CALLBACK" || b.type === "PHONE_CALL"
+    ).length;
+
+    // a) Quick replies limit = 10
+    if (type === "QUICK-REPLIES" && quickRepliesCount >= 10) {
+        toast.error("You can add a maximum of 10 quick reply buttons.");
+        return;
+    }
+
+    // b) CALL + URL combined limit = 2
+    if ((type === "CALLBACK" || type === "PHONE_CALL") && callbackCallCount >= 2) {
+        toast.error("You can add a maximum of 2 Call/URL buttons combined.");
+        return;
+    }
+
+    // c) Total max 10
+    if (formData.buttons.length >= 10) {
+        toast.error("Maximum 10 buttons allowed.");
+        return;
+    }
+
+    // 2️⃣ VALIDATION OF BUTTON FIELDS
+    if (!formData.button_text.trim()) {
+        toast.error("Button text is required");
+        return;
+    }
+
+    const newButton = { type, text: formData.button_text.trim() };
+
+    if (type === "PHONE_CALL") {
+        if (!formData.button_number.trim()) {
+            toast.error("Phone number is required.");
+            return;
+        }
+        newButton.phone_number = formData.button_number.trim();
+    }
+
+    if (type === "CALLBACK") {
+        if (!formData.button_url.trim()) {
+            toast.error("URL is required.");
+            return;
+        }
+        newButton.url = formData.button_url.trim();
+    }
+
+    // 3️⃣ PUSH TO ARRAY
+    setFormData(prev => ({
+        ...prev,
+        buttons: [...prev.buttons, newButton],
+        button_text: "",
+        button_url: "",
+        button_number: "",
+        button_type: "",
+    }));
+
+    setActiveButton(null);
+  };
+
+  const removeButton = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      buttons: prev.buttons.filter((_, i) => i !== index),
+    }));
+  };
+
+
+
 
   const handleChange = (e) => {
     const { name, type, files, value } = e.target;
@@ -124,7 +214,7 @@ function CreateTemplate() {
       return updatedData;
     });
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -135,17 +225,21 @@ function CreateTemplate() {
         if (
           typeof value === "string" &&
           value.trim() === "" &&
-          key !== "header_img_video_file_url" &&
-          key !== "header_image_file_url"
+          key !== "header_media_url"
         ) {
           return;
         }
+        if (key === "buttons") return;
         if (key === "placeholder_mappings") {
           formDataToSend.append(key, JSON.stringify(value));
         } else {
           formDataToSend.append(key, value);
         }
+       
+
       });
+      // 🔥 FINAL — Add buttons JSON
+      formDataToSend.append("buttons", JSON.stringify(formData.buttons));
 
       const response = await axios.post(
         `${API_BASE_URL}/api/whatsapp/create-template/`,
@@ -159,7 +253,7 @@ function CreateTemplate() {
       );
 
       toast.success("Template Created Successfully!");
-      console.log(response);
+      navigate("/templates");
       resetFormData();
     } catch (error) {
       console.error("Error creating template:", error?.response?.data);
@@ -182,10 +276,11 @@ function CreateTemplate() {
       template_category: "",
       header_type: "",
       header_text: "",
-      header_image_file_url: "",
-      header_img_video_file_url: "",
+      // header_media_url: "",
+      header_media_url: "",
       body_text: "",
       footer_text: "",
+      buttons: [],
       button_type: "",
       button_text: "",
       button_url: "",
@@ -400,30 +495,33 @@ function CreateTemplate() {
                   </div>
                 )}
 
-                {(activeButton === "IMAGE" || activeButton === "VIDEO") && (
-                  <div className="sm:col-span-6">
-                    <label htmlFor="header_img_video_file_url" className="block text-sm leading-6 text-gray-900">
-                      Upload {activeButton === "IMAGE" ? "Image" : "Video"}
-                    </label>
-                    <input
-                      name={activeButton === "IMAGE" ? "header_image_file_url" : "header_img_video_file_url"}
-                      type="file"
-                      accept={activeButton === "IMAGE" ? "image/jpeg,image/png" : "video/mp4"}
-                      onChange={handleChange}
-                      className="block w-full bg-white rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                    />
-                    {activeButton === "IMAGE" && formData.header_image_file_url && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Selected: {formData.header_image_file_url.name}
-                      </p>
-                    )}
-                    {activeButton === "VIDEO" && formData.header_img_video_file_url && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Selected: {formData.header_img_video_file_url.name}
-                      </p>
-                    )}
-                  </div>
-                )}
+                {["IMAGE", "VIDEO", "DOCUMENT"].includes(activeButton) && (
+                <div className="sm:col-span-6">
+                  <label className="block text-sm leading-6 text-gray-900">
+                    Upload {activeButton}
+                  </label>
+
+                  <input
+                    name="header_media_url"
+                    type="file"
+                    accept={
+                      activeButton === "IMAGE"
+                        ? "image/jpeg,image/png"
+                        : activeButton === "VIDEO"
+                        ? "video/mp4"
+                        : "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv"
+                    }
+                    onChange={handleChange}
+                    className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
+                  />
+
+                  {formData.header_media_url && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      Selected: {formData.header_media_url.name}
+                    </p>
+                  )}
+                </div>
+              )}
 
                 <h2 className="text-slate-600">
                   Body <span className="text-xs">(Required)</span>
@@ -504,255 +602,348 @@ function CreateTemplate() {
                 ></textarea>
 
                 <h2 className="text-slate-600">
-                  Buttons <span className="text-xs">(Optional)</span>
-                </h2>
-                <span className="text-slate-600 text-xs">
-                  Create buttons that let customers respond to your message or
-                  take action
-                </span>
+                    Buttons <span className="text-xs">(Optional)</span>
+                  </h2>
+                  <span className="text-slate-600 text-xs">
+                    Create buttons that let customers respond to your message or take action
+                  </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 mb-2">
-                  <button
-                    type="button"
-                    onMouseDown={() => bottomButtonClick("PHONE_CALL")}
-                    name="PHONE_CALL"
-                    className="flex items-center justify-center text-slate-700 text-sm bg-slate-100 hover:bg-gray-200 hover:shadow-sm rounded-lg p-2 px-4 cursor-pointer"
-                  >
-                    Call phone number
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={() => bottomButtonClick("CALLBACK")}
-                    name="CALLBACK"
-                    className="flex items-center justify-center text-slate-700 text-sm bg-gray-100 hover:bg-gray-200 hover:shadow-sm rounded-lg p-2 px-4 cursor-pointer"
-                  >
-                    Visit website
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={() => bottomButtonClick("QUICK-REPLIES")}
-                    name="QUICK-REPLIES"
-                    className="flex items-center justify-center text-slate-700 text-sm bg-gray-100 hover:bg-gray-200 hover:shadow-sm rounded-lg p-2 px-4 cursor-pointer sm:col-span-2"
-                  >
-                    Simple Text
-                  </button>
-                </div>
+                  <div className="flex gap-3 my-3">
+                    <button
+                      type="button"
+                      onMouseDown={() => bottomButtonClick("PHONE_CALL")}
+                      className="px-4 py-2 bg-slate-100 rounded-lg"
+                    >
+                      Add Phone Call
+                    </button>
+
+                    <button
+                      type="button"
+                      onMouseDown={() => bottomButtonClick("CALLBACK")}
+                      className="px-4 py-2 bg-slate-100 rounded-lg"
+                    >
+                      Add URL Button
+                    </button>
+
+                    <button
+                      type="button"
+                      onMouseDown={() => bottomButtonClick("QUICK-REPLIES")}
+                      className="px-4 py-2 bg-slate-100 rounded-lg"
+                    >
+                      Add Quick Reply
+                    </button>
+                  </div>
+
+                 {formData.buttons.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-gray-700 font-semibold mb-2">Added Buttons (Drag to reorder)</h4>
+
+                    <DragDropContext
+                      onDragEnd={(result) => {
+                        if (!result.destination) return;
+
+                        const updated = Array.from(formData.buttons);
+                        const [moved] = updated.splice(result.source.index, 1);
+                        updated.splice(result.destination.index, 0, moved);
+
+                        setFormData((prev) => ({
+                          ...prev,
+                          buttons: updated
+                        }));
+                      }}
+                    >
+                      <Droppable droppableId="buttons">
+                        {(provided) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="flex flex-col gap-2"
+                          >
+                            {formData.buttons.map((btn, idx) => (
+                              <Draggable key={idx} draggableId={`btn-${idx}`} index={idx}>
+                                {(provided) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className="flex items-center justify-between px-3 py-2 bg-blue-100 rounded-lg cursor-move"
+                                  >
+                                    {/* text */}
+                                    <span className="text-blue-700 text-sm">
+                                      {btn.text} ({btn.type})
+                                    </span>
+
+                                    {/* delete */}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeButton(idx)}
+                                      className="text-red-500 font-bold hover:text-red-700"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  </div>
+                )}
+
+
+
 
                 {activeButton === "PHONE_CALL" && isVisible && (
                   <div className="mt-4 mb-8">
                     <div className="bg-[#f9f9fa] p-3 rounded-lg">
+
                       <div className="flex items-center justify-between pb-4">
                         <span className="text-sm text-gray-900">Call Phone Number</span>
                         <button
                           type="button"
-                          onMouseDown={() => {
-                            setIsVisible(false);
-                            setFormData((prevData) => ({
-                              ...prevData,
-                              button_text: "",
-                              button_number: "",
-                              button_type: "",
-                            }));
-                          }}
+                          onMouseDown={() => setActiveButton(null)}
                           className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fill="currentColor"
-                              fillRule="evenodd"
-                              d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 6.293L7.707 7.707a1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 0 0 0 1.414 1.414L12 17.707l4.293-4.293a1 0 0 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                          ✕
                         </button>
                       </div>
+
                       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 border-t pt-4">
                         <div className="flex-1">
-                          <label className="block text-sm leading-6 text-gray-900 mb-1">
-                            Button Text
-                          </label>
+                          <label className="block text-sm leading-6 text-gray-900 mb-1">Button Text</label>
                           <input
-                            className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
                             type="text"
                             name="button_text"
                             value={formData.button_text}
                             onChange={handleChange}
-                            placeholder="Enter button text"
+                            placeholder="Call Now"
+                            className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
                           />
                         </div>
+
                         <div className="flex-1">
-                          <label className="block text-sm leading-6 text-gray-900 mb-1">
-                            Phone Number
-                          </label>
+                          <label className="block text-sm leading-6 text-gray-900 mb-1">Phone Number</label>
                           <input
-                            value={formData.button_number}
-                            onChange={handleChange}
-                            className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-gray-300 sm:text-sm sm:leading-6"
                             type="text"
                             name="button_number"
+                            value={formData.button_number}
+                            onChange={handleChange}
                             placeholder="Enter phone number"
+                            className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
                           />
                         </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onMouseDown={() => addButton("PHONE_CALL")}
+                        className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg"
+                      >
+                        Add Button
+                      </button>
+
                     </div>
                   </div>
                 )}
+
 
                 {activeButton === "CALLBACK" && isVisible && (
-                  <div className="mt-4 mb-8">
-                    <div className="bg-[#f9f9fa] p-4 rounded-lg">
-                      <div className="flex items-center justify-between pb-4">
-                        <span className="text-sm text-gray-900">Website URL</span>
-                        <button
-                          type="button"
-                          onMouseDown={() => {
-                            setIsVisible(false);
-                            setFormData((prevData) => ({
-                              ...prevData,
-                              button_text: "",
-                              button_url: "",
-                              button_type: "",
-                            }));
-                          }}
-                          className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
-                        >
-                          <svg
-                            className="mx-auto h-12 w-4 text-gray-600 cursor-pointer"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fill="currentColor"
-                              fillRule="evenodd"
-                              d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 6.293L7.707 7.707a1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 0 0 0 1.414 1.414L12 17.707l4.293-4.293a1 0 0 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 border-t pt-4">
-                        <div className="flex-1">
-                          <label className="block text-sm leading-6 text-gray-900 mb-1">
-                            Button Text
-                          </label>
-                          <input
-                            className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                            type="text"
-                            name="button_text"
-                            value={formData.button_text}
-                            onChange={handleChange}
-                            placeholder="Enter button text"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-sm leading-6 text-gray-900 mb-1">
-                            Website URL
-                          </label>
-                          <input
-                            className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                            type="text"
-                            name="button_url"
-                            value={formData.button_url}
-                            onChange={handleChange}
-                            placeholder="Enter Website URL"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <div className="mt-4 mb-8">
+                  <div className="bg-[#f9f9fa] p-4 rounded-lg">
 
-                {activeButton === "QUICK-REPLIES" && isVisible && (
-                  <div className="mt-4 mb-8">
-                    <div className="bg-[#f9f9fa] p-4 rounded-lg mb-8">
-                      <div className="flex items-center justify-between pb-4">
-                        <span className="text-sm text-gray-900">Custom Button</span>
-                        <button
-                          type="button"
-                          onMouseDown={() => {
-                            setIsVisible(false);
-                            setFormData((prevData) => ({
-                              ...prevData,
-                              button_text: "",
-                              button_type: "",
-                            }));
-                          }}
-                          className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fill="currentColor"
-                              fillRule="evenodd"
-                              d="M17.707 7.707a1 1 0 0 0-1.414-1.414L12 6.293L7.707 7.707a1 0 0 0-1.414 1.414L10.586 12l-4.293 4.293a1 0 0 0 1.414 1.414L12 17.707l4.293-4.293a1 0 0 0 1.414-1.414L13.414 12l4.293-4.293Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="py-2">
-                        <label className="block text-sm leading-6 text-gray-900 mb-1">
-                          Button Text
-                        </label>
+                    <div className="flex items-center justify-between pb-4">
+                      <span className="text-sm text-gray-900">Website URL</span>
+                      <button
+                        type="button"
+                        onMouseDown={() => setActiveButton(null)}
+                        className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
+                      >
+                      ✕
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 border-t pt-4">
+                      <div className="flex-1">
+                        <label className="block text-sm leading-6 text-gray-900 mb-1">Button Text</label>
                         <input
-                          className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
                           type="text"
                           name="button_text"
                           value={formData.button_text}
                           onChange={handleChange}
-                          placeholder="Enter button text"
+                          placeholder="Visit Website"
+                          className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
+                        />
+                      </div>
+
+                      <div className="flex-1">
+                        <label className="block text-sm leading-6 text-gray-900 mb-1">Website URL</label>
+                        <input
+                          type="text"
+                          name="button_url"
+                          value={formData.button_url}
+                          onChange={handleChange}
+                          placeholder="https://example.com"
+                          className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
                         />
                       </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onMouseDown={() => addButton("CALLBACK")}
+                      className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg"
+                    >
+                      Add Button
+                    </button>
+
                   </div>
-                )}
+                </div>
+              )}
+
+
+                {activeButton === "QUICK-REPLIES" && isVisible && (
+                <div className="mt-4 mb-8">
+                  <div className="bg-[#f9f9fa] p-4 rounded-lg">
+
+                    <div className="flex items-center justify-between pb-4">
+                      <span className="text-sm text-gray-900">Quick Reply Button</span>
+                      <button
+                        type="button"
+                        onMouseDown={() => setActiveButton(null)}
+                        className="bg-slate-100 hover:bg-gray-200 rounded-full p-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <label className="block text-sm leading-6 text-gray-900 mb-1">Button Text</label>
+                    <input
+                      type="text"
+                      name="button_text"
+                      value={formData.button_text}
+                      onChange={handleChange}
+                      placeholder="Yes"
+                      className="block w-full rounded-md border-0 py-1.5 px-4 ring-1 ring-inset ring-gray-300"
+                    />
+
+                    <button
+                      type="button"
+                      onMouseDown={() => addButton("QUICK-REPLIES")}
+                      className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg"
+                    >
+                      Add Button
+                    </button>
+
+                  </div>
+                </div>
+              )}
+
               </div>
             )}
 
             <div
-              className="w-full sm:w-[30%] mx-auto sm:h-[80vh] p-4 sm:p-6 rounded-xl shadow-sm bg-cover bg-center"
-              style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}
-            >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-                alt="WhatsApp Logo"
-                className="w-6 h-6 mb-4"
-              />
-              <div className="flex justify-start">
-                <div className="flex items-end">
-                  <svg height="8" width="8">
-                    <path
-                      fill="white"
-                      d="M2.8,13L8,13V0.2C7.1,5.5,6.5,8.7,1,7,10.4C-1.6,11.5,1,13,2.8,13z"
-                    />
-                  </svg>
-                </div>
-                <div className="rounded-r-lg rounded-tl-lg bg-white py-2 px-4">
-                  <h1 className="font-semibold text-sm sm:text-md">{formData.header_text}</h1>
-                  <span className="text-xs sm:text-sm">{formData.body_text}</span>
-                  <div className="text-xs text-gray-500 mt-1">
-                    <span className="font-light">{formData.footer_text}</span>
-                    <br />
+                className="w-full sm:w-[30%] mx-auto sm:h-[80vh] p-4 sm:p-6 rounded-xl shadow-sm bg-cover bg-center"
+                style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}
+              >
+                {/* WhatsApp logo */}
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                  alt="WhatsApp Logo"
+                  className="w-6 h-6 mb-4"
+                />
+
+                {/* CHAT BUBBLE */}
+                <div className="flex justify-start">
+                  <div className="flex items-end">
+                    {/* <svg height="10" width="10">
+                      <path
+                        fill="white"
+                        d="M2.8,13L8,13V0.2C7.1,5.5,6.5,8.7,1,7,10.4C-1.6,11.5,1,13,2.8,13z"
+                      />
+                    </svg> */}
+                  </div>
+
+                  <div className="rounded-r-lg rounded-tl-lg bg-white py-2 px-4 max-w-[90%]">
+
+                    {/* HEADER MEDIA PREVIEW */}
+                    {formData.header_media_url && (
+                      <div className="mb-2">
+
+                        {activeButton === "IMAGE" && (
+                          <img
+                            src={URL.createObjectURL(formData.header_media_url)}
+                            alt="Preview"
+                            className="w-full max-w-[220px] rounded-lg border"
+                          />
+                        )}
+
+                        {activeButton === "VIDEO" && (
+                          <video
+                            src={URL.createObjectURL(formData.header_media_url)}
+                            controls
+                            className="w-full max-w-[220px] rounded-lg border"
+                          />
+                        )}
+
+                        {activeButton === "DOCUMENT" && (
+                          <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg border w-[220px]">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="22"
+                              height="22"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M14 2H6c-1.1 0-2 .9-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2l4 4h-4z"
+                              />
+                            </svg>
+                            <span className="text-xs truncate">{formData.header_media_url.name}</span>
+                          </div>
+                        )}
+
+                      </div>
+                    )}
+
+                    {/* HEADER TEXT */}
+                    {formData.header_text && (
+                      <h1 className="font-semibold text-sm mb-1">{formData.header_text}</h1>
+                    )}
+
+                    {/* BODY TEXT */}
+                    <span className="text-xs sm:text-sm whitespace-pre-wrap">
+                      {formData.body_text}
+                    </span>
+
+                    {/* FOOTER */}
+                    {formData.footer_text && (
+                      <div className="text-[11px] text-gray-500 mt-2">
+                        {formData.footer_text}
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* BUTTONS PREVIEW */}
+                {formData.buttons.length > 0 && (
+                  <div className="mt-3 space-y-2">
+
+                    {formData.buttons.map((btn, index) => (
+                      <div key={index} className="flex justify-start items-center">
+                        <span className="bg-white rounded-full w-full py-2 text-center text-blue-500 text-xs sm:text-sm shadow-sm">
+                          {btn.text}
+                        </span>
+                      </div>
+                    ))}
+
+                  </div>
+                )}
               </div>
-              <div className="flex justify-start items-center py-2">
-                <span className="bg-white rounded-full w-full text-center text-blue-500 text-xs sm:text-sm">
-                  {formData.button_text}
-                </span>
-              </div>
-            </div>
+
           </div>
         </form>
       </div>

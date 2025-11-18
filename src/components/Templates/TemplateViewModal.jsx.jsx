@@ -4,7 +4,7 @@ import { assest } from "../../assets/assets";
 
 const TemplateViewModal = ({ isOpen, onClose, template }) => {
   if (!isOpen || !template) return null;
-
+  console.log("Template in Modal:", template);
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-2 sm:px-0">
       <div
@@ -66,15 +66,21 @@ const TemplateViewModal = ({ isOpen, onClose, template }) => {
             )}
           </div>
         </div>
-
-        {/* Button */}
-        {template.button_text && (
-          <div className="flex justify-start items-center py-2">
-            <span className="bg-white rounded-lg w-full text-center text-blue-500 py-1 text-sm sm:text-base">
-              {template.button_text}
-            </span>
+        
+        {/* Buttons */}
+        {template.buttons && Array.isArray(template.buttons) && template.buttons.length > 0 && (
+          <div className="flex flex-wrap justify-start gap-2 py-2">
+            {template.buttons.map((btn, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg px-4 py-1 text-blue-500 text-sm sm:text-base shadow-sm border cursor-default"
+              >
+                {btn.text}
+              </div>
+            ))}
           </div>
         )}
+
       </div>
     </div>
   );
