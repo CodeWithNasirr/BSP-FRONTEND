@@ -3,6 +3,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config';
 
 const JobDetailModal = ({ jobId, onClose }) => {
+  
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem('authToken');
@@ -72,6 +73,55 @@ const JobDetailModal = ({ jobId, onClose }) => {
             <p className="text-gray-400">No details provided</p>
           )}
         </div>
+        {jobId.staff_issue && (
+          <div className="bg-gray-800 p-3 rounded border border-gray-700 mt-4">
+            <h4 className="text-white font-semibold">Staff Reported Issue</h4>
+            <p className="text-gray-300 text-sm mt-1">{jobId.staff_issue}</p>
+          </div>
+        )}
+        {jobId.status_history?.length > 0 && (
+          <div className="bg-gray-800 p-4 mt-4 rounded border border-gray-700">
+            <h3 className="text-white font-semibold mb-2">Status History</h3>
+
+            <ul className="space-y-2">
+              {jobId.status_history.map((entry, index) => (
+                <li key={index} className="bg-gray-900 p-3 rounded text-gray-300 text-sm">
+                  <p>
+                    <span className="font-bold">{entry.changed_by}</span>{" "}
+                    updated on{" "}
+                    <span className="text-blue-400">
+                      {new Date(entry.time).toLocaleString()}
+                    </span>
+                  </p>
+
+                  {entry.old_status && (
+                    <p>
+                      Status: <b>{entry.old_status}</b> →{" "}
+                      <span className="text-green-400">{entry.new_status}</span>
+                    </p>
+                  )}
+
+                  {entry.new_issue && (
+                    <p>
+                      Staff Issue Updated:{" "}
+                      <span className="text-yellow-400">{entry.new_issue}</span>
+                    </p>
+                  )}
+
+                  {entry.old_assigned_staff && (
+                    <p>
+                      Staff Changed: {entry.old_assigned_staff} →{" "}
+                      <span className="text-blue-400">{entry.new_assigned_staff}</span>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+
+
       </div>
 
       <div className="flex gap-3 mt-6 sticky bottom-0 bg-gray-800 pt-4">

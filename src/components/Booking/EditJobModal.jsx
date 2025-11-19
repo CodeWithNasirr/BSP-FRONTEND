@@ -12,6 +12,7 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
     status: '',
     details: {},
     assigned_staff: '',
+    staff_issue: "",   // ✅ ADD THIS
   });
   const [serviceTypes, setServiceTypes] = useState([]);
   const [staffList, setStaffList] = useState([]);
@@ -30,6 +31,9 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
         status: jobId.status || '',
         details: jobId.details || {},
         assigned_staff: jobId.assigned_staff || '',
+        details: jobId.details || {},
+       
+        
       });
     }
   }, [jobId]);
@@ -203,6 +207,23 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
           ))}
         </div>
       )}
+    {/* Staff Issue (STAFF ONLY) */}
+    {userInfo?.role === "staff" && (
+      <div>
+        <label className="block text-sm font-medium text-gray-400 mb-1">
+          Staff Issue Description
+        </label>
+        <textarea
+          name="staff_issue"
+          value={formData.staff_issue}
+          onChange={handleChange}
+          placeholder="Describe issue found by staff..."
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg 
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          rows={3}
+        ></textarea>
+      </div>
+    )}
 
       {/* ✅ Assigned Staff — only visible for Admin or Manager, not Staff */}
     {userInfo?.role !== 'staff' && (

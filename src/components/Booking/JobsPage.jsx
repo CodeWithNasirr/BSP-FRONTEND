@@ -209,6 +209,11 @@ const JobsPage = () => {
                     <p className="font-medium text-white">{job.name}</p>
                     <p className="text-sm text-gray-400">JOB-{String(job.id).padStart(3, '0')}</p>
                     <p className="text-xs text-gray-500">{job.service_type_name || 'Unknown'}</p>
+                    {job.staff_issue && (
+                      <span className="text-yellow-400 text-xs ml-1">
+                        ⚠ Staff Issue Found
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="p-4">
