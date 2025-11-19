@@ -31,7 +31,6 @@ const EditJobModal = ({ jobId, onClose, onUpdate }) => {
         status: jobId.status || '',
         details: jobId.details || {},
         assigned_staff: jobId.assigned_staff || '',
-        details: jobId.details || {},
        
         
       });
