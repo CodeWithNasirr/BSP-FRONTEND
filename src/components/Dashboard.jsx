@@ -296,29 +296,31 @@ const Dashboard = () => {
     const messageHandler = (event) => {
       if (!event.origin.endsWith("facebook.com")) return;
 
+      let data;
       try {
-        const data = JSON.parse(event.data);
+        if (typeof event.data !== "string") return;
+        if (!event.data.trim().startsWith("{")) return;
 
-        if (data.type === "WA_EMBEDDED_SIGNUP") {
-          const sessionId = localStorage.getItem("wa_onboarding_session");
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
 
-          axios.post(
-            `${API_BASE_URL}/api/whatsapp-signup/`,
-            {
-              ...data,
-              state: sessionId,
+      if (data.type === "WA_EMBEDDED_SIGNUP") {
+        const sessionId = localStorage.getItem("wa_onboarding_session");
+
+        axios.post(
+          `${API_BASE_URL}/api/whatsapp-signup/`,
+          { ...data, state: sessionId },
+          {
+            headers: {
+              Authorization: `Token ${tokenRef.current}`,
             },
-            {
-              headers: {
-                Authorization: `Token ${token}`,
-              },
-            }
-          );
-        }
-      } catch (e) {
-        console.error("Invalid Facebook message", e);
+          }
+        );
       }
     };
+
 
     window.addEventListener("message", messageHandler);
 
