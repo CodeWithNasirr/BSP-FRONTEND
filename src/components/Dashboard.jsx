@@ -373,7 +373,7 @@ const Dashboard = () => {
         featureType: "whatsapp_business_app_onboarding",
         sessionInfoVersion: "3",
         state: sessionId,
-        redirect_uri: "https://indianchiplevelcommunity.com/api/exchange-token/",
+        redirect_uri: "https://api.numlockitsolutions.co.in/api/exchange-token/",
       },
     }
   );
