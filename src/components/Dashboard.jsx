@@ -243,98 +243,141 @@ const Dashboard = () => {
      }
    };
 
-   // Facebook SDK and Embedded Signup Logic
+
+   const startWhatsAppOnboarding = async () => {
+    const sessionId = crypto.randomUUID();
+
+    // Save locally (for safety)
+    localStorage.setItem("wa_onboarding_session", sessionId);
+
+    // Tell backend: "this session belongs to THIS user"
+    await axios.post(
+      `${API_BASE_URL}/api/start-whatsapp-onboarding/`,
+      { session_id: sessionId },
+      {
+        headers: {
+          Authorization: `Token ${token}`, // ✅ HERE token is valid
+        },
+      }
+    );
+
+    launchWhatsAppSignup(sessionId);
+  };
+
+
+
+   const [fbReady, setFbReady] = useState(false);
+
   useEffect(() => {
-    // Load Facebook SDK
-    const script = document.createElement('script');
-    script.src = 'https://connect.facebook.net/en_US/sdk.js';
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = 'anonymous';
-    document.body.appendChild(script);
+    // 1️⃣ Load Facebook SDK only once
+    if (!window.FB) {
+      window.fbAsyncInit = () => {
+        window.FB.init({
+          appId: "3890308814613591",
+          autoLogAppEvents: true,
+          xfbml: true,
+          version: "v23.0",
+        });
 
-    // Initialize SDK
-    window.fbAsyncInit = () => {
-      window.FB.init({
-        appId: "3890308814613591", // Store in .env
-        // appId: process.env.REACT_APP_FACEBOOK_APP_ID, // Store in .env
-        autoLogAppEvents: true,
-        xfbml: true,
-        version: 'v23.0', // Use latest Graph API version
-      });
-    };
+        setFbReady(true); // ✅ SDK READY
+      };
 
-    // Session logging message event listener
-    window.addEventListener('message', (event) => {
-      if (!event.origin.endsWith('facebook.com')) return;
+      const script = document.createElement("script");
+      script.src = "https://connect.facebook.net/en_US/sdk.js";
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = "anonymous";
+      document.body.appendChild(script);
+    } else {
+      setFbReady(true);
+    }
+
+    // 2️⃣ Message handler (SAME reference for cleanup)
+    const messageHandler = (event) => {
+      if (!event.origin.endsWith("facebook.com")) return;
+
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'WA_EMBEDDED_SIGNUP') {
-          // Send data to Django backend
-          axios.post(`${API_BASE_URL}/api/whatsapp-signup/`, data, {
-            headers: {
-              Authorization: `Token ${token}`,
-              'Content-Type': 'application/json',
-            },
-          })
-            .then((response) => {
-              toast.success('WhatsApp signup data processed successfully');
-              // Optionally update isConnected in context or refetch userInfo
-            })
-            .catch((error) => toast.error('Failed to process WhatsApp signup data'));
-        }
-      } catch {
-        toast.error('Invalid WhatsApp signup message');
-      }
-    });
 
-    return () => {
-      // Cleanup event listener
-      window.removeEventListener('message', () => {});
+        if (data.type === "WA_EMBEDDED_SIGNUP") {
+          const sessionId = localStorage.getItem("wa_onboarding_session");
+
+          axios.post(
+            `${API_BASE_URL}/api/whatsapp-signup/`,
+            {
+              ...data,
+              state: sessionId,
+            },
+            {
+              headers: {
+                Authorization: `Token ${token}`,
+              },
+            }
+          );
+        }
+      } catch (e) {
+        console.error("Invalid Facebook message", e);
+      }
     };
-  }, [token]);
+
+    window.addEventListener("message", messageHandler);
+
+    // 3️⃣ Proper cleanup
+    return () => {
+      window.removeEventListener("message", messageHandler);
+    };
+  }, []); // 🚨 NO token dependency
+
  
   // Response callback for token
-  const fbLoginCallback = (response) => {
-    if (response.authResponse) {
-      const code = response.authResponse.code;
-      // Send exchangeable token to Django backend
-      axios.post(`${API_BASE_URL}/api/exchange-token/`, { code }, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-        .then((response) => {
-          if (response.data.status === 'success') {
-            toast.success('WhatsApp connected successfully!');
-            fetchDashboard(); // Update isConnected
-            // Update context or refetch userInfo to reflect isConnected
-          } else {
-            toast.error('Token exchange failed');
-          }
-        })
-        .catch((error) => toast.error('Failed to exchange token'));
-    } else {
-      toast.error('WhatsApp login failed');
+    const fbLoginCallback = (response) => {
+    if (!response.authResponse) {
+      toast.error("WhatsApp login failed");
+      return;
     }
-  }; 
+
+    const sessionId = localStorage.getItem("wa_onboarding_session");
+
+    axios.post(
+      `${API_BASE_URL}/api/exchange-token/`,
+      {
+        code: response.authResponse.code,
+        state: sessionId, // 🔥 send state
+      }
+    )
+    .then(() => {
+      toast.success("WhatsApp connected successfully!");
+      fetchDashboard();
+    })
+    .catch(() => toast.error("Token exchange failed"));
+  };
+
 
   // Launch WhatsApp Signup
-  const launchWhatsAppSignup = () => {
-    window.FB.login(fbLoginCallback, {
-      config_id: "3713662958940509", // Store in .env
-      // config_id: process.env.REACT_APP_CONFIG_ID, // Store in .env
-      response_type: 'code',
+  const launchWhatsAppSignup = (sessionId) => {
+  if (!fbReady || !window.FB) {
+    toast.error("Facebook SDK still loading. Please wait.");
+    return;
+  }
+
+  window.FB.login(
+    fbLoginCallback,
+    {
+      config_id: "3713662958940509",
+      response_type: "code",
       override_default_response_type: true,
       extras: {
         setup: {},
-        featureType: 'whatsapp_business_app_onboarding', // Set to desired feature type (e.g., 'only_waba_sharing')
-        sessionInfoVersion: '3',
-        redirect_uri: 'https://indianchiplevelcommunity.com/api/exchange-token/', // Add this
+        featureType: "whatsapp_business_app_onboarding",
+        sessionInfoVersion: "3",
+        state: sessionId,
+        redirect_uri: "https://indianchiplevelcommunity.com/api/exchange-token/",
       },
-    });
+    }
+  );
   };
+
+
 
   return (
   <>
@@ -386,7 +429,7 @@ const Dashboard = () => {
                 {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
               </Link> */}
               <button
-                onClick={launchWhatsAppSignup}
+                onClick={startWhatsAppOnboarding}
                 disabled={isConnected}
                 className={`rounded-md cursor-pointer ${
                   isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'

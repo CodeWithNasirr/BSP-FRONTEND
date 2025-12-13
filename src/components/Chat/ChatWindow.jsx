@@ -272,6 +272,7 @@ const ChatWindow = ({ recipient }) => {
           if (!msg) return;
 
           const action = msg.action;
+          console.log(action)
           const payload = msg.data;
 
           // ========== NEW MESSAGE ==========
