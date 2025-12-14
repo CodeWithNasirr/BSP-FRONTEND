@@ -374,7 +374,6 @@ const Dashboard = () => {
       config_id: "3713662958940509",
       response_type: "code",
       override_default_response_type: true,
-      redirect_uri: `${API_BASE_URL}/api/exchange-token/`,
       extras: {
         setup: {},
         featureType: "whatsapp_business_app_onboarding",
