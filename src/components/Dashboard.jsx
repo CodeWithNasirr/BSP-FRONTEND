@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Context } from "./context/Context";
 import { toast } from 'react-toastify';
 import API_BASE_URL from '../config'; // Adjust the path as needed
+import { useRef } from "react";
 
 
 const Dashboard = () => { 
@@ -12,6 +13,11 @@ const Dashboard = () => {
   const token = localStorage.getItem("authToken");
   const user_email = userInfo.email || '';
   const user_name = userInfo.username || '';
+  const tokenRef = useRef(null);
+
+  useEffect(() => {
+    tokenRef.current = localStorage.getItem("authToken");
+  }, []);
 
   // Wallet states
   const [balance, setBalance] = useState(0);
