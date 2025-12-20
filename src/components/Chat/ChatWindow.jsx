@@ -154,14 +154,14 @@ const ChatWindow = ({ recipient }) => {
           headers: { Authorization: `Token ${token}` }
         });
         const { success, data, message } = response.data;
-      
+          console.log(response.data)
           if (success && data) {
             // ✅ Active flow exists
             setActiveFlow(data);
             setSelectedFlowId(data.flow || null);
             setSessionFlowId(data.id || null);
             // console.log(data);
-            setIsFlowPaused(data.context.paused || false);
+            setIsFlowPaused(data.is_paused || false);
           } else {
             // ✅ No active session
             setActiveFlow(null);
@@ -577,7 +577,27 @@ const ChatWindow = ({ recipient }) => {
             />
           </div>
         );
-      } else if (msg.media_type === 'document') {
+      }
+      else if (msg.media_type === 'audio') {
+      return (
+        <div className="mb-2 max-w-[260px] md:max-w-[320px]">
+          <div className="bg-gray-100 rounded-lg p-2 flex items-center">
+            <audio
+              src={msg.media_url}
+              controls
+              className=" h-8"
+              preload="none"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.closest("div").style.display = "none";
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+       else if (msg.media_type === 'document') {
         return (
           <div className="mb-2 p-3 bg-gray-50 rounded-lg border">
             <div className="flex items-center gap-2">

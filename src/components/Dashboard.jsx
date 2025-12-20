@@ -13,11 +13,7 @@ const Dashboard = () => {
   const token = localStorage.getItem("authToken");
   const user_email = userInfo.email || '';
   const user_name = userInfo.username || '';
-  const tokenRef = useRef(null);
 
-  useEffect(() => {
-    tokenRef.current = localStorage.getItem("authToken");
-  }, []);
 
   // Wallet states
   const [balance, setBalance] = useState(0);
@@ -320,7 +316,7 @@ const Dashboard = () => {
           { ...data, state: sessionId },
           {
             headers: {
-              Authorization: `Token ${tokenRef.current}`,
+              Authorization: `Token ${token}`,
             },
           }
         );

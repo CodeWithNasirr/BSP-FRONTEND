@@ -1,14 +1,56 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import { MessageSquare, Plus, Pencil, Trash2,Image } from 'lucide-react';
+import { MessageSquare, Plus, Pencil, Trash2,Image,Upload } from 'lucide-react';
+import { uploadFlowMedia } from '../uploadFlowMedia';
+import { toast } from 'react-toastify';
+
 
 const TextButtonsNode = ({ data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(data.message || '');
   const [footer, setFooter] = useState(data.footerText || '');
   const [buttons, setButtons] = useState(data.buttons || []);
-  const [mediaUrl, setMediaUrl] = useState(data.image || '');
+  const [mediaUrl, setMediaUrl] = useState(data.media_url || "");
+  const [mediaType, setMediaType] = useState(data.media_type || "");
    
+
+  const handleFileUpload = async (file) => {
+    // toast.loading("Uploading media...", { id: "media-upload" });
+
+    try {
+      const res = await uploadFlowMedia(file);
+
+      // Update local state
+      setMediaUrl(res.url);
+      setMediaType(res.media_type);
+
+      // ✅ Persist directly into node data
+      data.media_url = res.url;
+      data.media_type = res.media_type;
+      data.message = message;
+      data.footerText = footer;
+      data.buttons = buttons;
+
+      // ✅ Auto-close editor (auto-save UX)
+      setEditing(false);
+
+      toast.update("media-upload", {
+        render: "Media uploaded & saved",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } catch (err) {
+      toast.update("media-upload", {
+        render: "Upload failed",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    }
+  };
+
+  
  
   const handleAddButton = () => {
     const newButton = { text: `Button ${buttons.length + 1}` };
@@ -27,7 +69,9 @@ const TextButtonsNode = ({ data, selected }) => {
   const handleSave = () => {
     data.message = message;
     data.buttons = buttons;
-    data.image = mediaUrl;
+    data.media_url = mediaUrl;
+    data.media_type = mediaType;
+    // data.image = mediaUrl;
     data.footerText = footer;
     setEditing(false);
   };
@@ -49,13 +93,19 @@ const TextButtonsNode = ({ data, selected }) => {
       {editing ? (
         <div className="space-y-2 mb-2">
 
-            <input
-            type="text"
-            className="w-full text-xs px-2 py-1 border border-blue-200 rounded"
-            placeholder="Image URL "
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-          />
+          <div className="flex justify-center">
+            <label className="flex items-center gap-2 text-xs cursor-pointer bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 px-3 py-2 rounded-md transition">
+              <Upload size={16} />
+              Upload Media
+              <input
+                type="file"
+                accept="image/*,video/*,audio/*"
+                hidden
+                onChange={(e) => handleFileUpload(e.target.files[0])}
+              />
+            </label>
+          </div>
+
           <textarea
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}

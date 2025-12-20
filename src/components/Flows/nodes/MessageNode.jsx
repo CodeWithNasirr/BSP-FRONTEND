@@ -1,11 +1,14 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import { MessageSquare, Image, Pencil } from 'lucide-react';
+import { MessageSquare, Image, Pencil,Upload  } from 'lucide-react';
+import { uploadFlowMedia } from '../uploadFlowMedia';
+import { toast } from 'react-toastify';
 
 const MessageNode = ({ data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(data.message || '');
-  const [mediaUrl, setMediaUrl] = useState(data.mediaUrl || '');
+  const [mediaUrl, setMediaUrl] = useState(data.media_url || "");
+  const [mediaType, setMediaType] = useState(data.media_type || "");
   const [collectAddress, setCollectAddress] = useState(data.collect_address || false);
   const [collectLocation, setCollectLocation] = useState(data.collect_location || false);
   const [centerLat, setCenterLat] = useState(data.center_lat || '');
@@ -14,9 +17,49 @@ const MessageNode = ({ data, selected }) => {
   const [collectInput, setCollectInput] = useState(data.collect_input || false);
   const [inputKey, setInputKey] = useState(data.input_key || '');
  
+  const handleFileUpload = async (file) => {
+      // toast.loading("Uploading media...", { id: "media-upload" });
+  
+      try {
+        const res = await uploadFlowMedia(file);
+  
+        // Update local state
+        setMediaUrl(res.url);
+        setMediaType(res.media_type);
+  
+        // ✅ Persist directly into node data
+        data.media_url = res.url;
+        data.media_type = res.media_type;
+        data.message = message;
+        data.footerText = footer;
+        data.buttons = buttons;
+  
+        // ✅ Auto-close editor (auto-save UX)
+        setEditing(false);
+  
+        toast.update("media-upload", {
+          render: "Media uploaded & saved",
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
+      } catch (err) {
+        toast.update("media-upload", {
+          render: "Upload failed",
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+      }
+    };
+
+
+
+
   const handleSave = () => {
     data.message = message;
-    data.mediaUrl = mediaUrl;
+    data.media_url = mediaUrl;
+    data.media_type = mediaType;
     data.collect_address = collectAddress;
     data.collect_location = collectLocation;
     if (collectLocation) {
@@ -52,13 +95,16 @@ const MessageNode = ({ data, selected }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <input
-            type="text"
-            className="w-full text-xs px-2 py-1 border border-blue-200 rounded"
-            placeholder="Media URL (optional)"
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-          />
+          <label className="flex items-center text-xs cursor-pointer">
+            <Upload size={14} className="mr-1" />
+            Upload Media
+            <input
+              type="file"
+              accept="image/*,video/*,audio/*"
+              hidden
+              onChange={(e) => handleFileUpload(e.target.files[0])}
+            />
+          </label>
           <label className="flex items-center">
             <input
               type="checkbox"
