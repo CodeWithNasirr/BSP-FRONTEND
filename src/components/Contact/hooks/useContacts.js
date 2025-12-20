@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // contacts/hooks/useContacts.js
-// Custom hook for managing contacts with infinite scroll
+// Custom hook for managing contacts with infinite scroll (FIXED)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { contactsApi } from "../api/contactsApi";
 
@@ -16,15 +16,26 @@ const contactsCache = {
   page: 1,
   hasMore: true,
   scrollTop: 0,
-  filters: { search: "", segment: "", group: "" },
+  filterKey: "", // Normalized filter signature
   lastFetchTime: 0,
 };
 
 const CACHE_TTL = 30000; // 30 seconds
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOCAL STORAGE HELPERS
+// HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Create a normalized filter key for cache comparison
+ * Ensures consistent string representation
+ */
+const getFilterKey = (filters) => {
+  const search = (filters.search || "").trim().toLowerCase();
+  const segment = (filters.segment || "").toString().trim();
+  const group = (filters.group || "").toString().trim();
+  return `${search}|${segment}|${group}`;
+};
 
 const updateLocalStorageContacts = (contacts) => {
   try {
@@ -39,131 +50,158 @@ const updateLocalStorageContacts = (contacts) => {
   }
 };
 
-const getLocalStorageContacts = () => {
-  try {
-    const storedUserInfo = localStorage.getItem("userInfo");
-    if (storedUserInfo) {
-      const parsed = JSON.parse(storedUserInfo);
-      return parsed.contacts || [];
-    }
-  } catch (e) {
-    console.error("Failed to read localStorage:", e);
-  }
-  return [];
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // HOOK
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const useContacts = (token, filters = {}) => {
   // ═══════════════════════════════════════════════════════════════════════════
+  // NORMALIZE FILTERS (prevent unnecessary re-renders)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const normalizedFilters = useMemo(
+    () => ({
+      search: (filters.search || "").trim(),
+      segment: (filters.segment || "").toString().trim(),
+      group: (filters.group || "").toString().trim(),
+    }),
+    [filters.search, filters.segment, filters.group]
+  );
+
+  const filterKey = useMemo(
+    () => getFilterKey(normalizedFilters),
+    [normalizedFilters]
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
-  const [contacts, setContacts] = useState(() => contactsCache.contacts);
-  const [page, setPage] = useState(() => contactsCache.page);
-  const [hasMore, setHasMore] = useState(() => contactsCache.hasMore);
+  const [contacts, setContacts] = useState(() => {
+    // Only use cache if filters match
+    if (contactsCache.filterKey === filterKey && contactsCache.contacts.length > 0) {
+      return contactsCache.contacts;
+    }
+    return [];
+  });
+
+  const [page, setPage] = useState(() => {
+    if (contactsCache.filterKey === filterKey) {
+      return contactsCache.page;
+    }
+    return 1;
+  });
+
+  const [hasMore, setHasMore] = useState(() => {
+    if (contactsCache.filterKey === filterKey) {
+      return contactsCache.hasMore;
+    }
+    return true;
+  });
+
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // REFS
+  // REFS (for async callbacks)
   // ═══════════════════════════════════════════════════════════════════════════
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef(null);
   const pageRef = useRef(page);
   const hasMoreRef = useRef(hasMore);
-  const filtersRef = useRef(filters);
+  const filterKeyRef = useRef(filterKey);
+  const fetchIdRef = useRef(0); // Track fetch sequence to ignore stale responses
 
-  // Keep refs updated
-  useEffect(() => { pageRef.current = page; }, [page]);
-  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
-  useEffect(() => { filtersRef.current = filters; }, [filters]);
+  // Keep refs synced
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    filterKeyRef.current = filterKey;
+  }, [filterKey]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CACHE SYNC
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    contactsCache.contacts = contacts;
-    contactsCache.page = page;
-    contactsCache.hasMore = hasMore;
-    contactsCache.filters = filters;
-  }, [contacts, page, hasMore, filters]);
+    if (page === 1) {
+      contactsCache.contacts = contacts;
+      contactsCache.page = page;
+      contactsCache.hasMore = hasMore;
+    }
+  }, [contacts, page, hasMore]);
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // FETCH CONTACTS
   // ═══════════════════════════════════════════════════════════════════════════
   const fetchContacts = useCallback(
     async (pageNum, currentFilters, isAppending = false) => {
-      if (isLoadingRef.current) {
-        console.log("⏳ Already loading, skipping...");
-        return;
-      }
-
-      isLoadingRef.current = true;
-
-      // Cancel pending request
+      // Cancel previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
       abortControllerRef.current = new AbortController();
 
-      try {
-        if (isAppending) {
-          setIsLoadingMore(true);
-        } else {
-          setIsLoading(true);
-        }
+      const currentFetchId = ++fetchIdRef.current;
+      const currentFilterKey = getFilterKey(currentFilters);
 
-        console.log(`📡 Fetching contacts page ${pageNum}...`);
+      try {
+        if (isAppending) setIsLoadingMore(true);
+        else setIsLoading(true);
+
+        console.log(`📡 Fetching contacts page ${pageNum}, filters: ${currentFilterKey}`);
 
         const response = await contactsApi.getContacts(
           token,
           {
             page: pageNum,
-            search: currentFilters.search || "",
-            segment: currentFilters.segment || "",
-            group: currentFilters.group || "",
+            search: currentFilters.search,
+            segment: currentFilters.segment,
+            group: currentFilters.group,
           },
           abortControllerRef.current.signal
         );
 
+        // Ignore stale responses
+        if (
+          currentFetchId !== fetchIdRef.current ||
+          currentFilterKey !== filterKeyRef.current
+        ) {
+          console.log("🚫 Ignoring stale response");
+          return;
+        }
+
         const newContacts = response.results || [];
         const hasNext = !!response.next;
 
-        console.log(`✅ Received ${newContacts.length} contacts, hasMore: ${hasNext}`);
-
         if (isAppending) {
-          // Append and deduplicate
           setContacts((prev) => {
             const ids = new Set(prev.map((c) => c.id));
-            const unique = newContacts.filter((c) => !ids.has(c.id));
-            const updated = [...prev, ...unique];
-            updateLocalStorageContacts(updated);
-            return updated;
+            return [...prev, ...newContacts.filter((c) => !ids.has(c.id))];
           });
         } else {
-          // Fresh load
           setContacts(newContacts);
-          updateLocalStorageContacts(newContacts);
         }
 
         setHasMore(hasNext);
-        hasMoreRef.current = hasNext;
         setTotalCount(response.count || 0);
+
+        // ✅ update cache metadata
+        contactsCache.filterKey = currentFilterKey;
         contactsCache.lastFetchTime = Date.now();
-        setError(null);
 
       } catch (err) {
-        if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
-          console.error("❌ Fetch error:", err);
-          setError(err.message || "Failed to fetch contacts");
-          toast.error("Failed to fetch contacts");
+        if (err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+          return;
         }
+        toast.error("Failed to fetch contacts");
       } finally {
-        isLoadingRef.current = false;
         setIsLoading(false);
         setIsLoadingMore(false);
       }
@@ -171,54 +209,89 @@ export const useContacts = (token, filters = {}) => {
     [token]
   );
 
+
   // ═══════════════════════════════════════════════════════════════════════════
   // LOAD MORE (for infinite scroll)
   // ═══════════════════════════════════════════════════════════════════════════
   const loadMore = useCallback(() => {
-    if (isLoadingRef.current || !hasMoreRef.current) return;
+    if (isLoadingRef.current || !hasMoreRef.current) {
+      return;
+    }
 
     const nextPage = pageRef.current + 1;
     setPage(nextPage);
     pageRef.current = nextPage;
-    fetchContacts(nextPage, filtersRef.current, true);
-  }, [fetchContacts]);
+
+    // Use current normalized filters
+    fetchContacts(
+      nextPage,
+      {
+        search: normalizedFilters.search,
+        segment: normalizedFilters.segment,
+        group: normalizedFilters.group,
+      },
+      true
+    );
+  }, [fetchContacts, normalizedFilters]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RESET & RELOAD (on filter change)
+  // FILTER CHANGE HANDLER
   // ═══════════════════════════════════════════════════════════════════════════
-  const resetAndReload = useCallback(() => {
+  // useEffect(() => {
+  //   if (!token) return;
+
+  //   const cacheAge = Date.now() - contactsCache.lastFetchTime;
+  //   const cacheValid =
+  //     contactsCache.filterKey === filterKey &&
+  //     contactsCache.contacts.length > 0 &&
+  //     cacheAge < CACHE_TTL;
+
+  //   if (cacheValid) {
+  //     console.log("📦 Using cached contacts for filter:", filterKey);
+  //     // Restore from cache
+  //     setContacts(contactsCache.contacts);
+  //     setPage(contactsCache.page);
+  //     setHasMore(contactsCache.hasMore);
+  //     pageRef.current = contactsCache.page;
+  //     hasMoreRef.current = contactsCache.hasMore;
+  //     setIsLoading(false);
+  //     return;
+  //   }
+
+  //   // ═══════════════════════════════════════════════════════════════════════
+  //   // FIX: Clear state BEFORE fetching to prevent stale data showing
+  //   // ═══════════════════════════════════════════════════════════════════════
+  //   console.log("🔄 Filter changed, resetting...", filterKey);
+
+  //   // Reset state
+  //   setPage(1);
+  //   pageRef.current = 1;
+  //   setHasMore(true);
+  //   hasMoreRef.current = true;
+  //   setContacts([]);
+  //   setError(null);
+
+  //   // Fetch with new filters
+  //   fetchContacts(1, normalizedFilters, false);
+  // }, [token, filterKey, normalizedFilters, fetchContacts]);
+  useEffect(() => {
+    if (!token) return;
+
+    // HARD reset cache on filter change
+    contactsCache.lastFetchTime = 0;
+    contactsCache.contacts = [];
+
+    console.log("🔄 Filter changed, fetching:", filterKey);
+
     setPage(1);
     pageRef.current = 1;
     setHasMore(true);
     hasMoreRef.current = true;
     setContacts([]);
-    fetchContacts(1, filtersRef.current, false);
-  }, [fetchContacts]);
+    setError(null);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INITIAL LOAD & FILTER CHANGES
-  // ═══════════════════════════════════════════════════════════════════════════
-  useEffect(() => {
-    if (!token) return;
-
-    const cacheAge = Date.now() - contactsCache.lastFetchTime;
-    const filtersChanged =
-      JSON.stringify(contactsCache.filters) !== JSON.stringify(filters);
-
-    // Use cache if valid
-    if (
-      contactsCache.contacts.length > 0 &&
-      cacheAge < CACHE_TTL &&
-      !filtersChanged
-    ) {
-      console.log("📦 Using cached contacts");
-      setIsLoading(false);
-      return;
-    }
-
-    // Fetch fresh
-    resetAndReload();
-  }, [token, filters.search, filters.segment, filters.group]); // eslint-disable-line
+    fetchContacts(1, normalizedFilters, false);
+  }, [token, filterKey]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CRUD OPERATIONS
@@ -228,13 +301,14 @@ export const useContacts = (token, filters = {}) => {
     async (contactData) => {
       try {
         const response = await contactsApi.createContact(token, contactData);
-        
-        // Add to local state (optimistic)
+
+        // Optimistic update - add to beginning
         setContacts((prev) => {
           const updated = [response.data, ...prev];
           updateLocalStorageContacts(updated);
           return updated;
         });
+        setTotalCount((prev) => prev + 1);
 
         toast.success(response.Message || "Contact saved successfully");
         return { success: true, data: response.data };
@@ -252,7 +326,7 @@ export const useContacts = (token, filters = {}) => {
       try {
         const response = await contactsApi.updateContact(token, contactId, contactData);
 
-        // Update local state
+        // Update in place
         setContacts((prev) => {
           const updated = prev.map((c) =>
             c.id === contactId ? { ...c, ...response.data } : c
@@ -279,12 +353,13 @@ export const useContacts = (token, filters = {}) => {
       try {
         await contactsApi.deleteContacts(token, ids);
 
-        // Remove from local state (optimistic)
+        // Remove from state
         setContacts((prev) => {
           const updated = prev.filter((c) => !ids.includes(c.id));
           updateLocalStorageContacts(updated);
           return updated;
         });
+        setTotalCount((prev) => Math.max(0, prev - ids.length));
 
         toast.success(`${ids.length} contact(s) deleted successfully`);
         return { success: true };
@@ -302,11 +377,13 @@ export const useContacts = (token, filters = {}) => {
       try {
         await contactsApi.addToGroup(token, contactId, groupId);
 
-        // Update local state
         setContacts((prev) =>
           prev.map((c) =>
             c.id === contactId
-              ? { ...c, Group: [...(c.Group || []), { id: groupId, group_name: groupName }] }
+              ? {
+                  ...c,
+                  Group: [...(c.Group || []), { id: groupId, group_name: groupName }],
+                }
               : c
           )
         );
@@ -327,7 +404,6 @@ export const useContacts = (token, filters = {}) => {
       try {
         await contactsApi.removeFromGroup(token, contactId, groupId);
 
-        // Update local state
         setContacts((prev) =>
           prev.map((c) =>
             c.id === contactId
@@ -357,9 +433,20 @@ export const useContacts = (token, filters = {}) => {
   );
 
   const invalidateCache = useCallback(() => {
+    console.log("🗑️ Invalidating cache...");
     contactsCache.lastFetchTime = 0;
-    resetAndReload();
-  }, [resetAndReload]);
+    contactsCache.contacts = [];
+    contactsCache.filterKey = "";
+
+    // Reset and refetch
+    setPage(1);
+    pageRef.current = 1;
+    setHasMore(true);
+    hasMoreRef.current = true;
+    setContacts([]);
+
+    fetchContacts(1, normalizedFilters, false);
+  }, [fetchContacts, normalizedFilters]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RETURN
@@ -376,18 +463,19 @@ export const useContacts = (token, filters = {}) => {
 
     // Actions
     loadMore,
-    resetAndReload,
+    invalidateCache,
     createContact,
     updateContact,
     deleteContacts,
     addContactToGroup,
     removeContactFromGroup,
     getContactById,
-    invalidateCache,
 
     // Cache utilities
     getCacheScrollTop: () => contactsCache.scrollTop,
-    setCacheScrollTop: (value) => { contactsCache.scrollTop = value; },
+    setCacheScrollTop: (value) => {
+      contactsCache.scrollTop = value;
+    },
   };
 };
 
