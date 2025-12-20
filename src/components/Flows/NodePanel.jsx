@@ -55,8 +55,8 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
         >
           <MessageSquare className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium text-sm">Send Message</h4>
-            <p className="text-xs text-gray-500">Send text or media message</p>
+            <h4 className="font-medium text-sm">Send Media + Message</h4>
+            <p className="text-xs text-gray-500">Add an image, video, or document URL to send along with your message.</p>
           </div>
         </div>
 

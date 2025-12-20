@@ -31,18 +31,14 @@ const MessageNode = ({ data, selected }) => {
         data.media_url = res.url;
         data.media_type = res.media_type;
         data.message = message;
-        data.footerText = footer;
-        data.buttons = buttons;
+
   
         // ✅ Auto-close editor (auto-save UX)
         setEditing(false);
   
-        toast.update("media-upload", {
-          render: "Media uploaded & saved",
-          type: "success",
-          isLoading: false,
-          autoClose: 2000,
-        });
+        toast.success("Media uploaded & saved", {
+              autoClose: 2000,
+            });
       } catch (err) {
         toast.update("media-upload", {
           render: "Upload failed",

@@ -34,10 +34,7 @@ const TextButtonsNode = ({ data, selected }) => {
       // ✅ Auto-close editor (auto-save UX)
       setEditing(false);
 
-      toast.update("media-upload", {
-        render: "Media uploaded & saved",
-        type: "success",
-        isLoading: false,
+      toast.success("Media uploaded & saved", {
         autoClose: 2000,
       });
     } catch (err) {
