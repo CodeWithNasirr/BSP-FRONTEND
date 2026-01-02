@@ -154,7 +154,7 @@ const ChatWindow = ({ recipient }) => {
           headers: { Authorization: `Token ${token}` }
         });
         const { success, data, message } = response.data;
-          console.log(response.data)
+          // console.log(response.data)
           if (success && data) {
             // ✅ Active flow exists
             setActiveFlow(data);
@@ -272,7 +272,7 @@ const ChatWindow = ({ recipient }) => {
           if (!msg) return;
 
           const action = msg.action;
-          console.log(action)
+          // console.log(action)
           const payload = msg.data;
 
           // ========== NEW MESSAGE ==========
@@ -527,6 +527,29 @@ const ChatWindow = ({ recipient }) => {
     }
   };
 
+  const ChatImage = ({ src, alt }) => {
+  const [error, setError] = React.useState(false);
+
+    if (error) {
+      return (
+        <div className="text-sm text-red-500 italic mt-2">
+          Image not loaded
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain"
+        loading="lazy"
+        onError={() => setError(true)}
+      />
+    );
+  };
+
+
   const renderMediaContent = (msg, isOutbound = false) => {
     const plan = subscriptionStatus?.plan?.toUpperCase();
     
@@ -544,26 +567,16 @@ const ChatWindow = ({ recipient }) => {
         );
       }
 
-      if (msg.media_type === 'image') {
-        return (
-          <div className="mb-2">
-            {!error ? (
-              <img
-                src={msg.media_url}
-                crossOrigin="anonymous"
-                alt={isOutbound ? "Sent media" : "Received media"}
-                className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain"
-                loading="lazy"
-                onError={() => setError(true)}
-              />
-            ) : (
-              <div className="text-sm text-red-500 italic mt-2">
-                Image not loaded
-              </div>
-            )}
-          </div>
-        );
-      } else if (msg.media_type === 'video') {
+     if (msg.media_type === "image") {
+      return (
+        <div className="mb-2">
+          <ChatImage
+            src={msg.media_url}
+            alt={isOutbound ? "Sent media" : "Received media"}
+          />
+        </div>
+      );
+    } else if (msg.media_type === 'video') {
         return (
           <div className="mb-2">
             <video
