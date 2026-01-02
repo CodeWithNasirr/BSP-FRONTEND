@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import API_BASE_URL from "../../config";
 import { toast } from "react-toastify";
 
@@ -11,7 +10,6 @@ const ExportContactsButton = () => {
         method: "GET",
         headers: {
           Authorization: `Token ${token}`,
-          "Content-Type": "application/json",
         },
       });
 
@@ -19,19 +17,19 @@ const ExportContactsButton = () => {
         throw new Error("Export failed");
       }
 
-      const data = await response.json(); // 👈 expecting JSON
+      const blob = await response.blob(); // ✅ CORRECT
 
-      // Convert JSON → Excel
-      const worksheet = XLSX.utils.json_to_sheet(data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
-
-      // Download file
-      XLSX.writeFile(workbook, "contacts_export.xlsx");
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "contacts_export.xlsx"; // or .csv
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
       toast.success("Contacts exported successfully!");
     } catch (error) {
-      console.error("Export failed", error);
+      console.error("Export failed:", error);
       toast.error("Something went wrong while exporting contacts!");
     }
   };
