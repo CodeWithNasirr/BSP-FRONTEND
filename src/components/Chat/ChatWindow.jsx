@@ -6,10 +6,13 @@ import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { Context } from '../context/Context';
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import VoiceMessage from './VoiceMessage';
+import VoiceRecorder from './VoiceRecorder';
 const ChatWindow = ({ recipient }) => {
   const navigate = useNavigate();
 
   const [messages, setMessages] = useState([]);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [socket, setSocket] = useState(null);
   
   const token = localStorage.getItem('authToken');
@@ -41,28 +44,46 @@ const ChatWindow = ({ recipient }) => {
           types: ['image/jpeg', 'image/png'],
           accept: 'image/jpeg,image/png',
           maxSize: 5 * 1024 * 1024,
-          description: 'Images (JPEG, PNG)'
+          description: 'Images (JPEG, PNG)',
+          allowVoice: true, // ✅ Allow voice for all plans
         };
       case 'GROWTH':
         return {
-          types: ['image/jpeg', 'image/png', 'video/mp4', 'video/avi', 'video/mov', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-          accept: 'image/jpeg,image/png,video/mp4,video/avi,video/mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          types: [
+            'image/jpeg', 'image/png',
+            'video/mp4', 'video/avi', 'video/mov',
+            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', // ✅ ADD
+            'application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ],
+          accept: 'image/jpeg,image/png,video/*,audio/*,application/pdf,.doc,.docx',
           maxSize: 5 * 1024 * 1024,
-          description: 'Images, Videos, Documents'
+          description: 'Images, Videos, Audio, Documents',
+          allowVoice: true,
         };
       case 'BUSINESS PRO':
         return {
-          types: ['image/jpeg', 'image/png', 'video/mp4', 'video/avi', 'video/mov', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-          accept: 'image/jpeg,image/png,video/mp4,video/avi,video/mov,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          maxSize: 5 * 1024 * 1024,
-          description: 'All media types'
+          types: [
+            'image/jpeg', 'image/png',
+            'video/mp4', 'video/avi', 'video/mov',
+            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', // ✅ ADD
+            'application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          ],
+          accept: 'image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx',
+          maxSize: 16 * 1024 * 1024,
+          description: 'All media types',
+          allowVoice: true,
         };
       default:
         return {
           types: [],
           accept: '',
           maxSize: 0,
-          description: 'No file uploads allowed'
+          description: 'No file uploads allowed',
+          allowVoice: true, // ✅ Voice allowed even without plan
         };
     }
   };
@@ -550,6 +571,76 @@ const ChatWindow = ({ recipient }) => {
   };
 
 
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STEP 3: Add voice message handler
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const handleVoiceSend = async (audioFile, duration) => {
+    const tempId = "temp_" + Date.now();
+
+    // Optimistic UI update
+    const optimisticMessage = {
+      id: tempId,
+      temp_id: tempId,
+      message_id: null,
+      text_content: "",
+      media_url: URL.createObjectURL(audioFile),
+      media_type: "audio",
+      direction: "OUTBOUND",
+      status: "sending",
+      timestamp: new Date().toISOString(),
+      voice_duration: duration,
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setIsVoiceMode(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("recipient", recipient);
+      formData.append("message_text", ""); // Empty for voice-only
+      formData.append("url", audioFile);
+      formData.append("voice_duration", duration);
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/whatsapp/send-message/`,
+        formData,
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      // Update optimistic message with real data
+      setMessages(prev =>
+        prev.map(m =>
+          m.temp_id === tempId
+            ? { ...m, status: "sent", temp_id: null, media_url: response.data.media_url }
+            : m
+        )
+      );
+
+    } catch (error) {
+      console.error("Voice message error:", error);
+      
+      // Mark as failed
+      setMessages(prev =>
+        prev.map(m =>
+          m.temp_id === tempId ? { ...m, status: "failed" } : m
+        )
+      );
+
+      toast.error(error.response?.data?.error || "Failed to send voice message");
+    }
+  };
+
+  const handleVoiceCancel = () => {
+    setIsVoiceMode(false);
+  };
+
   const renderMediaContent = (msg, isOutbound = false) => {
     const plan = subscriptionStatus?.plan?.toUpperCase();
     
@@ -576,7 +667,22 @@ const ChatWindow = ({ recipient }) => {
           />
         </div>
       );
-    } else if (msg.media_type === 'video') {
+    } 
+    // ✅ ADD THIS CASE for audio/voice messages
+    if (msg.media_type === 'audio') {
+      return (
+        <div className="mb-2">
+          <VoiceMessage
+            src={msg.media_url}
+            duration={msg.voice_duration}
+            isOutbound={isOutbound}
+            timestamp={msg.timestamp}
+            status={msg.status}
+          />
+        </div>
+      );
+    }
+    else if (msg.media_type === 'video') {
         return (
           <div className="mb-2">
             <video
@@ -954,91 +1060,109 @@ const ChatWindow = ({ recipient }) => {
             ⚠️ This conversation has expired. You can no longer send free-form messages after 24 hours.
           </div>
         ) : (
-          <>
-            <form
-              id="chat_message_form"
-              className="w-full flex flex-wrap items-center gap-2 mb-2"
-              onSubmit={handleSubmit}
-            >
-              {allowedFiles.types.length > 0 && (
-                <label
-                  htmlFor="file-upload"
-                  className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition-colors p-2 sm:p-0"
-                  title={`Upload ${allowedFiles.description}`}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                    />
-                  </svg>
-                </label>
-              )}
+              <>
 
-              <input
-                onChange={handleFileChange}
-                type="file"
-                className="sr-only"
-                accept={allowedFiles.accept}
-                id="file-upload"
-                name="url"
-                disabled={allowedFiles.types.length === 0}
-              />
-
-              <input
-                  value={formData.message_text}
-                  onChange={handleChange}
-                  type="text"
-                  name="message_text"
-                  placeholder={isInteractiveMode ? "Message body for buttons..." : "Type your message..."}
-                  maxLength="150"
-                  className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
-                />
+              {isVoiceMode ? (
+                <div className="flex items-center justify-center py-2">
+                  <VoiceRecorder
+                    onSend={handleVoiceSend}
+                    onCancel={handleVoiceCancel}
+                    disabled={isSending}
+                  />
+                </div>
+              ) : (
               
-           
+          <>
+          <form
+            id="chat_message_form"
+            className="w-full flex flex-wrap items-center gap-2 mb-2"
+            onSubmit={handleSubmit}
+          >
+            {/* File Upload Button */}
+            {allowedFiles.types.length > 0 && (
+              <label
+                htmlFor="file-upload"
+                className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition-colors"
+                title={`Upload ${allowedFiles.description}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+              </label>
+            )}
 
-              <input
-                type="hidden"
-                name="recipient"
-                value={recipient}
-                onChange={handleChange}
-              />
+            <input
+              onChange={handleFileChange}
+              type="file"
+              className="sr-only"
+              accept={allowedFiles.accept}
+              id="file-upload"
+              name="url"
+              disabled={allowedFiles.types.length === 0}
+            />
 
+            {/* Text Input */}
+            <input
+              value={formData.message_text}
+              onChange={handleChange}
+              type="text"
+              name="message_text"
+              placeholder={isInteractiveMode ? "Message body for buttons..." : "Type your message..."}
+              maxLength="150"
+              className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+            />
+
+            <input type="hidden" name="recipient" value={recipient} onChange={handleChange} />
+
+            {/* ════════════════════════════════════════════════════════
+                SEND / VOICE TOGGLE BUTTONS
+            ════════════════════════════════════════════════════════ */}
+            {formData.message_text.trim() || selectedFile || (isInteractiveMode && interactiveButtons.length > 0) ? (
+              // Show Send button when there's content
               <button
-                  type="submit"
-                  disabled={
-                        isInteractiveMode
-                            ? !formData.message_text.trim() || interactiveButtons.length === 0
-                            : (!formData.message_text.trim() && !selectedFile)
-                    }
-                  className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-full transition-colors shadow-sm min-h-[44px] min-w-[60px]"
-                >
-                  Send
-                </button>
+                type="submit"
+                disabled={
+                  isInteractiveMode
+                    ? !formData.message_text.trim() || interactiveButtons.length === 0
+                    : (!formData.message_text.trim() && !selectedFile)
+                }
+                className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-full transition-colors shadow-sm min-h-[44px] min-w-[60px]"
+              >
+                Send
+              </button>
+            ) : (
+              // Show Voice button when input is empty
+              <button
+                type="button"
+                onClick={() => setIsVoiceMode(true)}
+                disabled={!allowedFiles.allowVoice}
+                className="flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full transition-colors shadow-sm"
+                title="Record voice message"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+              </button>
+            )}
 
-
-              {!isInteractiveMode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsInteractiveMode(true);
-                    setInteractiveButtons([]);
-                    setNewButtonTitle('');
-                  }}
-                  className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 rounded-full transition-colors flex-shrink-0"
-                >
-                  + Interactive
-                </button>
-              )}
-            </form>
-
+            {/* Interactive Button Toggle */}
+            {!isInteractiveMode && !isVoiceMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsInteractiveMode(true);
+                  setInteractiveButtons([]);
+                  setNewButtonTitle('');
+                }}
+                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 rounded-full transition-colors flex-shrink-0"
+              >
+                + Interactive
+              </button>
+            )}
+          </form>
+          </>
+          )}
             {/* Interactive Buttons Management */}
             {isInteractiveMode && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
