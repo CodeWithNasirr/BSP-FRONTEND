@@ -215,10 +215,12 @@ const VoiceMessage = ({
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className={`
-      flex items-center gap-3 px-3 py-2 rounded-xl min-w-[260px] max-w-[320px]
-      ${isOutbound ? 'bg-green-200' : 'bg-white'}
-    `}>
+    <div
+    className={`
+        flex items-center gap-3 px-3 py-2 rounded-xl w-full
+        ${isOutbound ? 'bg-green-200' : 'bg-white'}
+    `}
+    >
       {/* Play/Pause Button */}
       <button
         type="button"
@@ -253,13 +255,14 @@ const VoiceMessage = ({
       </button>
 
       {/* Waveform & Progress */}
-      <div className="flex-1 flex flex-col gap-1">
+      <div className="flex-1 flex flex-col gap-1 min-w-0">
         {/* Waveform */}
-        <div
-          ref={progressRef}
-          onClick={handleSeek}
-          className="flex items-center gap-0.5 h-6 cursor-pointer"
+       <div
+        ref={progressRef}
+        onClick={handleSeek}
+        className="flex items-center gap-0.5 h-6 cursor-pointer overflow-hidden"
         >
+
           {waveformData.map((value, index) => (
             <div
               key={index}

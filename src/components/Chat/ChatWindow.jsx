@@ -698,23 +698,19 @@ const ChatWindow = ({ recipient }) => {
         );
       }
       else if (msg.media_type === 'audio') {
-      return (
-        <div className="mb-2 max-w-[260px] md:max-w-[320px]">
-          <div className="bg-gray-100 rounded-lg p-2 flex items-center">
-            <audio
+        return (
+          <div className="mb-2 w-full">
+            <VoiceMessage
               src={msg.media_url}
-              controls
-              className=" h-8"
-              preload="none"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.closest("div").style.display = "none";
-              }}
+              duration={msg.voice_duration}
+              isOutbound={isOutbound}
+              timestamp={msg.timestamp}
+              status={msg.status}
             />
           </div>
-        </div>
-      );
-    }
+        );
+      }
+
 
        else if (msg.media_type === 'document') {
         return (
@@ -991,7 +987,9 @@ const ChatWindow = ({ recipient }) => {
                         {msg.direction === 'OUTBOUND' ? (
                           <>
                             <div className="flex justify-end mb-3">
-                              <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-3 md:p-4 max-w-[70%] shadow-sm">
+                              <div className="bg-green-200 p-3 rounded-l-lg rounded-tr-lg max-w-[85%] md:max-w-[420px]">
+
+                              {/* <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-3 md:p-4 max-w-[70%] shadow-sm"> */}
                                 {msg.header_text && (
                                   <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>
                                 )}

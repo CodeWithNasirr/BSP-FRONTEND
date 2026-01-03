@@ -153,12 +153,11 @@ const VoiceRecorder = ({ onSend, onCancel, disabled = false }) => {
       // Setup MediaRecorder
       // Try to use webm/opus for better compression, fallback to other formats
       const mimeTypes = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/mp4',
-        'audio/mpeg',
-      ];
+            'audio/ogg;codecs=opus', // 👈 WhatsApp compatible
+            'audio/ogg',
+            'audio/webm;codecs=opus',
+            ];
+
 
       let selectedMimeType = '';
       for (const mimeType of mimeTypes) {
