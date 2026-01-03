@@ -297,33 +297,65 @@ const ChatWindow = ({ recipient }) => {
           const payload = msg.data;
 
           // ========== NEW MESSAGE ==========
-          if (action === "new_message") {
-            if (!payload) return;
+          // if (action === "new_message") {
+          //   if (!payload) return;
+          // setMessages(prev => {
+          //   // If optimistic message exists → replace it
+          //   const hasTemp = prev.some(m => m.temp_id);
 
-          //   setMessages((prev) =>
-          //     prev.some((m) => m.message_id === payload.message_id)
-          //       ? prev
-          //       : [...prev, payload]
-          //   );
-          //   return;
+          //   if (hasTemp) {
+          //     return prev.map(m =>
+          //       m.temp_id ? { ...payload, temp_id: null } : m
+          //     );
+          //   }
+
+          //   // Otherwise append new real message
+          //   if (prev.some(m => m.message_id === payload.message_id)) return prev;
+          //   return [...prev, payload];
+          // });
+
+          // return;
           // }
-          setMessages(prev => {
-            // If optimistic message exists → replace it
-            const hasTemp = prev.some(m => m.temp_id);
+          if (action === "new_message") {
+              const payload = msg.data;
 
-            if (hasTemp) {
-              return prev.map(m =>
-                m.temp_id ? { ...payload, temp_id: null } : m
-              );
+              setMessages(prev => {
+                // 🔒 prevent duplicates
+                if (prev.some(m => m.message_id === payload.message_id)) {
+                  return prev;
+                }
+
+                // 🔁 replace optimistic VOICE message
+                if (payload.media_type === "audio") {
+                  const index = prev.findIndex(
+                    m =>
+                      m.temp_id &&
+                      m.media_type === "audio" &&
+                      m.direction === "OUTBOUND"
+                  );
+
+                  if (index !== -1) {
+                    const updated = [...prev];
+                    updated[index] = payload;
+                    return updated;
+                  }
+                }
+
+                // 🔁 replace optimistic TEXT / FILE message
+                const tempIndex = prev.findIndex(m => m.temp_id);
+                if (tempIndex !== -1) {
+                  const updated = [...prev];
+                  updated[tempIndex] = payload;
+                  return updated;
+                }
+
+                // fallback append
+                return [...prev, payload];
+              });
+
+              return;
             }
 
-            // Otherwise append new real message
-            if (prev.some(m => m.message_id === payload.message_id)) return prev;
-            return [...prev, payload];
-          });
-
-          return;
-        }
 
           // ========== UPDATE STATUS ==========
           if (action === "update_status") {
