@@ -579,20 +579,19 @@ const ChatWindow = ({ recipient }) => {
   const handleVoiceSend = async (audioFile, duration) => {
     const tempId = "temp_" + Date.now();
 
-    // Optimistic UI update
+    // ⭐ Show message instantly
     const optimisticMessage = {
       id: tempId,
       temp_id: tempId,
       message_id: null,
       text_content: "",
-      media_url: URL.createObjectURL(audioFile),
       media_type: "audio",
+      media_url: URL.createObjectURL(audioFile),
+      voice_duration: duration,
       direction: "OUTBOUND",
-      status: "sent",
+      status: "sent",               // ⏳ same as text
       timestamp: new Date().toISOString(),
-      // voice_duration: duration,
     };
-
     setMessages(prev => [...prev, optimisticMessage]);
     setIsVoiceMode(false);
 
@@ -614,14 +613,14 @@ const ChatWindow = ({ recipient }) => {
         }
       );
 
-      // Update optimistic message with real data
-      setMessages(prev =>
-        prev.map(m =>
-          m.temp_id === tempId
-            ? { ...m, status: "sent", temp_id: null, media_url: response.data.media_url }
-            : m
-        )
-      );
+      // // Update optimistic message with real data
+      // setMessages(prev =>
+      //   prev.map(m =>
+      //     m.temp_id === tempId
+      //       ? { ...m, status: "sent", temp_id: null, media_url: response.data.media_url }
+      //       : m
+      //   )
+      // );
 
     } catch (error) {
       console.error("Voice message error:", error);
