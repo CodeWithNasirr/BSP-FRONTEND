@@ -588,9 +588,9 @@ const ChatWindow = ({ recipient }) => {
       media_url: URL.createObjectURL(audioFile),
       media_type: "audio",
       direction: "OUTBOUND",
-      status: "sending",
+      status: "sent",
       timestamp: new Date().toISOString(),
-      voice_duration: duration,
+      // voice_duration: duration,
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
@@ -601,7 +601,7 @@ const ChatWindow = ({ recipient }) => {
       formData.append("recipient", recipient);
       formData.append("message_text", ""); // Empty for voice-only
       formData.append("url", audioFile);
-      formData.append("voice_duration", duration);
+      // formData.append("voice_duration", duration);
 
       const response = await axios.post(
         `${API_BASE_URL}/api/whatsapp/send-message/`,
