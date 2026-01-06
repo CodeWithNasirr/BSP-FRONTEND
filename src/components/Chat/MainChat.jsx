@@ -1,36 +1,54 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// src/components/Chat/MainChat.jsx
+// Main chat container - wraps everything with ChatProvider
+// ═══════════════════════════════════════════════════════════════════════════════
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ChatProvider, useChatContext } from './context/ChatContext'; // 👈 IMPORT
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
-
 import axios from 'axios';
 import API_BASE_URL from '../../config';
 import { assest } from '../../assets/assets';
 import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 
-const MainChat = () => {
+// ─────────────────────────────────────────────────────────────────────────────
+// INNER COMPONENT (uses context)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MainChatInner = () => {
   const token = localStorage.getItem('authToken');
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract recipient phone number from URL
+  // Get markAsRead from context for optimistic update
+  const { markAsRead } = useChatContext();
+
+  // Extract recipient from URL
   const queryParams = new URLSearchParams(location.search);
   const recipientFromUrl = queryParams.get('recipient');
 
-  // State to manage chat selection and view
+  // State
   const [recipient, setRecipient] = useState(recipientFromUrl || null);
   const [isChatOpen, setIsChatOpen] = useState(!!recipientFromUrl);
 
-  // Sync recipient with URL changes
+  // Sync with URL
   useEffect(() => {
     setRecipient(recipientFromUrl);
     setIsChatOpen(!!recipientFromUrl);
   }, [recipientFromUrl]);
 
-  // Mark messages as read when recipient changes
+  // Mark as read when opening chat (local update only - no API call that triggers refresh)
   useEffect(() => {
     if (recipient && token) {
+      // Local optimistic update - instant, no refresh, no list change
+      markAsRead(recipient);
+      
+      // Server sync in background - silent, no WebSocket event expected
+      // If your backend sends refresh_chatlist on mark-read, consider removing this
+      // or updating backend to not send that event
       axios
         .get(`${API_BASE_URL}/api/chats/${recipient}/mark-read/`, {
           headers: {
@@ -40,11 +58,11 @@ const MainChat = () => {
         })
         .catch((error) => {
           console.error('Error marking messages as read:', error);
-          alert(`Error: ${error.response?.data?.error || 'Something went wrong'}`);
         });
     }
-  }, [recipient, token]);
+  }, [recipient, token, markAsRead]);
 
+  // Handlers
   const handleSelectConversation = (recipientPhone) => {
     setRecipient(recipientPhone);
     setIsChatOpen(true);
@@ -60,20 +78,8 @@ const MainChat = () => {
   return (
     <RequireSubscription>
       <div className="flex flex-col h-screen bg-gray-100">
-        {/* {isChatOpen && (
-          <div className="p-2 md:hidden bg-white border-b border-gray-200 sticky top-0 z-10 flex items-center">
-            <button
-              onClick={handleBack}
-              className="mr-2 p-1 md:p-2 bg-gray-200 rounded-full hover:bg-gray-300"
-            >
-              <ArrowLeftIcon className="h-4 md:h-5 w-4 md:w-5 text-gray-600" />
-            </button>
-            <span className="text-sm md:text-base font-semibold">{recipient}</span>
-          </div>
-        )} */}
-
         <div className="flex flex-1 overflow-hidden">
-          {/* ChatList - Hidden on mobile when isChatOpen, visible on md+ */}
+          {/* ChatList - Hidden on mobile when chat is open */}
           <div
             className={`w-full md:w-1/2 bg-white border-r border-gray-200 flex flex-col ${
               isChatOpen ? 'hidden sm:hidden md:block' : 'block'
@@ -82,7 +88,7 @@ const MainChat = () => {
             <ChatList onSelectConversation={handleSelectConversation} />
           </div>
 
-          {/* ChatWindow - Full width on mobile when isChatOpen, 2/3 on md+ when not full-screen */}
+          {/* ChatWindow */}
           <div
             className={`flex-1 flex flex-col bg-cover bg-center ${
               isChatOpen ? 'w-full block' : 'hidden md:block md:w-1/2'
@@ -104,6 +110,18 @@ const MainChat = () => {
         </div>
       </div>
     </RequireSubscription>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT (provides context)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MainChat = () => {
+  return (
+    <ChatProvider>
+      <MainChatInner />
+    </ChatProvider>
   );
 };
 
