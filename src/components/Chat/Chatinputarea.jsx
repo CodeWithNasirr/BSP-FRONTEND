@@ -291,7 +291,7 @@ const ChatInputArea = ({
                 className="w-11 h-11 flex items-center justify-center bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-gray-300 text-white rounded-full transition-all shadow-lg shadow-green-500/30 disabled:shadow-none"
               >
                 {isSending ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 max-[318px]:w-4 max-[318px]:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -442,7 +442,7 @@ const ChatInputArea = ({
               <button
                 type="submit"
                 disabled={!canSend || isSending}
-                className="w-11 h-11 flex items-center justify-center bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-gray-300 text-white rounded-full shadow-lg shadow-green-500/30 disabled:shadow-none transition-all"
+                className="w-11 h-11 max-[318px]:w-9 max-[318px]:h-9 flex items-center justify-center bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-gray-300 text-white rounded-full shadow-lg shadow-green-500/30 disabled:shadow-none transition-all"
               >
                 {isSending ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -458,9 +458,9 @@ const ChatInputArea = ({
                   <button
                     type="button"
                     onClick={() => setIsVoiceMode(true)}
-                    className="w-11 h-11 flex items-center justify-center bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-full shadow-lg shadow-green-500/30 transition-all"
+                    className="w-11 h-11 max-[318px]:w-9 max-[318px]:h-9 flex items-center justify-center bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-full shadow-lg shadow-green-500/30 transition-all"
                   >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 max-[318px]:w-5 max-[318px]:h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
                       <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
@@ -470,9 +470,9 @@ const ChatInputArea = ({
                   <button
                     type="button"
                     onClick={() => setIsInteractiveMode(true)}
-                    className="h-11 px-3 flex items-center gap-1 text-green-600 hover:bg-green-50 text-sm font-medium rounded-full transition-colors"
+                    className="h-11 px-3 max-[318px]:h-9 max-[318px]:px-2 flex items-center gap-1 text-green-600 hover:bg-green-50 text-sm max-[318px]:text-xs font-medium rounded-full transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 max-[318px]:h-3 max-[318px]:w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     <span className="hidden sm:inline">Buttons</span>
