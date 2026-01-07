@@ -1,41 +1,35 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config';
-import { assest } from '../../assets/assets';
 import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { Context } from '../context/Context';
+import ChatInputArea from './Chatinputarea';
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import VoiceMessage from './VoiceMessage';
-import VoiceRecorder from './VoiceRecorder';
+
 const ChatWindow = ({ recipient }) => {
   const navigate = useNavigate();
 
   const [messages, setMessages] = useState([]);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [socket, setSocket] = useState(null);
-  
   const token = localStorage.getItem('authToken');
   const chatContainerRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
   const { subscriptionStatus } = useContext(Context);
   const [isConversationExpired, setIsConversationExpired] = useState(false);
-  const [error, setError] = useState(false);
   
-  // ========== NEW: Flow Session States ==========
+  // ========== Flow Session States ==========
   const [activeFlow, setActiveFlow] = useState(null);
   const [isFlowPaused, setIsFlowPaused] = useState(false);
   const [availableFlows, setAvailableFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [selectedSessionId, setSessionFlowId] = useState(null);
-  // console.log(isFlowPaused)
   const [showFlowSelector, setShowFlowSelector] = useState(false);
-  const [interactiveButtons, setInteractiveButtons] = useState([]);
-  const [isInteractiveMode, setIsInteractiveMode] = useState(false);
-  const [newButtonTitle, setNewButtonTitle] = useState('');
-  // =============================================
 
-  // Get allowed file types based on subscription plan
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FILE TYPE CONFIGURATION
+  // ═══════════════════════════════════════════════════════════════════════════
   const getAllowedFileTypes = () => {
     const plan = subscriptionStatus?.plan?.toUpperCase();
     switch (plan) {
@@ -45,14 +39,14 @@ const ChatWindow = ({ recipient }) => {
           accept: 'image/jpeg,image/png',
           maxSize: 5 * 1024 * 1024,
           description: 'Images (JPEG, PNG)',
-          allowVoice: true, // ✅ Allow voice for all plans
+          allowVoice: true,
         };
       case 'GROWTH':
         return {
           types: [
             'image/jpeg', 'image/png',
             'video/mp4', 'video/avi', 'video/mov',
-            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', // ✅ ADD
+            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4',
             'application/pdf', 'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           ],
@@ -66,7 +60,7 @@ const ChatWindow = ({ recipient }) => {
           types: [
             'image/jpeg', 'image/png',
             'video/mp4', 'video/avi', 'video/mov',
-            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', // ✅ ADD
+            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4',
             'application/pdf', 'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel',
@@ -83,7 +77,7 @@ const ChatWindow = ({ recipient }) => {
           accept: '',
           maxSize: 0,
           description: 'No file uploads allowed',
-          allowVoice: true, // ✅ Voice allowed even without plan
+          allowVoice: true,
         };
     }
   };
@@ -95,9 +89,10 @@ const ChatWindow = ({ recipient }) => {
   };
 
   const getFileCategory = (fileType) => {
-    if (fileType.startsWith('image/')) return 'image';
-    if (fileType.startsWith('video/')) return 'video';
-    if (fileType.includes('pdf') || fileType.includes('document') || fileType.includes('word') || fileType.includes('excel')) return 'document';
+    if (fileType?.startsWith('image/')) return 'image';
+    if (fileType?.startsWith('video/')) return 'video';
+    if (fileType?.startsWith('audio/')) return 'audio';
+    if (fileType?.includes('pdf') || fileType?.includes('document') || fileType?.includes('word') || fileType?.includes('excel')) return 'document';
     return 'file';
   };
 
@@ -149,7 +144,9 @@ const ChatWindow = ({ recipient }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // ========== NEW: Fetch Available Flows ==========
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FLOW MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     const fetchFlows = async () => {
       try {
@@ -167,7 +164,6 @@ const ChatWindow = ({ recipient }) => {
     }
   }, [token]);
   
-  // ========== NEW: Fetch Flow Status for Recipient ==========
   useEffect(() => {
     const fetchFlowStatus = async () => {
       try {
@@ -175,37 +171,27 @@ const ChatWindow = ({ recipient }) => {
           headers: { Authorization: `Token ${token}` }
         });
         const { success, data, message } = response.data;
-          // console.log(response.data)
-          if (success && data) {
-            // ✅ Active flow exists
-            setActiveFlow(data);
-            setSelectedFlowId(data.flow || null);
-            setSessionFlowId(data.id || null);
-            // console.log(data);
-            setIsFlowPaused(data.is_paused || false);
-          } else {
-            // ✅ No active session
-            setActiveFlow(null);
-            setSelectedFlowId(null);
-            setSessionFlowId(null);
-            setIsFlowPaused(false);
-            // console.log(message || "No active flow session found");
-          }
-        } catch (error) {
-          console.error(
-            "Error fetching flow status:",
-            error.response?.data?.error || error.message
-          );
+        if (success && data) {
+          setActiveFlow(data);
+          setSelectedFlowId(data.flow || null);
+          setSessionFlowId(data.id || null);
+          setIsFlowPaused(data.is_paused || false);
+        } else {
+          setActiveFlow(null);
+          setSelectedFlowId(null);
+          setSessionFlowId(null);
+          setIsFlowPaused(false);
         }
-      };
-
-      if (recipient && token) {
-        fetchFlowStatus();
+      } catch (error) {
+        console.error("Error fetching flow status:", error.response?.data?.error || error.message);
       }
-    }, [recipient, token]);
+    };
 
- 
-  // ========== NEW: Flow Control Handlers ==========
+    if (recipient && token) {
+      fetchFlowStatus();
+    }
+  }, [recipient, token]);
+
   const handleStartFlow = async () => {
     if (!selectedFlowId) {
       alert('Please select a flow first');
@@ -214,44 +200,31 @@ const ChatWindow = ({ recipient }) => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/flows/start/`,
-        { phone_number:recipient, flow_id: selectedFlowId },
+        { phone_number: recipient, flow_id: selectedFlowId },
         { headers: { Authorization: `Token ${token}` } }
       );
-      //  ✅ Use backend success structure
       const data = response.data;
-
-      setActiveFlow(data?.data); // your backend uses "data" for session info
+      setActiveFlow(data?.data);
       setShowFlowSelector(false);
       toast.success(data?.message || 'Flow started successfully');
     } catch (error) {
       console.error('Error starting flow:', error);
-
-      // ✅ Safely extract backend error message
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Failed to start flow';
-
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to start flow';
       toast.error(`Error: ${errorMessage}`);
-    };
-  }
+    }
+  };
 
-  // ========= NEW: Unified Flow Action Handler ==========
   const handleFlowAction = async (action) => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/flows/update-status/`,
-        { 
-          session_id: selectedSessionId,
-          action, // 'pause', 'resume', or 'stop'
-        },
+        { session_id: selectedSessionId, action },
         { headers: { Authorization: `Token ${token}` } }
       );
 
       const message = response.data.message || `Flow ${action}d successfully`;
       toast.success(message);
 
-      // Update local state based on the action
       if (action === 'pause') {
         setIsFlowPaused(true);
       } else if (action === 'resume') {
@@ -260,7 +233,6 @@ const ChatWindow = ({ recipient }) => {
         setActiveFlow(null);
         setIsFlowPaused(false);
       }
-
     } catch (error) {
       console.error(`Error performing ${action} on flow:`, error);
       const errorMsg = error.response?.data?.error || `Failed to ${action} flow`;
@@ -268,8 +240,9 @@ const ChatWindow = ({ recipient }) => {
     }
   };
 
- 
-  // WebSocket connection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WEBSOCKET CONNECTION
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!recipient || !token) return;
 
@@ -287,77 +260,43 @@ const ChatWindow = ({ recipient }) => {
       newSocket.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-
-          // All backend WS messages come in "data.message"
           const msg = data.message;
           if (!msg) return;
 
           const action = msg.action;
-          // console.log(action)
           const payload = msg.data;
 
-          // ========== NEW MESSAGE ==========
-          // if (action === "new_message") {
-          //   if (!payload) return;
-          // setMessages(prev => {
-          //   // If optimistic message exists → replace it
-          //   const hasTemp = prev.some(m => m.temp_id);
-
-          //   if (hasTemp) {
-          //     return prev.map(m =>
-          //       m.temp_id ? { ...payload, temp_id: null } : m
-          //     );
-          //   }
-
-          //   // Otherwise append new real message
-          //   if (prev.some(m => m.message_id === payload.message_id)) return prev;
-          //   return [...prev, payload];
-          // });
-
-          // return;
-          // }
           if (action === "new_message") {
-              const payload = msg.data;
+            setMessages(prev => {
+              if (prev.some(m => m.message_id === payload.message_id)) {
+                return prev;
+              }
 
-              setMessages(prev => {
-                // 🔒 prevent duplicates
-                if (prev.some(m => m.message_id === payload.message_id)) {
-                  return prev;
-                }
-
-                // 🔁 replace optimistic VOICE message
-                if (payload.media_type === "audio") {
-                  const index = prev.findIndex(
-                    m =>
-                      m.temp_id &&
-                      m.media_type === "audio" &&
-                      m.direction === "OUTBOUND"
-                  );
-
-                  if (index !== -1) {
-                    const updated = [...prev];
-                    updated[index] = payload;
-                    return updated;
-                  }
-                }
-
-                // 🔁 replace optimistic TEXT / FILE message
-                const tempIndex = prev.findIndex(m => m.temp_id);
-                if (tempIndex !== -1) {
+              // Replace optimistic VOICE message
+              if (payload.media_type === "audio") {
+                const index = prev.findIndex(
+                  m => m.temp_id && m.media_type === "audio" && m.direction === "OUTBOUND"
+                );
+                if (index !== -1) {
                   const updated = [...prev];
-                  updated[tempIndex] = payload;
+                  updated[index] = payload;
                   return updated;
                 }
+              }
 
-                // fallback append
-                return [...prev, payload];
-              });
+              // Replace optimistic TEXT / FILE message
+              const tempIndex = prev.findIndex(m => m.temp_id);
+              if (tempIndex !== -1) {
+                const updated = [...prev];
+                updated[tempIndex] = payload;
+                return updated;
+              }
 
-              return;
-            }
+              return [...prev, payload];
+            });
+            return;
+          }
 
-
-          // ========== UPDATE STATUS ==========
           if (action === "update_status") {
             setMessages((prev) =>
               prev.map((m) =>
@@ -368,18 +307,10 @@ const ChatWindow = ({ recipient }) => {
             );
             return;
           }
-
-          // ========== REFRESH CHATLIST ==========
-          // if (action === "refresh_chatlist") {
-          //   console.log("Chatlist needs refresh");
-          //   return;
-          // }
-
         } catch (error) {
           console.error("WS parse error:", error);
         }
-      
-      }
+      };
 
       newSocket.onclose = (e) => {
         setTimeout(() => {
@@ -403,7 +334,9 @@ const ChatWindow = ({ recipient }) => {
     };
   }, [recipient, token]);
 
-  // Fetch initial messages
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FETCH INITIAL MESSAGES
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     setMessages([]);
     setIsConversationExpired(false);
@@ -425,12 +358,10 @@ const ChatWindow = ({ recipient }) => {
           return acc;
         }, []);
         setMessages(uniqueMessages);
-        
         setIsConversationExpired(data.expired);
-       
       } catch (error) {
         console.error('Initial chat fetch failed:', error);
-        alert(`Error: ${error.response?.data?.error || 'Failed to fetch messages'}`);
+        toast.error(error.response?.data?.error || 'Failed to fetch messages');
       }
     };
 
@@ -439,149 +370,181 @@ const ChatWindow = ({ recipient }) => {
     }
   }, [recipient, token]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MESSAGE HANDLERS (Used by ChatInputArea)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  /**
+   * Handle text/interactive message from ChatInputArea
+   */
+  const handleSendText = async ({ message_text, buttons = [] }) => {
+    if (!message_text.trim()) return;
 
-    if (!isFileTypeAllowed(file)) {
-      alert(`File type not allowed. Your ${subscriptionStatus?.plan || 'current'} plan supports: ${allowedFiles.description}`);
-      return;
-    }
-
-    if (file.size > allowedFiles.maxSize) {
-      alert(`File size too large. Maximum allowed: ${formatFileSize(allowedFiles.maxSize)}`);
-      return;
-    }
-
-    setSelectedFile(file);
-    
-    const fileCategory = getFileCategory(file.type);
-    if (fileCategory === 'image') {
-      setFilePreview(URL.createObjectURL(file));
-    } else {
-      setFilePreview(null);
-    }
-  };
-
-  const cancelFile = () => {
-    setSelectedFile(null);
-    setFilePreview(null);
-  };
-
-  const confirmFileSend = (e) => {
-    handleSubmit(e);
-    cancelFile();
-  };
-
-  const [formData, setFormData] = useState({
-    url: '',
-    message_text: '',
-    recipient: ''
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Basic validation
-    if (
-      !formData.message_text.trim() &&
-      !selectedFile &&
-      interactiveButtons.length === 0
-    ) {
-      alert('Please enter a message, select a file, or add buttons');
-      return;
-    }
-  
     const tempId = "temp_" + Date.now();
 
-    // ⭐ Show message instantly
     const optimisticMessage = {
       id: tempId,
       temp_id: tempId,
       message_id: null,
-      text_content: formData.message_text,
-      media_url: selectedFile ? URL.createObjectURL(selectedFile) : null,
-      buttons: interactiveButtons,
+      text_content: message_text,
+      media_url: null,
+      buttons: buttons,
       direction: "OUTBOUND",
-      status: "sent",
+      status: "sending",
       timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
-
-    // ⭐ Clear UI instantly
-    setFormData({ url: "", message_text: "", recipient: "" });
-    cancelFile();
-    setInteractiveButtons([]);
-    setIsInteractiveMode(false);
-
     setIsSending(true);
 
     try {
-      // === SEND VIA API ===
-      if (selectedFile) {
-        const fileFormData = new FormData();
-        fileFormData.append("recipient", recipient);
-        fileFormData.append("message_text", optimisticMessage.text_content);
-        fileFormData.append("url", selectedFile);
+      const body = {
+        recipient,
+        message_text: message_text,
+        buttons: buttons.length > 0 ? buttons : undefined,
+        url: "",
+      };
 
-        if (interactiveButtons.length > 0) {
-          fileFormData.append("buttons", JSON.stringify(interactiveButtons));
-        }
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, body, {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, fileFormData, {
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      } else {
-        const body = {
-          recipient,
-          message_text: optimisticMessage.text_content,
-          buttons: interactiveButtons.length > 0 ? interactiveButtons : undefined,
-          url: "",
-        };
-
-        await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, body, {
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-      }
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "sent" } : m))
+      );
     } catch (error) {
-      console.error("Error sending message:", error);
-
-      // ⭐ Mark optimistic message as failed
+      console.error("Error sending text message:", error);
       setMessages(prev =>
         prev.map(m => (m.temp_id === tempId ? { ...m, status: "failed" } : m))
       );
-
-      alert(error.response?.data?.error || "Something went wrong");
+      toast.error(error.response?.data?.error || "Failed to send message");
     } finally {
       setIsSending(false);
     }
   };
 
+  /**
+   * Handle file upload from ChatInputArea
+   */
+  const handleSendFile = async ({ file, caption = "" }) => {
+    if (!file) return;
+
+    if (!isFileTypeAllowed(file)) {
+      toast.error(`File type not allowed. Your ${subscriptionStatus?.plan || 'current'} plan supports: ${allowedFiles.description}`);
+      return;
+    }
+
+    if (file.size > allowedFiles.maxSize) {
+      toast.error(`File too large. Maximum: ${formatFileSize(allowedFiles.maxSize)}`);
+      return;
+    }
+
+    const tempId = "temp_" + Date.now();
+
+    const optimisticMessage = {
+      id: tempId,
+      temp_id: tempId,
+      message_id: null,
+      text_content: caption,
+      media_url: URL.createObjectURL(file),
+      media_type: getFileCategory(file.type),
+      direction: "OUTBOUND",
+      status: "sending",
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setIsSending(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("recipient", recipient);
+      formData.append("message_text", caption);
+      formData.append("url", file);
+
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "sent" } : m))
+      );
+    } catch (error) {
+      console.error("Error sending file:", error);
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "failed" } : m))
+      );
+      toast.error(error.response?.data?.error || "Failed to send file");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  /**
+   * Handle voice message from ChatInputArea
+   */
+  const handleSendVoice = async (audioFile, duration) => {
+    const tempId = "temp_" + Date.now();
+
+    const optimisticMessage = {
+      id: tempId,
+      temp_id: tempId,
+      message_id: null,
+      text_content: "",
+      media_type: "audio",
+      media_url: URL.createObjectURL(audioFile),
+      voice_duration: duration,
+      direction: "OUTBOUND",
+      status: "sending",
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      const formData = new FormData();
+      formData.append("recipient", recipient);
+      formData.append("message_text", "");
+      formData.append("url", audioFile);
+
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "sent" } : m))
+      );
+    } catch (error) {
+      console.error("Voice message error:", error);
+      setMessages(prev =>
+        prev.map(m => (m.temp_id === tempId ? { ...m, status: "failed" } : m))
+      );
+      toast.error(error.response?.data?.error || "Failed to send voice message");
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const ChatImage = ({ src, alt }) => {
-  const [error, setError] = React.useState(false);
+    const [error, setError] = React.useState(false);
 
     if (error) {
       return (
@@ -602,76 +565,6 @@ const ChatWindow = ({ recipient }) => {
     );
   };
 
-
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 3: Add voice message handler
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  const handleVoiceSend = async (audioFile, duration) => {
-    const tempId = "temp_" + Date.now();
-
-    // ⭐ Show message instantly
-    const optimisticMessage = {
-      id: tempId,
-      temp_id: tempId,
-      message_id: null,
-      text_content: "",
-      media_type: "audio",
-      media_url: URL.createObjectURL(audioFile),
-      voice_duration: duration,
-      direction: "OUTBOUND",
-      status: "sent",               // ⏳ same as text
-      timestamp: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, optimisticMessage]);
-    setIsVoiceMode(false);
-
-    try {
-      const formData = new FormData();
-      formData.append("recipient", recipient);
-      formData.append("message_text", ""); // Empty for voice-only
-      formData.append("url", audioFile);
-      // formData.append("voice_duration", duration);
-
-      const response = await axios.post(
-        `${API_BASE_URL}/api/whatsapp/send-message/`,
-        formData,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      // // Update optimistic message with real data
-      // setMessages(prev =>
-      //   prev.map(m =>
-      //     m.temp_id === tempId
-      //       ? { ...m, status: "sent", temp_id: null, media_url: response.data.media_url }
-      //       : m
-      //   )
-      // );
-
-    } catch (error) {
-      console.error("Voice message error:", error);
-      
-      // Mark as failed
-      setMessages(prev =>
-        prev.map(m =>
-          m.temp_id === tempId ? { ...m, status: "failed" } : m
-        )
-      );
-
-      toast.error(error.response?.data?.error || "Failed to send voice message");
-    }
-  };
-
-  const handleVoiceCancel = () => {
-    setIsVoiceMode(false);
-  };
-
   const renderMediaContent = (msg, isOutbound = false) => {
     const plan = subscriptionStatus?.plan?.toUpperCase();
     
@@ -689,31 +582,32 @@ const ChatWindow = ({ recipient }) => {
         );
       }
 
-     if (msg.media_type === "image") {
-      return (
-        <div className="mb-2">
-          <ChatImage
-            src={msg.media_url}
-            alt={isOutbound ? "Sent media" : "Received media"}
-          />
-        </div>
-      );
-    } 
-    // ✅ ADD THIS CASE for audio/voice messages
-    if (msg.media_type === 'audio') {
-      return (
-        <div className="mb-2">
-          <VoiceMessage
-            src={msg.media_url}
-            duration={msg.voice_duration}
-            isOutbound={isOutbound}
-            timestamp={msg.timestamp}
-            status={msg.status}
-          />
-        </div>
-      );
-    }
-    else if (msg.media_type === 'video') {
+      if (msg.media_type === "image") {
+        return (
+          <div className="mb-2">
+            <ChatImage
+              src={msg.media_url}
+              alt={isOutbound ? "Sent media" : "Received media"}
+            />
+          </div>
+        );
+      }
+
+      if (msg.media_type === 'audio') {
+        return (
+          <div className="mb-2">
+            <VoiceMessage
+              src={msg.media_url}
+              duration={msg.voice_duration}
+              isOutbound={isOutbound}
+              timestamp={msg.timestamp}
+              status={msg.status}
+            />
+          </div>
+        );
+      }
+
+      if (msg.media_type === 'video') {
         return (
           <div className="mb-2">
             <video
@@ -728,22 +622,8 @@ const ChatWindow = ({ recipient }) => {
           </div>
         );
       }
-      else if (msg.media_type === 'audio') {
-        return (
-          <div className="mb-2 w-full">
-            <VoiceMessage
-              src={msg.media_url}
-              duration={msg.voice_duration}
-              isOutbound={isOutbound}
-              timestamp={msg.timestamp}
-              status={msg.status}
-            />
-          </div>
-        );
-      }
 
-
-       else if (msg.media_type === 'document') {
+      if (msg.media_type === 'document') {
         return (
           <div className="mb-2 p-3 bg-gray-50 rounded-lg border">
             <div className="flex items-center gap-2">
@@ -753,7 +633,7 @@ const ChatWindow = ({ recipient }) => {
               <div>
                 <div className="text-sm font-medium text-gray-900">Document</div>
                 <a 
-                  href={`${msg.media_url}`} 
+                  href={msg.media_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 hover:underline"
@@ -769,63 +649,33 @@ const ChatWindow = ({ recipient }) => {
     return null;
   };
 
-  // ========== NEW: Render Interactive Buttons ==========
-    const renderInteractiveButtons = (msg) => {
-      if (!msg.buttons || msg.buttons.length === 0) return null;
+  const renderInteractiveButtons = (msg) => {
+    if (!msg.buttons || msg.buttons.length === 0) return null;
 
-      const isReadOnly = !!msg.button_text; 
+    const isReadOnly = !!msg.button_text;
 
-      return (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {msg.buttons.map((btn, index) => {
-            const label = btn.title || btn.text || "Button";  // 🔥 MAIN LOGIC
-            
-            return (
-              <button
-                key={btn.id || index}
-                disabled={isReadOnly}
-                className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
-                  isReadOnly
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      );
-    };
-
-  const renderMessageButtons = (msg) => {
-  if (!msg.buttons || msg.buttons.length === 0) return null;
-  const isReadOnly = !!msg.button_text; // disable click if message has button_text
-  
-  return (
-    <div className="flex justify-end mb-3">
-      <div className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center p-3 shadow-sm">
-        <div className="flex flex-wrap justify-center gap-2">
-          {msg.buttons.map((btn, index) => (
-          <button
-            key={btn.id || index}
-            // onClick={isReadOnly ? null : () => handleButtonClick(btn, msg.message_id)}
-            disabled={isReadOnly}
-            className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
-              isReadOnly
-                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            {btn.title}
-          </button>
-        ))}
-        </div>
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {msg.buttons.map((btn, index) => {
+          const label = btn.title || btn.text || "Button";
+          
+          return (
+            <button
+              key={btn.id || index}
+              disabled={isReadOnly}
+              className={`px-3 py-1.5 rounded-full text-sm transition-colors duration-200 shadow-sm ${
+                isReadOnly
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
-    </div>
-  );
+    );
   };
-
 
   const groupedMessages = messages.reduce((acc, msg) => {
     const date = new Date(msg.timestamp).toDateString();
@@ -836,41 +686,28 @@ const ChatWindow = ({ recipient }) => {
     return acc;
   }, {});
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <RequireSubscription>
       <div className="flex flex-col min-h-screen">
-        {/* ✅ Mobile Header with Flow Controls */}
-      
-        <div className="p-2  bg-white border-b border-gray-200 sticky top-0 z-50 flex justify-between items-center gap-2">
-
-          {/* Back button + recipient */}
+        {/* Header with Flow Controls */}
+        <div className="p-2 bg-white border-b border-gray-200 sticky top-0 z-50 flex justify-between items-center gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(-1)}
               className="block md:hidden p-1.5 bg-gray-200 rounded-full hover:bg-gray-300 transition"
             >
-              <svg
-                className="h-5 w-5 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
+              <svg className="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-
             <span className="text-sm md:text-base font-semibold text-gray-800 truncate max-w-[150px] md:max-w-[250px]">
               {recipient}
             </span>
           </div>
 
-         
-          {/* Flow Control Buttons */}
           <div className="flex items-center gap-1.5 md:gap-2 justify-end">
             {!activeFlow ? (
               <button
@@ -912,7 +749,6 @@ const ChatWindow = ({ recipient }) => {
                     </span>
                   </button>
                 )}
-
                 <button
                   onClick={() => handleFlowAction('stop')}
                   className="bg-red-500 hover:bg-red-600 text-white px-2 md:px-3 py-1 rounded-full text-xs md:text-sm ml-1 md:ml-2 transition-colors duration-200"
@@ -927,10 +763,9 @@ const ChatWindow = ({ recipient }) => {
               </>
             )}
           </div>
-
         </div>
 
-        {/* ========== NEW: Flow Selector Dropdown ========== */}
+        {/* Flow Selector Dropdown */}
         {showFlowSelector && (
           <div className="bg-blue-50 border-b border-blue-200 p-3">
             <div className="flex items-center gap-3">
@@ -941,9 +776,7 @@ const ChatWindow = ({ recipient }) => {
               >
                 <option value="">Select a flow...</option>
                 {availableFlows.map((flow) => (
-                  <option key={flow.id} value={flow.id}>
-                    {flow.name}
-                  </option>
+                  <option key={flow.id} value={flow.id}>{flow.name}</option>
                 ))}
               </select>
               <button
@@ -965,7 +798,7 @@ const ChatWindow = ({ recipient }) => {
           </div>
         )}
 
-        {/* ========== NEW: Active Flow Status Bar ========== */}
+        {/* Active Flow Status Bar */}
         {activeFlow && (
           <div className={`border-b p-3 ${isFlowPaused ? 'bg-yellow-50' : 'bg-green-50'}`}>
             <div className="flex items-center justify-between">
@@ -995,13 +828,12 @@ const ChatWindow = ({ recipient }) => {
           </div>
         )}
 
-        {/* Chat Content */}
+        {/* Chat Messages */}
         <div
-          id="chat_container"
           ref={chatContainerRef}
           className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
         >
-          <ul id="chat_messages" className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-3">
             {Object.keys(groupedMessages)
               .sort((a, b) => new Date(a) - new Date(b))
               .map((date) => (
@@ -1016,48 +848,24 @@ const ChatWindow = ({ recipient }) => {
                     .map((msg) => (
                       <li key={msg.id}>
                         {msg.direction === 'OUTBOUND' ? (
-                          <>
-                            <div className="flex justify-end mb-3">
-                              <div className="bg-green-200 p-3 rounded-l-lg rounded-tr-lg max-w-[85%] md:max-w-[420px]">
-
-                              {/* <div className="bg-green-200 rounded-l-lg rounded-tr-lg p-3 md:p-4 max-w-[70%] shadow-sm"> */}
-                                {msg.header_text && (
-                                  <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>
-                                )}
-                                {renderMediaContent(msg, true)}
-                                <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
-                                {renderInteractiveButtons(msg)}
-                                <div className="text-xs md:text-sm text-gray-600 mt-1 flex justify-end">
-                                  <span>{formatTimestamp(msg.timestamp)} · {msg.status}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-end">
-                                <svg height="13" width="8">
-                                  <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
-                                </svg>
+                          <div className="flex justify-end mb-3">
+                            <div className="bg-green-200 p-3 rounded-l-lg rounded-tr-lg max-w-[85%] md:max-w-[420px]">
+                              {msg.header_text && (
+                                <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>
+                              )}
+                              {renderMediaContent(msg, true)}
+                              <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
+                              {renderInteractiveButtons(msg)}
+                              <div className="text-xs md:text-sm text-gray-600 mt-1 flex justify-end">
+                                <span>{formatTimestamp(msg.timestamp)} · {msg.status}</span>
                               </div>
                             </div>
-                            {/* {msg.button_text && (
-                                <div className="flex justify-end items-center mb-3">
-                                  <div className="bg-zinc-100 rounded-l-lg rounded-tr-lg min-w-[70%] text-center p-3 shadow-sm">
-                                    <div className="flex flex-wrap justify-center gap-2">
-                                      {msg.button_text
-                                        .split(',')
-                                        .map((btnTitle, index) => (
-                                          <span
-                                            key={index}
-                                            className="bg-white text-blue-500 text-sm md:text-base px-3 py-1.5 rounded-full shadow-sm cursor-default"
-                                          >
-                                            {btnTitle.trim()}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )} */}
-                              {/* {renderMessageButtons(msg)} */}
-
-                          </>
+                            <div className="flex items-end">
+                              <svg height="13" width="8">
+                                <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" />
+                              </svg>
+                            </div>
+                          </div>
                         ) : (
                           <div className="flex justify-start mb-3">
                             <div className="flex items-end">
@@ -1082,243 +890,19 @@ const ChatWindow = ({ recipient }) => {
           </ul>
         </div>
 
-        {/* Chat Input */}
-      <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 shadow-sm p-2 md:p-3">
-        {isConversationExpired ? (
-          <div className="bg-yellow-100 text-yellow-800 text-center py-2 px-3 text-sm border-t border-yellow-300 rounded-md">
-            ⚠️ This conversation has expired. You can no longer send free-form messages after 24 hours.
-          </div>
-        ) : (
-              <>
-
-              {isVoiceMode ? (
-                <div className="flex items-center justify-center py-2">
-                  <VoiceRecorder
-                    onSend={handleVoiceSend}
-                    onCancel={handleVoiceCancel}
-                    disabled={isSending}
-                  />
-                </div>
-              ) : (
-              
-          <>
-          <form
-            id="chat_message_form"
-            className="w-full flex flex-wrap items-center gap-2 mb-2"
-            onSubmit={handleSubmit}
-          >
-            {/* File Upload Button */}
-            {allowedFiles.types.length > 0 && (
-              <label
-                htmlFor="file-upload"
-                className="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full cursor-pointer transition-colors"
-                title={`Upload ${allowedFiles.description}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-              </label>
-            )}
-
-            <input
-              onChange={handleFileChange}
-              type="file"
-              className="sr-only"
-              accept={allowedFiles.accept}
-              id="file-upload"
-              name="url"
-              disabled={allowedFiles.types.length === 0}
-            />
-
-            {/* Text Input */}
-            <input
-              value={formData.message_text}
-              onChange={handleChange}
-              type="text"
-              name="message_text"
-              placeholder={isInteractiveMode ? "Message body for buttons..." : "Type your message..."}
-              maxLength="150"
-              className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-            />
-
-            <input type="hidden" name="recipient" value={recipient} onChange={handleChange} />
-
-            {/* ════════════════════════════════════════════════════════
-                SEND / VOICE TOGGLE BUTTONS
-            ════════════════════════════════════════════════════════ */}
-            {formData.message_text.trim() || selectedFile || (isInteractiveMode && interactiveButtons.length > 0) ? (
-              // Show Send button when there's content
-              <button
-                type="submit"
-                disabled={
-                  isInteractiveMode
-                    ? !formData.message_text.trim() || interactiveButtons.length === 0
-                    : (!formData.message_text.trim() && !selectedFile)
-                }
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-full transition-colors shadow-sm min-h-[44px] min-w-[60px]"
-              >
-                Send
-              </button>
-            ) : (
-              // Show Voice button when input is empty
-              <button
-                type="button"
-                onClick={() => setIsVoiceMode(true)}
-                disabled={!allowedFiles.allowVoice}
-                className="flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-full transition-colors shadow-sm"
-                title="Record voice message"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
-                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                </svg>
-              </button>
-            )}
-
-            {/* Interactive Button Toggle */}
-            {!isInteractiveMode && !isVoiceMode && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsInteractiveMode(true);
-                  setInteractiveButtons([]);
-                  setNewButtonTitle('');
-                }}
-                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 rounded-full transition-colors flex-shrink-0"
-              >
-                + Interactive
-              </button>
-            )}
-          </form>
-          </>
-          )}
-            {/* Interactive Buttons Management */}
-            {isInteractiveMode && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-gray-800">Interactive Buttons</h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsInteractiveMode(false);
-                      setInteractiveButtons([]);
-                      setNewButtonTitle('');
-                    }}
-                    className="text-gray-500 hover:text-gray-700 text-sm"
-                  >
-                    Close
-                  </button>
-                </div>
-                {interactiveButtons.length === 0 && (
-                  <p className="text-xs text-gray-500 mb-2 italic">Add your first button below...</p>
-                )}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {interactiveButtons.map((btn, i) => (
-                    <span key={i} className="bg-white px-3 py-1.5 rounded-md text-xs font-medium text-gray-700 flex items-center shadow-sm border border-gray-200">
-                      {btn.title}
-                      <button
-                        type="button"
-                        onClick={() => setInteractiveButtons(prev => prev.filter((_, idx) => idx !== i))}
-                        className="ml-2 text-red-500 hover:text-red-600 p-0.5 rounded hover:bg-red-50 transition-colors"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    value={newButtonTitle}
-                    onChange={e => setNewButtonTitle(e.target.value)}
-                    placeholder="e.g., Yes, No, Maybe"
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[40px]"
-                    maxLength={20}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newButtonTitle.trim() && interactiveButtons.length < 3) {
-                        setInteractiveButtons([...interactiveButtons, { id: `btn${Date.now()}`, title: newButtonTitle.trim() }]);
-                        setNewButtonTitle('');
-                      } else if (interactiveButtons.length >= 3) {
-                        alert('Max 4 buttons allowed');
-                      } else {
-                        alert('Enter a button title');
-                      }
-                    }}
-                    disabled={interactiveButtons.length >= 3 || !newButtonTitle.trim()}
-                    className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md transition-colors shadow-sm min-h-[40px] disabled:cursor-not-allowed"
-                  >
-                    + Add Button
-                  </button>
-                </div>
-                {interactiveButtons.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">Max 3 buttons. Send to dispatch interactive message.</p>
-                )}
-              </div>
-            )}
-
-            {/* File Preview */}
-            {selectedFile && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2 shadow-sm">
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  Selected {getFileCategory(selectedFile.type)}: <span className="text-gray-900">{selectedFile.name}</span> ({formatFileSize(selectedFile.size)})
-                </p>
-
-                {filePreview ? (
-                  <img
-                    src={filePreview}
-                    alt="Preview"
-                    className="w-full h-auto rounded-lg mb-3 max-h-40 object-contain border"
-                  />
-                ) : (
-                  <div className="mb-3 p-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <div className="text-center text-gray-600">
-                      <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <p className="text-sm">{selectedFile.name}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
-                  <button
-                    onClick={cancelFile}
-                    type="button"
-                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmFileSend}
-                    type="button"
-                    disabled={isSending || (!formData.message_text.trim() && !selectedFile && (!isInteractiveMode || interactiveButtons.length === 0))}
-                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md transition-colors shadow-sm disabled:cursor-not-allowed"
-                  >
-                    {isSending ? 'Sending...' : `Send ${getFileCategory(selectedFile.type)}`}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {subscriptionStatus?.plan && (
-              <div className="text-xs text-gray-500 text-center pt-1">
-                <span className="font-medium">{subscriptionStatus.plan.toUpperCase()} Plan:</span> {allowedFiles.description} allowed
-                {allowedFiles.types.length === 0 && (
-                  <span className="text-orange-600 font-medium"> - Upgrade to send files</span>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+        {/* ═══════════════════════════════════════════════════════════════════
+            CHAT INPUT - Using the new ChatInputArea component
+        ═══════════════════════════════════════════════════════════════════ */}
+        <ChatInputArea
+          recipient={recipient}
+          onSendText={handleSendText}
+          onSendFile={handleSendFile}
+          onSendVoice={handleSendVoice}
+          isConversationExpired={isConversationExpired}
+          isSending={isSending}
+          allowedFiles={allowedFiles}
+          subscriptionStatus={subscriptionStatus}
+        />
       </div>
     </RequireSubscription>
   );
