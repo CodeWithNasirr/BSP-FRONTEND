@@ -47,14 +47,25 @@ const TextButtonsNode = ({ data, selected }) => {
     }
   };
 
-  
+    const MAX_BUTTONS = 3;
+  const MAX_BUTTON_TEXT_LENGTH = 20;
+
  
   const handleAddButton = () => {
-    const newButton = { text: `Button ${buttons.length + 1}` };
+    if (buttons.length >= MAX_BUTTONS) {
+      toast.warning("Maximum 3 buttons allowed");
+      return;
+    }
+
+    const newButton = {
+      text: `Button ${buttons.length + 1}`.slice(0, MAX_BUTTON_TEXT_LENGTH),
+    };
+
     const updatedButtons = [...buttons, newButton];
     setButtons(updatedButtons);
     data.buttons = updatedButtons;
   };
+
 
   const handleDeleteButton = (index) => {
     const updatedButtons = [...buttons];
@@ -63,15 +74,26 @@ const TextButtonsNode = ({ data, selected }) => {
     data.buttons = updatedButtons;
   };
 
-  const handleSave = () => {
-    data.message = message;
-    data.buttons = buttons;
-    data.media_url = mediaUrl;
-    data.media_type = mediaType;
-    // data.image = mediaUrl;
-    data.footerText = footer;
-    setEditing(false);
-  };
+ const handleSave = () => {
+  if (buttons.length > MAX_BUTTONS) {
+    toast.error("Too many buttons");
+    return;
+  }
+
+  if (buttons.some(b => b.text.length > MAX_BUTTON_TEXT_LENGTH)) {
+    toast.error("Button text too long");
+    return;
+  }
+
+  data.message = message;
+  data.footerText = footer;
+  data.buttons = buttons;
+  data.media_url = mediaUrl;
+  data.media_type = mediaType;
+
+  setEditing(false);
+};
+
 
   return (
     <div className={`px-4 py-3 rounded-lg bg-node-message border ${selected ? 'border-blue-400' : 'border-blue-200'} min-w-[220px] max-w-[300px]`}>
@@ -123,17 +145,30 @@ const TextButtonsNode = ({ data, selected }) => {
               <input
                 type="text"
                 value={btn.text}
+                maxLength={MAX_BUTTON_TEXT_LENGTH}
                 onChange={(e) => {
+                  const value = e.target.value.slice(0, MAX_BUTTON_TEXT_LENGTH);
+
                   const updated = [...buttons];
-                  updated[index].text = e.target.value;
+                  updated[index] = { ...updated[index], text: value };
+
                   setButtons(updated);
+                  data.buttons = updated;
                 }}
                 className="w-full p-1 border border-blue-200 rounded mr-1"
+                placeholder="Button text"
               />
-              <button onClick={() => handleDeleteButton(index)} className="text-red-500 hover:text-red-700">
+
+              
+              <div className="text-[10px] text-gray-400 text-right">
+            {btn.text.length}/{MAX_BUTTON_TEXT_LENGTH}
+            </div>
+            <button onClick={() => handleDeleteButton(index)} className="text-red-500 hover:text-red-700">
                 <Trash2 size={14} />
               </button>
             </div>
+            
+
           ))}
 
           <button
@@ -174,10 +209,20 @@ const TextButtonsNode = ({ data, selected }) => {
                 </div>
               ))
             ) : (
-              <div className="bg-gray-50 text-xs p-1.5 rounded border border-gray-200 text-gray-500 flex items-center justify-center">
+              <button
+                onClick={handleAddButton}
+                disabled={buttons.length >= MAX_BUTTONS}
+                className={`flex items-center text-xs
+                  ${
+                    buttons.length >= MAX_BUTTONS
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-blue-600 hover:text-blue-800'
+                  }`}
+              >
                 <Plus size={12} className="mr-1" />
-                Add buttons
-              </div>
+                Add Button
+              </button>
+
             )}
           </div>
         </>

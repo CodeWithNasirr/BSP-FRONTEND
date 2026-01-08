@@ -3,6 +3,9 @@ import { Handle, Position } from 'reactflow';
 import { MessageSquare, Plus, Pencil, Trash2 } from 'lucide-react';
 
 const TextButtonsNode = ({ data, selected }) => {
+  const MAX_BUTTONS = 3;
+  const MAX_TEXT_LENGTH = 20;
+
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(data.message || '');
   const [buttons, setButtons] = useState(
@@ -10,17 +13,21 @@ const TextButtonsNode = ({ data, selected }) => {
   );
 
   const handleAddButton = () => {
+    if (buttons.length >= MAX_BUTTONS) return; // 🚫 hard stop
+
     const newButton = {
-      text: `Button ${buttons.length + 1}`,
+      text: `Button ${buttons.length + 1}`.slice(0, MAX_TEXT_LENGTH),
       value: `${buttons.length + 1}`,
       collect_cart: false,
       collect_payment_method: false,
       checkout: false
     };
+
     const updatedButtons = [...buttons, newButton];
     setButtons(updatedButtons);
     data.buttons = updatedButtons;
   };
+
 
   const handleDeleteButton = (index) => {
     const updatedButtons = [...buttons];
@@ -31,10 +38,20 @@ const TextButtonsNode = ({ data, selected }) => {
 
   const handleButtonChange = (index, field, value) => {
     const updatedButtons = [...buttons];
-    updatedButtons[index] = { ...updatedButtons[index], [field]: value };
+
+    if (field === 'text') {
+      value = value.slice(0, MAX_TEXT_LENGTH); // 🛑 enforce limit
+    }
+
+    updatedButtons[index] = {
+      ...updatedButtons[index],
+      [field]: value
+    };
+
     setButtons(updatedButtons);
     data.buttons = updatedButtons;
   };
+
 
   const handleSave = () => {
     data.message = message;
@@ -72,14 +89,22 @@ const TextButtonsNode = ({ data, selected }) => {
                 <input
                   type="text"
                   value={btn.text}
-                  onChange={(e) => handleButtonChange(index, 'text', e.target.value)}
+                  maxLength={MAX_TEXT_LENGTH}
+                  onChange={(e) =>
+                    handleButtonChange(index, 'text', e.target.value)
+                  }
                   className="w-full text-xs p-1 border border-blue-200 rounded mr-1"
                   placeholder="Button text"
                 />
+
                 <button onClick={() => handleDeleteButton(index)} className="text-red-500 hover:text-red-700">
                   <Trash2 size={14} />
                 </button>
               </div>
+              <div className="text-[10px] text-gray-400 text-right">
+                {btn.text.length}/{MAX_TEXT_LENGTH}
+              </div>
+
               <input
                 type="text"
                 value={btn.value}
@@ -119,11 +144,18 @@ const TextButtonsNode = ({ data, selected }) => {
 
           <button
             onClick={handleAddButton}
-            className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+            disabled={buttons.length >= MAX_BUTTONS}
+            className={`flex items-center text-xs
+              ${
+                buttons.length >= MAX_BUTTONS
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-blue-600 hover:text-blue-800'
+              }`}
           >
             <Plus size={12} className="mr-1" />
             Add Button
           </button>
+
 
           <button
             onClick={handleSave}

@@ -46,11 +46,11 @@ const ChatWindow = ({ recipient }) => {
           types: [
             'image/jpeg', 'image/png',
             'video/mp4', 'video/avi', 'video/mov',
-            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4',
+            'audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a',   // ✅ ADD THIS,
             'application/pdf', 'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           ],
-          accept: 'image/jpeg,image/png,video/*,audio/*,application/pdf,.doc,.docx',
+          accept: 'image/jpeg,image/png,video/*,audio/*,application/pdf,.doc,.docx,.m4a',
           maxSize: 5 * 1024 * 1024,
           description: 'Images, Videos, Audio, Documents',
           allowVoice: true,
@@ -84,9 +84,17 @@ const ChatWindow = ({ recipient }) => {
 
   const allowedFiles = getAllowedFileTypes();
 
-  const isFileTypeAllowed = (file) => {
-    return allowedFiles.types.includes(file.type);
+  const isFileTypeAllowed = (file) => {ss
+    if (allowedFiles.types.includes(file.type)) return true;
+
+    // Fallback for audio/*
+    if (file.type.startsWith('audio/') && allowedFiles.accept.includes('audio/*')) {
+      return true;
+    }
+
+    return false;
   };
+
 
   const getFileCategory = (fileType) => {
     if (fileType?.startsWith('image/')) return 'image';
