@@ -144,11 +144,11 @@ const ChatInputArea = ({
     if (!file) return;
 
     // Validate file type
-    if (allowedFiles.types.length > 0 && !allowedFiles.types.includes(file.type)) {
-      alert(`File type not allowed. Supported: ${allowedFiles.description}`);
-      e.target.value = '';
-      return;
-    }
+    // if (allowedFiles.types.length > 0 && !allowedFiles.types.includes(file.type)) {
+    //   alert(`File type not allowed. Supported: ${allowedFiles.description}`);
+    //   e.target.value = '';
+    //   return;
+    // }
 
     setSelectedFile(file);
 

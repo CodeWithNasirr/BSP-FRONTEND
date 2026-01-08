@@ -84,7 +84,7 @@ const ChatWindow = ({ recipient }) => {
 
   const allowedFiles = getAllowedFileTypes();
 
-  const isFileTypeAllowed = (file) => {ss
+  const isFileTypeAllowed = (file) => {
     if (allowedFiles.types.includes(file.type)) return true;
 
     // Fallback for audio/*
