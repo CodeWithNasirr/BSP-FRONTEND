@@ -332,14 +332,21 @@ const ChatInputArea = ({
           {interactiveButtons.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {interactiveButtons.map((btn, i) => (
-                <span key={btn.id} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full">
+                <span key={btn.id} className="inline-flex whitespace-nowrap
+ items-center gap-1.5 max-[318px]:gap-0.5 pl-3 pr-1.5 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full">
                   {btn.title}
                   <button
                     type="button"
                     onClick={() => setInteractiveButtons(prev => prev.filter((_, idx) => idx !== i))}
-                    className="w-5 h-5 flex items-center justify-center hover:bg-blue-600 rounded-full"
+                    className="flex-shrink-0
+                        min-w-[20px] min-h-[20px]
+                        w-5 h-5
+                        max-[318px]:w-4 max-[318px]:h-4
+                        flex items-center justify-center
+                        hover:bg-blue-600
+                        rounded-full"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 max-[318px]:w-2.5 max-[318px]:h-2.5 " fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -437,7 +444,7 @@ const ChatInputArea = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 max-[318px]:gap-0.5 flex-shrink-0">
             {hasContent || (isInteractiveMode && interactiveButtons.length > 0) ? (
               <button
                 type="submit"
@@ -470,7 +477,7 @@ const ChatInputArea = ({
                   <button
                     type="button"
                     onClick={() => setIsInteractiveMode(true)}
-                    className="h-11 px-3 max-[318px]:h-9 max-[318px]:px-2 flex items-center gap-1 text-green-600 hover:bg-green-50 text-sm max-[318px]:text-xs font-medium rounded-full transition-colors"
+                    className="h-11 px-3 max-[318px]:h-9 max-[318px]:px-2 flex items-center max-[318px]:gap-0.5 text-green-600 hover:bg-green-50 text-sm max-[318px]:text-xs font-medium rounded-full transition-colors"
                   >
                     <svg className="w-5 h-5 max-[318px]:h-3 max-[318px]:w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
