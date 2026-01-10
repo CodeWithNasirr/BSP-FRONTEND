@@ -1104,75 +1104,82 @@ const Dashboard = () => {
 
   // ✅ FB Login callback (for popup flow - DESKTOP)
   const fbLoginCallback = useCallback((response) => {
-    console.log("📱 FB Login callback received:", response);
-    
-    if (!response.authResponse) {
-      console.log("No authResponse - might be redirect flow or user cancelled");
-      return;
-    }
+      console.log("📱 FB Login callback received:", response);
+      
+      if (!response.authResponse) {
+        console.log("No authResponse - might be redirect flow or user cancelled");
+        return;
+      }
 
-    const sessionId = localStorage.getItem("wa_onboarding_session") ||
-                     sessionStorage.getItem("wa_onboarding_session");
+      const sessionId = localStorage.getItem("wa_onboarding_session") ||
+                      sessionStorage.getItem("wa_onboarding_session");
 
-    if (!sessionId) {
-      console.error("No session ID found");
-      toast.error("Session expired. Please try again.");
-      return;
-    }
+      if (!sessionId) {
+        console.error("No session ID found");
+        toast.error("Session expired. Please try again.");
+        return;
+      }
 
-    exchangeTokenAndComplete(response.authResponse.code, sessionId);
-  }, [exchangeTokenAndComplete]);
+      exchangeTokenAndComplete(response.authResponse.code, sessionId);
+    }, [exchangeTokenAndComplete]);
 
-  // ✅ Launch WhatsApp Signup with mobile detection
-  const launchWhatsAppSignup = (sessionId) => {
+
+    const redirectToOAuth = (sessionId) => {
+      const redirectUri = "https://admin.numlockitsolutions.co.in/api/exchange-token/";
+
+      const appId = "3890308814613591";
+      const configId = "3713662958940509";
+
+      // ⚠️ Redirect DOES NOT support featureType
+      const oauthUrl =
+        `https://www.facebook.com/v23.0/dialog/oauth` +
+        `?client_id=${appId}` +
+        `&redirect_uri=${redirectUri}` +
+        `&response_type=code` +
+        `&config_id=${configId}` +
+        `&state=${sessionId}`;
+
+      window.location.href = oauthUrl;
+    };
+
+
+    const launchWhatsAppSignup = (sessionId) => {
     if (!fbReady || !window.FB) {
       toast.error("Facebook SDK still loading. Please wait.");
       return;
     }
 
-    // Detect if mobile
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // ✅ MOBILE: Use redirect flow
-      console.log("📱 Mobile detected - using redirect flow");
-      
-      const redirectUri = "https://admin.numlockitsolutions.co.in/api/exchange-token/";
-      const configId = "3713662958940509";
-      const appId = "3890308814613591";
-      
-      // Build OAuth URL
-      const oauthUrl =
-      `https://www.facebook.com/v23.0/dialog/oauth` +
-      `?client_id=${appId}` +
-      `&redirect_uri=${redirectUri}` +
-      `&response_type=code` +
-      `&config_id=${configId}` +               // ✅ REQUIRED
-      `&state=${sessionId}`;
-
-      
-      // Redirect to Facebook OAuth
-      window.location.href = oauthUrl;
-    } else {
-      // ✅ DESKTOP: Use popup flow
-      console.log("🖥️ Desktop detected - using popup flow");
-      
+    // Try popup FIRST (desktop + some mobile browsers)
+    try {
       window.FB.login(
-        fbLoginCallback,
+        (response) => {
+          if (!response || !response.authResponse) {
+            console.warn("FB.login blocked or failed, falling back to redirect");
+            redirectToOAuth(sessionId);
+            return;
+          }
+
+          // ✅ Coexistence SUCCESS (popup path)
+          fbLoginCallback(response);
+        },
         {
           config_id: "3713662958940509",
           response_type: "code",
           override_default_response_type: true,
           extras: {
             setup: {},
-            featureType: "whatsapp_business_app_onboarding",
+            featureType: "whatsapp_business_app_onboarding", // ✅ coexistence
             sessionInfoVersion: "3",
             state: sessionId,
           },
         }
       );
+    } catch (err) {
+      console.warn("FB.login error, using redirect flow", err);
+      redirectToOAuth(sessionId);
     }
   };
+
 
   return (
     <>
