@@ -1137,7 +1137,7 @@ const Dashboard = () => {
       // ✅ MOBILE: Use redirect flow
       console.log("📱 Mobile detected - using redirect flow");
       
-      const redirectUri = encodeURIComponent(`${window.location.origin}/dashboard`);
+      const redirectUri = "https://admin.numlockitsolutions.co.in/api/exchange-token/";
       const configId = "3713662958940509";
       const appId = "3890308814613591";
       
