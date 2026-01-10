@@ -1142,13 +1142,14 @@ const Dashboard = () => {
       const appId = "3890308814613591";
       
       // Build OAuth URL
-      const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?` +
-        `client_id=${appId}` +
-        `&redirect_uri=${redirectUri}` +
-        `&response_type=code` +
-        `&config_id=${configId}` +
-        `&state=${sessionId}` +
-        `&scope=whatsapp_business_management,whatsapp_business_messaging`;
+      const oauthUrl =
+      `https://www.facebook.com/v23.0/dialog/oauth` +
+      `?client_id=${appId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code` +
+      `&config_id=${configId}` +               // ✅ REQUIRED
+      `&state=${sessionId}`;
+
       
       // Redirect to Facebook OAuth
       window.location.href = oauthUrl;
