@@ -50,7 +50,16 @@ const MessageNode = ({ data, selected }) => {
     };
 
 
+  const handleRemoveMedia = () => {
+    setMediaUrl("");
+    setMediaType("");
 
+    // remove from node data
+    data.media_url = "";
+    data.media_type = "";
+
+    toast.info("Media removed", { autoClose: 1500 });
+  };
 
   const handleSave = () => {
     data.message = message;
@@ -180,6 +189,13 @@ const MessageNode = ({ data, selected }) => {
             <div className="flex items-center mt-2 p-1 bg-blue-50 rounded text-xs">
               <Image size={12} className="mr-1 text-blue-500" />
               <span className="truncate w-full">{mediaUrl}</span>
+               <button
+                onClick={handleRemoveMedia}
+                className="text-red-500 hover:text-red-700 ml-2"
+                title="Remove media"
+              >
+                ✕
+              </button>
             </div>
           )}
           {data.collect_address && (
