@@ -388,6 +388,7 @@ export const ChatProvider = ({ children }) => {
 
       ws.onmessage = (e) => {
         if (!isMounted) return;
+
         try {
           const data = JSON.parse(e.data || "{}");
 
@@ -399,16 +400,13 @@ export const ChatProvider = ({ children }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          if (action === "refresh_chatlist") {
-            // ⭐ BLOCK refresh while user is navigating
-            if (!MODULE_IS_SELECTING) {
-              refresh(true);
-            } else {
-              console.log("🚫 WebSocket refresh blocked - user is selecting");
-            }
-          } else if (action === "new_message" && payload) {
+          // ✅ NEW MESSAGE → move to top instantly
+          if (action === "new_message" && payload) {
             moveToTop(payload.recipient, payload);
-          } else if (action === "mark_read" && payload) {
+          }
+
+          // ✅ MARK READ → instant unread=0
+          if (action === "mark_read" && payload) {
             markAsRead(payload.recipient);
           }
         } catch (err) {
@@ -433,7 +431,8 @@ export const ChatProvider = ({ children }) => {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (wsRef.current) wsRef.current.close();
     };
-  }, [token, refresh, moveToTop, markAsRead]);
+  }, [token, moveToTop, markAsRead]);
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // INITIAL LOAD - Only fetch once, preserve state across navigation
