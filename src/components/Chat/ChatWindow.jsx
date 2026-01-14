@@ -27,6 +27,57 @@ const ChatWindow = ({ recipient }) => {
   const [selectedSessionId, setSessionFlowId] = useState(null);
   const [showFlowSelector, setShowFlowSelector] = useState(false);
 
+
+
+
+
+
+    // ⭐ Mark messages as read when opening chat window
+  useEffect(() => {
+    if (!recipient || !token) return;
+
+    // Call the backend API to mark messages as read
+    const markAsRead = async () => {
+      try {
+        console.log("📤 Calling mark-as-read API for:", recipient);
+        
+        await axios.get(
+          `${API_BASE_URL}/api/chats/${recipient}/mark-read/`,
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        console.log("✅ Mark-as-read API call successful");
+      } catch (error) {
+        console.error("❌ Error marking messages as read:", error);
+      }
+    };
+
+    // Call immediately when chat opens
+    markAsRead();
+
+    // Optional: Mark as read periodically while chat is open
+    // This handles the case where new messages arrive while viewing
+    const intervalId = setInterval(() => {
+      markAsRead();
+    }, 5000); // Every 5 seconds
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [recipient, token]);
+
+
+
+
+
+
+
+
   // ═══════════════════════════════════════════════════════════════════════════
   // FILE TYPE CONFIGURATION
   // ═══════════════════════════════════════════════════════════════════════════
