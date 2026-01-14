@@ -82,7 +82,7 @@ const MainChat = () => {
     <RequireSubscription>
       <div className="flex flex-col h-screen bg-gray-100">
         {/* Mobile back button */}
-        {isChatOpen && (
+        {/* {isChatOpen && (
           <div className="p-2 md:hidden bg-white border-b border-gray-200 sticky top-0 z-10 flex items-center">
             <button
               onClick={handleBack}
@@ -92,7 +92,7 @@ const MainChat = () => {
             </button>
             <span className="text-sm md:text-base font-semibold truncate">{recipient}</span>
           </div>
-        )}
+        )} */}
 
         <div className="flex flex-1 overflow-hidden">
           {/* ChatList - ✅ Key prop forces refresh check on navigation */}

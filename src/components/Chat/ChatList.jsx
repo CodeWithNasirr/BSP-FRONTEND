@@ -470,7 +470,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          console.log("📨 WebSocket message:", action, payload);
+          // console.log("📨 WebSocket message:", action, payload);
 
           // ✅ FIX: Always refresh on new_message action
           if (action === "new_message") {
