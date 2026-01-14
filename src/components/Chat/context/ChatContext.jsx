@@ -185,24 +185,37 @@ export const ChatProvider = ({ children }) => {
             const unique = newItems.filter((c) => !ids.has(c.recipient));
             return [...prev, ...unique];
           });
-        } else if (silent && allConversations.length > 0) {
-          setAllConversations((prev) => {
-            const prevMap = new Map(prev.map((c) => [c.recipient, c]));
+          } else if (silent && allConversations.length > 0) {
+            setAllConversations((prev) => {
+              const prevMap = new Map(prev.map((c) => [c.recipient, c]));
 
-            newItems.forEach((item) => {
-              if (prevMap.has(item.recipient)) {
-                prevMap.set(item.recipient, {
-                  ...prevMap.get(item.recipient),
-                  ...item,
-                });
-              } else {
-                // 🔥 allow new conversations too
-                prevMap.set(item.recipient, item);
-              }
+              newItems.forEach((item) => {
+                const prevItem = prevMap.get(item.recipient);
+
+                if (prevItem) {
+                  prevMap.set(item.recipient, {
+                    ...prevItem,
+
+                    // 🔐 PROTECT REALTIME UNREAD
+                    unread_count:
+                      prevItem.unread_count !== item.unread_count
+                        ? prevItem.unread_count
+                        : item.unread_count,
+
+                    last_message_text: item.last_message_text,
+                    last_message_at: item.last_message_at,
+                    tags: item.tags,
+                  });
+                } else {
+                  // New conversation from server
+                  prevMap.set(item.recipient, item);
+                }
+              });
+
+              return Array.from(prevMap.values());
             });
+          
 
-            return Array.from(prevMap.values());
-          });
 
         } else {
           // Fresh load (initial or forced refresh)
