@@ -24,8 +24,7 @@ const MainChatInner = () => {
   const location = useLocation();
 
   // Get markAsRead from context for optimistic update
-  const { markAsRead, setIsSelecting } = useChatContext();
-
+  const { markAsRead } = useChatContext();
 
   // Extract recipient from URL
   const queryParams = new URLSearchParams(location.search);
@@ -34,17 +33,6 @@ const MainChatInner = () => {
   // State
   const [recipient, setRecipient] = useState(recipientFromUrl || null);
   const [isChatOpen, setIsChatOpen] = useState(!!recipientFromUrl);
-
-
-  useEffect(() => {
-  // When chat is open → block unread + refresh
-    setIsSelecting(!!recipient);
-
-    return () => {
-      setIsSelecting(false);
-    };
-  }, [recipient, setIsSelecting]);
-
 
   // Sync with URL
   useEffect(() => {
@@ -56,7 +44,6 @@ const MainChatInner = () => {
   useEffect(() => {
     if (recipient && token) {
       // Local optimistic update - instant, no refresh, no list change
-      
       markAsRead(recipient);
       
       // Server sync in background - silent, no WebSocket event expected
