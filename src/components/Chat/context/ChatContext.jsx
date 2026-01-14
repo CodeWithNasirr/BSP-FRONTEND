@@ -195,24 +195,44 @@ export const ChatProvider = ({ children }) => {
   const moveToTop = useCallback((recipient, data) => {
     setAllConversations((prev) => {
       const idx = prev.findIndex((c) => c.recipient === recipient);
+      const prevConv = prev[idx];
+
+      const isOutbound = data.direction === "OUTBOUND";
+
       const updated = {
         recipient,
-        user_name: data.user_name || prev[idx]?.user_name || "Unknown",
-        last_message_text: data.text_content || "",
-        last_message_at: data.timestamp || new Date().toISOString(),
-        tags: data.tags || prev[idx]?.tags || [],
-        unread_count: (prev[idx]?.unread_count || 0) + 1,
+        user_name: data.user_name || prevConv?.user_name || "Unknown",
+        last_message_text: data.text_content || prevConv?.last_message_text || "",
+        last_message_at: data.timestamp || prevConv?.last_message_at || new Date().toISOString(),
+        tags: data.tags || prevConv?.tags || [],
+        unread_count: isOutbound
+          ? prevConv?.unread_count || 0
+          : (prevConv?.unread_count || 0) + 1,
       };
+
       if (idx === -1) return [updated, ...prev];
+
       return [updated, ...prev.filter((_, i) => i !== idx)];
     });
   }, []);
 
+
+
   const markAsRead = useCallback((recipient) => {
     setAllConversations((prev) =>
-      prev.map((c) => (c.recipient === recipient ? { ...c, unread_count: 0 } : c))
+      prev.map((c) => {
+        if (c.recipient !== recipient) return c;
+
+        // 👇 force a render without changing ordering
+        return {
+          ...c,
+          unread_count: 0,
+          last_read_at: Date.now(), // 🔑 NEW (UI-only field)
+        };
+      })
     );
   }, []);
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TAGS
