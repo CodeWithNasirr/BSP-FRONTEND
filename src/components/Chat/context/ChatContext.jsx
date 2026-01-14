@@ -148,8 +148,15 @@ export const ChatProvider = ({ children }) => {
             );
           });
         } else {
-          setAllConversations(newItems);
-        }
+        setAllConversations((prev) => {
+          const map = new Map(prev.map(c => [c.recipient, c]));
+          newItems.forEach(item => map.set(item.recipient, item));
+          return [...map.values()].sort(
+            (a, b) => new Date(b.last_message_at) - new Date(a.last_message_at)
+          );
+        });
+      }
+
 
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
@@ -198,23 +205,26 @@ export const ChatProvider = ({ children }) => {
       const prevConv = prev[idx];
 
       const isOutbound = data.direction === "OUTBOUND";
+      const isChatOpen = MODULE_IS_SELECTING; // 👈 FINAL PIECE
 
       const updated = {
         recipient,
-        user_name: data.user_name || prevConv?.user_name || "Unknown",
-        last_message_text: data.text_content || prevConv?.last_message_text || "",
-        last_message_at: data.timestamp || prevConv?.last_message_at || new Date().toISOString(),
-        tags: data.tags || prevConv?.tags || [],
-        unread_count: isOutbound
-          ? prevConv?.unread_count || 0
-          : (prevConv?.unread_count || 0) + 1,
+        user_name: data.user_name || prevConv?.user_name || recipient,
+        last_message_text: data.text_content || "",
+        last_message_at: data.timestamp || new Date().toISOString(),
+        tags: prevConv?.tags || [],
+        unread_count:
+          isOutbound || isChatOpen
+            ? prevConv?.unread_count || 0
+            : (prevConv?.unread_count || 0) + 1,
       };
 
       if (idx === -1) return [updated, ...prev];
-
       return [updated, ...prev.filter((_, i) => i !== idx)];
     });
   }, []);
+
+
 
 
 
