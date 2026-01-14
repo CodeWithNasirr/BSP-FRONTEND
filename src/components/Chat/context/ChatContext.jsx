@@ -257,26 +257,6 @@ export const ChatProvider = ({ children }) => {
 
 
 
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const buffer = wsEventBufferRef.current;
-    if (buffer.length === 0) return;
-
-    buffer.forEach(({ action, payload }) => {
-      if (action === "new_message") {
-        moveToTop(payload.recipient, payload);
-      }
-      if (action === "mark_read") {
-        markAsRead(payload.recipient);
-      }
-    });
-
-    wsEventBufferRef.current = [];
-  }, [isInitialized, moveToTop, markAsRead]);
-
-
-
   // ═══════════════════════════════════════════════════════════════════════════
   // LOAD MORE (Pagination)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -387,6 +367,26 @@ export const ChatProvider = ({ children }) => {
       )
     );
   }, []);
+
+
+
+    useEffect(() => {
+    if (!isInitialized) return;
+
+    const buffer = wsEventBufferRef.current;
+    if (buffer.length === 0) return;
+
+    buffer.forEach(({ action, payload }) => {
+      if (action === "new_message") {
+        moveToTop(payload.recipient, payload);
+      }
+      if (action === "mark_read") {
+        markAsRead(payload.recipient);
+      }
+    });
+
+    wsEventBufferRef.current = [];
+  }, [isInitialized, moveToTop, markAsRead]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // FETCH TAGS
