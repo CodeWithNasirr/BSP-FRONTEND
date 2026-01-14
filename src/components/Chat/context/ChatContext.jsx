@@ -186,41 +186,38 @@ export const ChatProvider = ({ children }) => {
             return [...prev, ...unique];
           });
           } else if (silent && allConversations.length > 0) {
-            setAllConversations((prev) => {
-              const prevMap = new Map(prev.map((c) => [c.recipient, c]));
+          setAllConversations((prev) => {
+            const prevMap = new Map(prev.map((c) => [c.recipient, c]));
 
-              newItems.forEach((item) => {
-                const prevItem = prevMap.get(item.recipient);
+            newItems.forEach((item) => {
+              const prevItem = prevMap.get(item.recipient);
 
-                if (prevItem) {
-                  prevMap.set(item.recipient, {
-                    ...prevItem,
+              if (prevItem) {
+                prevMap.set(item.recipient, {
+                  ...prevItem,
 
-                    // 🔐 PROTECT REALTIME UNREAD
-                    unread_count:
-                      prevItem.unread_count !== item.unread_count
-                        ? prevItem.unread_count
-                        : item.unread_count,
+                  // 🔐 NEVER TOUCH unread_count from REST
+                  unread_count: prevItem.unread_count,
 
-                    last_message_text: item.last_message_text,
-                    last_message_at: item.last_message_at,
-                    tags: item.tags,
-                  });
-                } else {
-                  // New conversation from server
-                  prevMap.set(item.recipient, item);
-                }
-              });
-
-              return Array.from(prevMap.values());
+                  last_message_text: item.last_message_text,
+                  last_message_at: item.last_message_at,
+                  tags: item.tags,
+                });
+              } else {
+                // NEW chat only → REST unread allowed ONCE
+                prevMap.set(item.recipient, {
+                  ...item,
+                  unread_count: item.unread_count ?? 0,
+                });
+              }
             });
-          
 
-
-        } else {
-          // Fresh load (initial or forced refresh)
+            return Array.from(prevMap.values());
+          });
+          } else {
+          // 🔥 NON-SILENT REFRESH (SOURCE OF TRUTH = DB)
           setAllConversations(newItems);
-        }
+          }
 
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
@@ -462,7 +459,7 @@ export const ChatProvider = ({ children }) => {
     // IMPORTANT: Only fetch if NOT already initialized
     if (!isInitialized) {
       // 🔥 silent=true so REST never overwrites WS state
-      fetchConversations(1, "", [], false, true);
+      fetchConversations(1, "", [], false, false);
       fetchTags();
     }
 
