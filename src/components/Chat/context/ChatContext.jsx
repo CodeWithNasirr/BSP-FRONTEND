@@ -215,9 +215,22 @@ export const ChatProvider = ({ children }) => {
             return Array.from(prevMap.values());
           });
           } else {
-          // 🔥 NON-SILENT REFRESH (SOURCE OF TRUTH = DB)
-          setAllConversations(newItems);
-          }
+          // NON-SILENT refresh
+          setAllConversations((prev) => {
+            const prevMap = new Map(prev.map(c => [c.recipient, c]));
+
+            return newItems.map(item => {
+              const prevItem = prevMap.get(item.recipient);
+
+              return {
+                ...item,
+
+                // 🔐 PROTECT unread ALWAYS
+                unread_count: prevItem ? prevItem.unread_count : item.unread_count,
+              };
+            });
+          });
+        }
 
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
