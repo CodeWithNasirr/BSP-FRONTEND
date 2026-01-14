@@ -185,20 +185,25 @@ export const ChatProvider = ({ children }) => {
             const unique = newItems.filter((c) => !ids.has(c.recipient));
             return [...prev, ...unique];
           });
-        } else if (silent && isInitialized && allConversations.length > 0) {
-          // SILENT REFRESH: Merge new data without replacing the list
+        } else if (silent && allConversations.length > 0) {
           setAllConversations((prev) => {
             const prevMap = new Map(prev.map((c) => [c.recipient, c]));
-            
-            // Update existing items with fresh data
+
             newItems.forEach((item) => {
               if (prevMap.has(item.recipient)) {
-                prevMap.set(item.recipient, { ...prevMap.get(item.recipient), ...item });
+                prevMap.set(item.recipient, {
+                  ...prevMap.get(item.recipient),
+                  ...item,
+                });
+              } else {
+                // 🔥 allow new conversations too
+                prevMap.set(item.recipient, item);
               }
             });
-            
+
             return Array.from(prevMap.values());
           });
+
         } else {
           // Fresh load (initial or forced refresh)
           setAllConversations(newItems);
@@ -443,9 +448,11 @@ export const ChatProvider = ({ children }) => {
 
     // IMPORTANT: Only fetch if NOT already initialized
     if (!isInitialized) {
-      fetchConversations(1, "", [], false);
+      // 🔥 silent=true so REST never overwrites WS state
+      fetchConversations(1, "", [], false, true);
       fetchTags();
     }
+
 
     // Background refresh interval
     refreshIntervalRef.current = setInterval(() => {

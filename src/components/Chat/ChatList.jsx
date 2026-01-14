@@ -289,13 +289,7 @@ const ChatList = ({ onSelectConversation }) => {
       // ⭐ STEP 2: Save current scroll position BEFORE any navigation
       const currentScroll = listContainerRef.current?.scrollTop || 0;
       if (currentScroll > 0) {
-        // Directly set module variable (bypassing safeguards for this intentional save)
-        // console.log("💾 Saving scroll before navigation:", currentScroll);
-        // Use a timeout to ensure this runs before navigation
-        setTimeout(() => {
-          // This is a direct module-level assignment
-          window.__CHAT_SCROLL_POSITION__ = currentScroll;
-        }, 0);
+        setSavedScrollPosition(currentScroll);
       }
       
       // ⭐ STEP 3: Mark as read (optimistic update - no refresh)
@@ -341,13 +335,9 @@ const ChatList = ({ onSelectConversation }) => {
     const container = listContainerRef.current;
     if (!container) return;
 
-    // ⭐ Get saved position from module-level storage OR window fallback
-    const savedPosition = getSavedScrollPosition() || window.__CHAT_SCROLL_POSITION__ || 0;
+    const savedPosition = getSavedScrollPosition();
 
     if (savedPosition > 0) {
-      // console.log("🔄 Restoring scroll position:", savedPosition);
-      
-      // Use multiple RAF frames to ensure DOM is ready
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           container.scrollTop = savedPosition;
@@ -356,6 +346,7 @@ const ChatList = ({ onSelectConversation }) => {
       });
     }
   }, [getSavedScrollPosition, filteredConversations.length]);
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // VIRTUALIZATION
@@ -418,7 +409,7 @@ const ChatList = ({ onSelectConversation }) => {
             // Save to module-level storage
             setSavedScrollPosition(currentScrollTop);
             // Also save to window as backup
-            window.__CHAT_SCROLL_POSITION__ = currentScrollTop;
+            // window.__CHAT_SCROLL_POSITION__ = currentScrollTop;
             setScrollTop(currentScrollTop);
           }
 
