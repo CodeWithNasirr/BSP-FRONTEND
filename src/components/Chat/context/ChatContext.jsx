@@ -83,6 +83,8 @@ export const ChatProvider = ({ children }) => {
   const hasMoreRef = useRef(hasMore);
   const wsRef = useRef(null);
   const refreshIntervalRef = useRef(null);
+  const wsEventBufferRef = useRef([]);
+
 
   // Keep refs synced
   useEffect(() => {
@@ -252,6 +254,28 @@ export const ChatProvider = ({ children }) => {
     },
     [token, isInitialized, allConversations.length]
   );
+
+
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const buffer = wsEventBufferRef.current;
+    if (buffer.length === 0) return;
+
+    buffer.forEach(({ action, payload }) => {
+      if (action === "new_message") {
+        moveToTop(payload.recipient, payload);
+      }
+      if (action === "mark_read") {
+        markAsRead(payload.recipient);
+      }
+    });
+
+    wsEventBufferRef.current = [];
+  }, [isInitialized, moveToTop, markAsRead]);
+
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // LOAD MORE (Pagination)
@@ -428,15 +452,20 @@ export const ChatProvider = ({ children }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          // ✅ NEW MESSAGE → move to top instantly
+          if (!isInitialized) {
+            wsEventBufferRef.current.push({ action, payload });
+            return;
+          }
+
+
           if (action === "new_message" && payload) {
             moveToTop(payload.recipient, payload);
           }
 
-          // ✅ MARK READ → instant unread=0
           if (action === "mark_read" && payload) {
             markAsRead(payload.recipient);
           }
+
         } catch (err) {
           console.error("WS parse error:", err);
         }
@@ -472,7 +501,7 @@ export const ChatProvider = ({ children }) => {
     // IMPORTANT: Only fetch if NOT already initialized
     if (!isInitialized) {
       // 🔥 silent=true so REST never overwrites WS state
-      fetchConversations(1, "", [], false, false);
+      fetchConversations(1, "", [], false, true);
       fetchTags();
     }
 
