@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // src/components/context/ChatContext.jsx
-// FIXED: Immediate unread updates + proper refresh on navigation
+// Global chat state - preloads on app start, persists across navigation
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, {
@@ -15,14 +15,31 @@ import React, {
 import axios from "axios";
 import API_BASE_URL from "../../../config";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTEXT CREATION
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ChatContext = createContext(null);
 
-const CACHE_TTL = 60000;
-const BACKGROUND_REFRESH_INTERVAL = 30000;
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CACHE_TTL = 60000; // 1 minute
+const BACKGROUND_REFRESH_INTERVAL = 30000; // 30 seconds
 const PAGE_SIZE = 20;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⭐ MODULE-LEVEL STORAGE - SURVIVES REACT REMOUNTS!
+// This is the key to preserving scroll position across navigation
+// ─────────────────────────────────────────────────────────────────────────────
 
 let MODULE_SCROLL_POSITION = 0;
 let MODULE_IS_SELECTING = false;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVIDER COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const ChatProvider = ({ children }) => {
   const token = localStorage.getItem("authToken");
@@ -31,22 +48,30 @@ export const ChatProvider = ({ children }) => {
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // All conversations (master list)
   const [allConversations, setAllConversations] = useState([]);
+
+  // Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Loading states
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Server-side filters
   const [serverSearch, setServerSearch] = useState("");
   const [serverTags, setServerTags] = useState([]);
+
+  // Tags
   const [availableTags, setAvailableTags] = useState([]);
+
+  // Error & timestamps
   const [error, setError] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // ⭐ NEW: Track if user is currently viewing chat list
-  const [isViewingChatList, setIsViewingChatList] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // REFS
@@ -58,8 +83,8 @@ export const ChatProvider = ({ children }) => {
   const hasMoreRef = useRef(hasMore);
   const wsRef = useRef(null);
   const refreshIntervalRef = useRef(null);
-  const pendingRefreshRef = useRef(false);
 
+  // Keep refs synced
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
@@ -70,11 +95,23 @@ export const ChatProvider = ({ children }) => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ⭐ MODULE-LEVEL SCROLL POSITION FUNCTIONS
+  // These use module-level variables that survive React remounts
   // ═══════════════════════════════════════════════════════════════════════════
 
   const setSavedScrollPosition = useCallback((value) => {
-    if (MODULE_IS_SELECTING) return;
-    if (value === 0) return;
+    // ⭐ CRITICAL: Block ALL updates when selecting (navigating to chat)
+    if (MODULE_IS_SELECTING) {
+    //   console.log("🚫 BLOCKED scroll update during selection:", value);
+      return;
+    }
+    
+    // ⭐ CRITICAL: Never save 0 - it means nothing to restore
+    if (value === 0) {
+    //   console.log("🚫 BLOCKED scroll reset to 0");
+      return;
+    }
+    
+    // console.log("✅ Saving scroll position:", value);
     MODULE_SCROLL_POSITION = value;
   }, []);
 
@@ -83,10 +120,13 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   const forceSavedScrollPosition = useCallback((value) => {
+    // Force update even during selection (for intentional resets)
+    // console.log("🔄 Force setting scroll position:", value);
     MODULE_SCROLL_POSITION = value;
   }, []);
 
   const setIsSelecting = useCallback((value) => {
+    // console.log("🔄 setIsSelecting:", value);
     MODULE_IS_SELECTING = value;
   }, []);
 
@@ -94,24 +134,8 @@ export const ChatProvider = ({ children }) => {
     return MODULE_IS_SELECTING;
   }, []);
 
-  // ⭐ NEW: Notify when user enters/leaves chat list
-  const notifyViewingChatList = useCallback((isViewing) => {
-    console.log("📍 User viewing chat list:", isViewing);
-    setIsViewingChatList(isViewing);
-    
-    // If user just returned and there's pending data, refresh
-    if (isViewing && pendingRefreshRef.current) {
-      console.log("🔄 Executing pending refresh...");
-      pendingRefreshRef.current = false;
-      // Small delay to let component mount
-      setTimeout(() => {
-        refresh(true);
-      }, 100);
-    }
-  }, []);
-
   // ═══════════════════════════════════════════════════════════════════════════
-  // FETCH CONVERSATIONS
+  // FETCH CONVERSATIONS (Core API)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const fetchConversations = useCallback(
@@ -121,6 +145,7 @@ export const ChatProvider = ({ children }) => {
 
       isLoadingRef.current = true;
 
+      // Cancel previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -154,40 +179,28 @@ export const ChatProvider = ({ children }) => {
         const hasNext = !!data.next;
 
         if (isAppending) {
+          // Append and deduplicate
           setAllConversations((prev) => {
             const ids = new Set(prev.map((c) => c.recipient));
             const unique = newItems.filter((c) => !ids.has(c.recipient));
             return [...prev, ...unique];
           });
-        } else if (silent && allConversations.length > 0) {
-          // ⭐ IMPROVED: Silent merge - only update changed fields
+        } else if (silent && isInitialized && allConversations.length > 0) {
+          // SILENT REFRESH: Merge new data without replacing the list
           setAllConversations((prev) => {
             const prevMap = new Map(prev.map((c) => [c.recipient, c]));
-
+            
+            // Update existing items with fresh data
             newItems.forEach((item) => {
-              const prevItem = prevMap.get(item.recipient);
-
-              if (prevItem) {
-                // Update existing conversation
-                prevMap.set(item.recipient, {
-                  ...prevItem,
-                  user_name: item.user_name,
-                  last_message_text: item.last_message_text,
-                  last_message_at: item.last_message_at,
-                  tags: item.tags,
-                  // ⭐ CRITICAL: Always use server unread for silent refresh
-                  unread_count: item.unread_count,
-                });
-              } else {
-                // New conversation
-                prevMap.set(item.recipient, item);
+              if (prevMap.has(item.recipient)) {
+                prevMap.set(item.recipient, { ...prevMap.get(item.recipient), ...item });
               }
             });
-
+            
             return Array.from(prevMap.values());
           });
         } else {
-          // Fresh load
+          // Fresh load (initial or forced refresh)
           setAllConversations(newItems);
         }
 
@@ -213,7 +226,7 @@ export const ChatProvider = ({ children }) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // LOAD MORE
+  // LOAD MORE (Pagination)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const loadMore = useCallback(() => {
@@ -226,7 +239,7 @@ export const ChatProvider = ({ children }) => {
   }, [fetchConversations, serverSearch, serverTags]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEARCH
+  // SEARCH (Server-side)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const searchConversations = useCallback(
@@ -243,25 +256,17 @@ export const ChatProvider = ({ children }) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED REFRESH - Check if user is viewing
+  // REFRESH
   // ═══════════════════════════════════════════════════════════════════════════
 
   const refresh = useCallback(
     (silent = true) => {
+      // ⭐ Block refresh during selection
       if (MODULE_IS_SELECTING) {
         console.log("🚫 Refresh blocked - user is selecting");
         return;
       }
 
-      // ⭐ If user not viewing chat list, mark as pending
-      if (!isViewingChatList && silent) {
-        console.log("📌 Marking refresh as pending (user away)");
-        pendingRefreshRef.current = true;
-        return;
-      }
-
-      console.log("🔄 Executing refresh (silent:", silent, ")");
-      
       if (silent) {
         fetchConversations(1, serverSearch, serverTags, false, true);
       } else {
@@ -272,7 +277,7 @@ export const ChatProvider = ({ children }) => {
         fetchConversations(1, serverSearch, serverTags, false);
       }
     },
-    [fetchConversations, serverSearch, serverTags, isViewingChatList]
+    [fetchConversations, serverSearch, serverTags]
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -292,23 +297,20 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED: Move to top with immediate update
+  // MOVE TO TOP (New message)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const moveToTop = useCallback((recipient, messageData) => {
-    console.log("📨 moveToTop:", recipient, "unread:", messageData.unread_count);
-    
     setAllConversations((prev) => {
       const idx = prev.findIndex((c) => c.recipient === recipient);
 
       const updated = {
         recipient,
         user_name: messageData.user_name || prev[idx]?.user_name || "Unknown",
-        last_message_text: messageData.text_content || messageData.last_message_text || "",
-        last_message_at: messageData.timestamp || messageData.last_message_at || new Date().toISOString(),
+        last_message_text: messageData.text_content || "",
+        last_message_at: messageData.timestamp || new Date().toISOString(),
         tags: messageData.tags || prev[idx]?.tags || [],
-        // ⭐ Use exact unread from WebSocket
-        unread_count: messageData.unread_count ?? (prev[idx]?.unread_count || 0) + 1,
+        unread_count: (prev[idx]?.unread_count || 0) + 1,
       };
 
       if (idx === -1) {
@@ -321,12 +323,10 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED: Mark as read - instant local update
+  // MARK AS READ - Local only, no refresh, no re-ordering
   // ═══════════════════════════════════════════════════════════════════════════
 
   const markAsRead = useCallback((recipient) => {
-    console.log("✅ markAsRead:", recipient);
-    
     setAllConversations((prev) =>
       prev.map((c) => 
         c.recipient === recipient 
@@ -357,7 +357,7 @@ export const ChatProvider = ({ children }) => {
   }, [token]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED WEBSOCKET - Better logging and state management
+  // WEBSOCKET - Real-time updates (without full refresh)
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
@@ -378,7 +378,7 @@ export const ChatProvider = ({ children }) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("📡 WebSocket CONNECTED");
+        console.log("📡 ChatContext WebSocket connected");
         pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "pong" }));
@@ -388,7 +388,6 @@ export const ChatProvider = ({ children }) => {
 
       ws.onmessage = (e) => {
         if (!isMounted) return;
-
         try {
           const data = JSON.parse(e.data || "{}");
 
@@ -400,34 +399,30 @@ export const ChatProvider = ({ children }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          console.log("📡 WS Event:", action, payload?.recipient, "unread:", payload?.unread_count);
-
-          // ✅ NEW MESSAGE
-          if (action === "new_message" && payload) {
+          if (action === "refresh_chatlist") {
+            // ⭐ BLOCK refresh while user is navigating
+            if (!MODULE_IS_SELECTING) {
+              refresh(true);
+            } else {
+              console.log("🚫 WebSocket refresh blocked - user is selecting");
+            }
+          } else if (action === "new_message" && payload) {
             moveToTop(payload.recipient, payload);
-          }
-
-          // ✅ MARK READ - instant update
-          if (action === "mark_read" && payload) {
+          } else if (action === "mark_read" && payload) {
             markAsRead(payload.recipient);
           }
-
         } catch (err) {
-          console.error("❌ WS parse error:", err);
+          console.error("WS parse error:", err);
         }
       };
 
       ws.onclose = () => {
-        console.log("📡 WebSocket CLOSED, reconnecting...");
         if (isMounted) {
           reconnectTimeout = setTimeout(connect, 2000);
         }
       };
 
-      ws.onerror = (err) => {
-        console.error("📡 WebSocket ERROR:", err);
-        ws.close();
-      };
+      ws.onerror = () => ws.close();
     };
 
     connect();
@@ -438,26 +433,25 @@ export const ChatProvider = ({ children }) => {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (wsRef.current) wsRef.current.close();
     };
-  }, [token, moveToTop, markAsRead]);
+  }, [token, refresh, moveToTop, markAsRead]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INITIAL LOAD
+  // INITIAL LOAD - Only fetch once, preserve state across navigation
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
     if (!token) return;
 
+    // IMPORTANT: Only fetch if NOT already initialized
     if (!isInitialized) {
-      console.log("🚀 Initial load...");
-      fetchConversations(1, "", [], false, false);
+      fetchConversations(1, "", [], false);
       fetchTags();
     }
 
-    // Background refresh
+    // Background refresh interval
     refreshIntervalRef.current = setInterval(() => {
       const cacheAge = Date.now() - lastFetchTime;
       if (cacheAge > CACHE_TTL && !isLoadingRef.current && isInitialized && !MODULE_IS_SELECTING) {
-        console.log("⏰ Background refresh triggered");
         refresh(true);
       }
     }, BACKGROUND_REFRESH_INTERVAL);
@@ -475,6 +469,7 @@ export const ChatProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
+      // State
       conversations: allConversations,
       isInitialLoading,
       isLoadingMore,
@@ -486,6 +481,8 @@ export const ChatProvider = ({ children }) => {
       serverSearch,
       serverTags,
       isInitialized,
+
+      // Actions
       loadMore,
       refresh,
       searchConversations,
@@ -493,12 +490,13 @@ export const ChatProvider = ({ children }) => {
       moveToTop,
       markAsRead,
       fetchTags,
+      
+      // ⭐ Module-level scroll position (survives remounts!)
       setSavedScrollPosition,
       getSavedScrollPosition,
       forceSavedScrollPosition,
       setIsSelecting,
       getIsSelecting,
-      notifyViewingChatList, // ⭐ NEW
     }),
     [
       allConversations,
@@ -524,12 +522,15 @@ export const ChatProvider = ({ children }) => {
       forceSavedScrollPosition,
       setIsSelecting,
       getIsSelecting,
-      notifyViewingChatList,
     ]
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOK - Use this in components
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const useChatContext = () => {
   const context = useContext(ChatContext);

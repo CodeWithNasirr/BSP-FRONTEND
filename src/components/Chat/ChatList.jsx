@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // src/components/Chat/ChatList.jsx
-// ⭐ ADDED: Notify context when user is viewing chat list
+// Optimized WhatsApp-style chat list with instant local search
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, {
@@ -17,12 +17,18 @@ import { MagnifyingGlassIcon, Bars3Icon, ChevronUpIcon } from "@heroicons/react/
 import { useChatContext } from "./context/ChatContext";
 import MarkPurchaseModal from "./MarkPurchaseModal";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ITEM_HEIGHT = 88;
 const BUFFER_SIZE = 5;
 const SCROLL_THRESHOLD = 300;
 const SERVER_SEARCH_DELAY = 500;
 
-// ... (ChatItem and ChatSkeleton components remain the same)
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT ITEM (Memoized)
+// ─────────────────────────────────────────────────────────────────────────────
 
 const ChatItem = memo(
   ({ conv, style, onSelect, onMarkPurchase, formatTimestamp }) => (
@@ -33,6 +39,7 @@ const ChatItem = memo(
                  border-b border-gray-50 transition-colors"
       onClick={() => onSelect(conv.recipient)}
     >
+      {/* Avatar */}
       <div className="flex-shrink-0">
         <div
           className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 
@@ -42,6 +49,7 @@ const ChatItem = memo(
         </div>
       </div>
 
+      {/* Content */}
       <div className="flex-1 min-w-0 py-0.5">
         <div className="flex items-baseline justify-between gap-2">
           <h4 className="font-semibold text-gray-900 truncate text-[15px]">
@@ -107,6 +115,10 @@ const ChatItem = memo(
 
 ChatItem.displayName = "ChatItem";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SKELETON LOADER
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ChatSkeleton = () => (
   <div className="flex items-start gap-3 px-4 py-3 animate-pulse">
     <div className="w-12 h-12 rounded-full bg-gray-200" />
@@ -121,8 +133,16 @@ const ChatSkeleton = () => (
   </div>
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ChatList = ({ onSelectConversation }) => {
   const token = localStorage.getItem("authToken");
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONTEXT - Global chat state
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const {
     conversations,
@@ -136,33 +156,28 @@ const ChatList = ({ onSelectConversation }) => {
     searchConversations,
     markAsRead,
     isInitialized,
+    // ⭐ Module-level scroll functions
     setSavedScrollPosition,
     getSavedScrollPosition,
     forceSavedScrollPosition,
     setIsSelecting,
     getIsSelecting,
-    notifyViewingChatList, // ⭐ NEW
   } = useChatContext();
 
-  // ⭐ CRITICAL: Notify context when component mounts/unmounts
-  useEffect(() => {
-    console.log("📍 ChatList MOUNTED - notifying context");
-    notifyViewingChatList(true);
-    
-    return () => {
-      console.log("📍 ChatList UNMOUNTED - notifying context");
-      notifyViewingChatList(false);
-    };
-  }, [notifyViewingChatList]);
-
-  // ... (rest of the component remains exactly the same)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LOCAL STATE
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const [searchInput, setSearchInput] = useState("");
   const [localSearch, setLocalSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [showTags, setShowTags] = useState(false);
+
+  // Virtualization - initialize from saved scroll position
   const [scrollTop, setScrollTop] = useState(() => getSavedScrollPosition());
   const [containerHeight, setContainerHeight] = useState(0);
+
+  // Modal
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [purchaseForm, setPurchaseForm] = useState({
@@ -172,8 +187,16 @@ const ChatList = ({ onSelectConversation }) => {
     tagInput: "",
   });
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REFS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const listContainerRef = useRef(null);
   const isLoadingRef = useRef(false);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LOCAL FILTERING - INSTANT (no server call)
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const filteredConversations = useMemo(() => {
     if (!localSearch && selectedTags.length === 0) {
@@ -183,6 +206,7 @@ const ChatList = ({ onSelectConversation }) => {
     const searchLower = localSearch.toLowerCase().trim();
 
     return conversations.filter((conv) => {
+      // Search filter
       if (searchLower) {
         const matchesName = conv.user_name?.toLowerCase().includes(searchLower);
         const matchesPhone = conv.recipient?.includes(searchLower);
@@ -193,6 +217,7 @@ const ChatList = ({ onSelectConversation }) => {
         }
       }
 
+      // Tag filter
       if (selectedTags.length > 0) {
         const hasTags = selectedTags.every((tag) => conv.tags?.includes(tag));
         if (!hasTags) return false;
@@ -201,6 +226,10 @@ const ChatList = ({ onSelectConversation }) => {
       return true;
     });
   }, [conversations, localSearch, selectedTags]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DEBOUNCED SERVER SEARCH
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const debouncedServerSearch = useMemo(
     () =>
@@ -215,6 +244,10 @@ const ChatList = ({ onSelectConversation }) => {
   useEffect(() => {
     return () => debouncedServerSearch.cancel();
   }, [debouncedServerSearch]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const handleSearchChange = useCallback(
     (e) => {
@@ -243,27 +276,40 @@ const ChatList = ({ onSelectConversation }) => {
     setSearchInput("");
     setLocalSearch("");
     setSelectedTags([]);
-    forceSavedScrollPosition(0);
+    forceSavedScrollPosition(0); // ⭐ Force reset (intentional)
     refresh(false);
   }, [refresh, forceSavedScrollPosition]);
 
+  // ⭐ CRITICAL: Handle chat selection with proper scroll saving
   const handleSelect = useCallback(
     (recipient) => {
+      // ⭐ STEP 1: Block all scroll/refresh updates
       setIsSelecting(true);
       
+      // ⭐ STEP 2: Save current scroll position BEFORE any navigation
       const currentScroll = listContainerRef.current?.scrollTop || 0;
       if (currentScroll > 0) {
-        setSavedScrollPosition(currentScroll);
+        // Directly set module variable (bypassing safeguards for this intentional save)
+        // console.log("💾 Saving scroll before navigation:", currentScroll);
+        // Use a timeout to ensure this runs before navigation
+        setTimeout(() => {
+          // This is a direct module-level assignment
+          window.__CHAT_SCROLL_POSITION__ = currentScroll;
+        }, 0);
       }
       
+      // ⭐ STEP 3: Mark as read (optimistic update - no refresh)
       markAsRead(recipient);
+      
+      // ⭐ STEP 4: Navigate to chat
       onSelectConversation(recipient);
       
+      // ⭐ STEP 5: Keep blocking for a while to prevent any refresh during navigation
       setTimeout(() => {
         setIsSelecting(false);
-      }, 2000);
+      }, 2000); // 2 seconds to be safe
     },
-    [onSelectConversation, markAsRead, setIsSelecting, setSavedScrollPosition]
+    [onSelectConversation, markAsRead, setIsSelecting]
   );
 
   const handleOpenModal = useCallback((contact) => {
@@ -287,13 +333,21 @@ const ChatList = ({ onSelectConversation }) => {
     listContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [forceSavedScrollPosition]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⭐ SCROLL POSITION RESTORATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
   useLayoutEffect(() => {
     const container = listContainerRef.current;
     if (!container) return;
 
-    const savedPosition = getSavedScrollPosition();
+    // ⭐ Get saved position from module-level storage OR window fallback
+    const savedPosition = getSavedScrollPosition() || window.__CHAT_SCROLL_POSITION__ || 0;
 
     if (savedPosition > 0) {
+      // console.log("🔄 Restoring scroll position:", savedPosition);
+      
+      // Use multiple RAF frames to ensure DOM is ready
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           container.scrollTop = savedPosition;
@@ -302,6 +356,10 @@ const ChatList = ({ onSelectConversation }) => {
       });
     }
   }, [getSavedScrollPosition, filteredConversations.length]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VIRTUALIZATION
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const totalHeight = filteredConversations.length * ITEM_HEIGHT;
 
@@ -337,6 +395,10 @@ const ChatList = ({ onSelectConversation }) => {
     return items;
   }, [visibleRange, filteredConversations]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCROLL HANDLER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   useEffect(() => {
     const container = listContainerRef.current;
     if (!container) return;
@@ -351,11 +413,16 @@ const ChatList = ({ onSelectConversation }) => {
           const scrollHeight = container.scrollHeight;
           const clientHeight = container.clientHeight;
 
+          // ⭐ CRITICAL: Only save scroll when NOT selecting
           if (!getIsSelecting()) {
+            // Save to module-level storage
             setSavedScrollPosition(currentScrollTop);
+            // Also save to window as backup
+            window.__CHAT_SCROLL_POSITION__ = currentScrollTop;
             setScrollTop(currentScrollTop);
           }
 
+          // Load more when near bottom
           const distanceFromBottom = scrollHeight - currentScrollTop - clientHeight;
           if (distanceFromBottom < SCROLL_THRESHOLD && hasMore && !isLoadingRef.current) {
             isLoadingRef.current = true;
@@ -386,6 +453,10 @@ const ChatList = ({ onSelectConversation }) => {
     };
   }, [hasMore, loadMore, getIsSelecting, setSavedScrollPosition]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const formatTimestamp = useCallback((ts) => {
     if (!ts) return "";
     const d = new Date(ts);
@@ -402,8 +473,13 @@ const ChatList = ({ onSelectConversation }) => {
   const isScrolledDown = scrollTop > 200;
   const hasFilters = localSearch || selectedTags.length > 0;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   return (
     <div className="flex flex-col h-full bg-white relative">
+      {/* Header */}
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="p-3">
           <div className="relative">
@@ -417,6 +493,7 @@ const ChatList = ({ onSelectConversation }) => {
             />
             <MagnifyingGlassIcon className="absolute top-1/2 left-3 -translate-y-1/2 h-5 w-5 text-gray-400" />
 
+            {/* Refresh indicator */}
             {isRefreshing && (
               <div className="absolute top-1/2 right-12 -translate-y-1/2">
                 <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -432,6 +509,7 @@ const ChatList = ({ onSelectConversation }) => {
             </button>
           </div>
 
+          {/* Tags */}
           {showTags && availableTags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
               {availableTags.map((t) => (
@@ -451,6 +529,7 @@ const ChatList = ({ onSelectConversation }) => {
             </div>
           )}
 
+          {/* Active filters */}
           {hasFilters && (
             <div className="flex items-center gap-2 mt-2 text-xs">
               <span className="text-gray-500">
@@ -474,11 +553,13 @@ const ChatList = ({ onSelectConversation }) => {
         </div>
       </header>
 
+      {/* List Container */}
       <div
         ref={listContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
+        {/* Initial Loading */}
         {isInitialLoading && !isInitialized && (
           <div className="divide-y divide-gray-50">
             {[...Array(8)].map((_, i) => (
@@ -487,6 +568,7 @@ const ChatList = ({ onSelectConversation }) => {
           </div>
         )}
 
+        {/* Empty State */}
         {!isInitialLoading && filteredConversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -518,6 +600,7 @@ const ChatList = ({ onSelectConversation }) => {
           </div>
         )}
 
+        {/* Virtualized List */}
         {!isInitialLoading && filteredConversations.length > 0 && (
           <div style={{ height: totalHeight, position: "relative" }}>
             {visibleItems.map(({ conv, style }) => (
@@ -533,6 +616,7 @@ const ChatList = ({ onSelectConversation }) => {
           </div>
         )}
 
+        {/* Loading More */}
         {isLoadingMore && (
           <div className="flex items-center justify-center py-4">
             <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -540,11 +624,13 @@ const ChatList = ({ onSelectConversation }) => {
           </div>
         )}
 
+        {/* End Indicator */}
         {!hasMore && filteredConversations.length > 10 && (
           <div className="text-center py-6 text-xs text-gray-400">— End of conversations —</div>
         )}
       </div>
 
+      {/* Scroll to Top */}
       {isScrolledDown && (
         <button
           onClick={scrollToTop}
@@ -555,6 +641,7 @@ const ChatList = ({ onSelectConversation }) => {
         </button>
       )}
 
+      {/* Modal */}
       <MarkPurchaseModal
         show={showPurchaseModal}
         onClose={handleCloseModal}
