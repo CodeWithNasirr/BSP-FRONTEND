@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // src/components/context/ChatContext.jsx
-// FIXED: Real-time mark-as-read without triggering full refresh
+// Global chat state - preloads on app start, persists across navigation
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, {
@@ -31,13 +31,11 @@ const PAGE_SIZE = 20;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⭐ MODULE-LEVEL STORAGE - SURVIVES REACT REMOUNTS!
+// This is the key to preserving scroll position across navigation
 // ─────────────────────────────────────────────────────────────────────────────
 
 let MODULE_SCROLL_POSITION = 0;
 let MODULE_IS_SELECTING = false;
-
-// ⭐ NEW: Track locally updated unread counts to prevent server overwrite
-let LOCAL_UNREAD_OVERRIDES = new Map(); // recipient -> unread_count
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDER COMPONENT
@@ -50,16 +48,27 @@ export const ChatProvider = ({ children }) => {
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // All conversations (master list)
   const [allConversations, setAllConversations] = useState([]);
+
+  // Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Loading states
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Server-side filters
   const [serverSearch, setServerSearch] = useState("");
   const [serverTags, setServerTags] = useState([]);
+
+  // Tags
   const [availableTags, setAvailableTags] = useState([]);
+
+  // Error & timestamps
   const [error, setError] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -75,6 +84,7 @@ export const ChatProvider = ({ children }) => {
   const wsRef = useRef(null);
   const refreshIntervalRef = useRef(null);
 
+  // Keep refs synced
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
@@ -85,11 +95,23 @@ export const ChatProvider = ({ children }) => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ⭐ MODULE-LEVEL SCROLL POSITION FUNCTIONS
+  // These use module-level variables that survive React remounts
   // ═══════════════════════════════════════════════════════════════════════════
 
   const setSavedScrollPosition = useCallback((value) => {
-    if (MODULE_IS_SELECTING) return;
-    if (value === 0) return;
+    // ⭐ CRITICAL: Block ALL updates when selecting (navigating to chat)
+    if (MODULE_IS_SELECTING) {
+    //   console.log("🚫 BLOCKED scroll update during selection:", value);
+      return;
+    }
+    
+    // ⭐ CRITICAL: Never save 0 - it means nothing to restore
+    if (value === 0) {
+    //   console.log("🚫 BLOCKED scroll reset to 0");
+      return;
+    }
+    
+    // console.log("✅ Saving scroll position:", value);
     MODULE_SCROLL_POSITION = value;
   }, []);
 
@@ -98,45 +120,18 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   const forceSavedScrollPosition = useCallback((value) => {
+    // Force update even during selection (for intentional resets)
+    // console.log("🔄 Force setting scroll position:", value);
     MODULE_SCROLL_POSITION = value;
   }, []);
 
   const setIsSelecting = useCallback((value) => {
+    // console.log("🔄 setIsSelecting:", value);
     MODULE_IS_SELECTING = value;
   }, []);
 
   const getIsSelecting = useCallback(() => {
     return MODULE_IS_SELECTING;
-  }, []);
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ NEW: Local unread management
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  const setLocalUnreadOverride = useCallback((recipient, count) => {
-    LOCAL_UNREAD_OVERRIDES.set(recipient, count);
-  }, []);
-
-  const clearLocalUnreadOverride = useCallback((recipient) => {
-    LOCAL_UNREAD_OVERRIDES.delete(recipient);
-  }, []);
-
-  const getLocalUnreadOverride = useCallback((recipient) => {
-    return LOCAL_UNREAD_OVERRIDES.get(recipient);
-  }, []);
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED: Apply local unread overrides when merging server data
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  const applyLocalOverrides = useCallback((conversations) => {
-    return conversations.map(conv => {
-      const localOverride = LOCAL_UNREAD_OVERRIDES.get(conv.recipient);
-      if (localOverride !== undefined) {
-        return { ...conv, unread_count: localOverride };
-      }
-      return conv;
-    });
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -150,6 +145,7 @@ export const ChatProvider = ({ children }) => {
 
       isLoadingRef.current = true;
 
+      // Cancel previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -183,46 +179,45 @@ export const ChatProvider = ({ children }) => {
         const hasNext = !!data.next;
 
         if (isAppending) {
+          // Append and deduplicate
           setAllConversations((prev) => {
             const ids = new Set(prev.map((c) => c.recipient));
             const unique = newItems.filter((c) => !ids.has(c.recipient));
-            return applyLocalOverrides([...prev, ...unique]);
+            return [...prev, ...unique];
           });
-        } else if (silent && allConversations.length > 0) {
-          // ⭐ IMPROVED: Silent background refresh - preserve local state
+          } else if (silent && allConversations.length > 0) {
           setAllConversations((prev) => {
             const prevMap = new Map(prev.map((c) => [c.recipient, c]));
 
             newItems.forEach((item) => {
               const prevItem = prevMap.get(item.recipient);
-              const localUnread = LOCAL_UNREAD_OVERRIDES.get(item.recipient);
 
               if (prevItem) {
                 prevMap.set(item.recipient, {
                   ...prevItem,
-                  // ⭐ CRITICAL: Use local override if exists, otherwise use server value
-                  unread_count: localUnread !== undefined ? localUnread : item.unread_count,
+
+                  // 🔐 NEVER TOUCH unread_count from REST
+                  unread_count: prevItem.unread_count,
+
                   last_message_text: item.last_message_text,
                   last_message_at: item.last_message_at,
                   tags: item.tags,
                 });
               } else {
-                // New conversation from server
-                const conv = { ...item };
-                // Apply local override if exists
-                if (localUnread !== undefined) {
-                  conv.unread_count = localUnread;
-                }
-                prevMap.set(item.recipient, conv);
+                // NEW chat only → REST unread allowed ONCE
+                prevMap.set(item.recipient, {
+                  ...item,
+                  unread_count: item.unread_count ?? 0,
+                });
               }
             });
 
             return Array.from(prevMap.values());
           });
-        } else {
-          // Fresh load (initial or forced refresh)
-          setAllConversations(applyLocalOverrides(newItems));
-        }
+          } else {
+          // 🔥 NON-SILENT REFRESH (SOURCE OF TRUTH = DB)
+          setAllConversations(newItems);
+          }
 
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
@@ -242,7 +237,7 @@ export const ChatProvider = ({ children }) => {
         setIsRefreshing(false);
       }
     },
-    [token, isInitialized, allConversations.length, applyLocalOverrides]
+    [token, isInitialized, allConversations.length]
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -281,6 +276,7 @@ export const ChatProvider = ({ children }) => {
 
   const refresh = useCallback(
     (silent = true) => {
+      // ⭐ Block refresh during selection
       if (MODULE_IS_SELECTING) {
         console.log("🚫 Refresh blocked - user is selecting");
         return;
@@ -322,7 +318,6 @@ export const ChatProvider = ({ children }) => {
   const moveToTop = useCallback((recipient, messageData) => {
     setAllConversations((prev) => {
       const idx = prev.findIndex((c) => c.recipient === recipient);
-      const localUnread = LOCAL_UNREAD_OVERRIDES.get(recipient);
 
       const updated = {
         recipient,
@@ -330,10 +325,7 @@ export const ChatProvider = ({ children }) => {
         last_message_text: messageData.text_content || "",
         last_message_at: messageData.timestamp || new Date().toISOString(),
         tags: messageData.tags || prev[idx]?.tags || [],
-        // ⭐ Use local override if exists, otherwise increment
-        unread_count: localUnread !== undefined 
-          ? localUnread 
-          : (prev[idx]?.unread_count || 0) + 1,
+        unread_count: (prev[idx]?.unread_count || 0) + 1,
       };
 
       if (idx === -1) {
@@ -346,16 +338,10 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⭐ IMPROVED: Mark as Read - Instant local update with override protection
+  // MARK AS READ - Local only, no refresh, no re-ordering
   // ═══════════════════════════════════════════════════════════════════════════
 
   const markAsRead = useCallback((recipient) => {
-    console.log("🔔 markAsRead called for:", recipient);
-    
-    // ⭐ Set local override to protect against server updates
-    setLocalUnreadOverride(recipient, 0);
-    
-    // ⭐ Update UI immediately
     setAllConversations((prev) =>
       prev.map((c) => 
         c.recipient === recipient 
@@ -363,13 +349,7 @@ export const ChatProvider = ({ children }) => {
           : c
       )
     );
-
-    // ⭐ Clear override after 5 seconds (gives time for server to sync)
-    setTimeout(() => {
-      clearLocalUnreadOverride(recipient);
-      console.log("✅ Cleared local override for:", recipient);
-    }, 5000);
-  }, [setLocalUnreadOverride, clearLocalUnreadOverride]);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // FETCH TAGS
@@ -392,7 +372,7 @@ export const ChatProvider = ({ children }) => {
   }, [token]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // WEBSOCKET - Real-time updates
+  // WEBSOCKET - Real-time updates (without full refresh)
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
@@ -435,27 +415,14 @@ export const ChatProvider = ({ children }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          // ✅ NEW MESSAGE → move to top
+          // ✅ NEW MESSAGE → move to top instantly
           if (action === "new_message" && payload) {
-            console.log("📨 WS: new_message", payload.recipient);
             moveToTop(payload.recipient, payload);
           }
 
-          // ✅ MARK READ → instant local update with protection
+          // ✅ MARK READ → instant unread=0
           if (action === "mark_read" && payload) {
-            console.log("✅ WS: mark_read", payload.recipient);
             markAsRead(payload.recipient);
-          }
-
-          // ⭐ IMPORTANT: Ignore refresh_chatlist events during selection
-          if (action === "refresh_chatlist") {
-            if (MODULE_IS_SELECTING) {
-              console.log("🚫 WS: Ignoring refresh_chatlist during selection");
-              return;
-            }
-            console.log("🔄 WS: refresh_chatlist");
-            // Silent refresh that respects local overrides
-            refresh(true);
           }
         } catch (err) {
           console.error("WS parse error:", err);
@@ -464,7 +431,6 @@ export const ChatProvider = ({ children }) => {
 
       ws.onclose = () => {
         if (isMounted) {
-          console.log("📡 WebSocket closed, reconnecting...");
           reconnectTimeout = setTimeout(connect, 2000);
         }
       };
@@ -480,20 +446,25 @@ export const ChatProvider = ({ children }) => {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (wsRef.current) wsRef.current.close();
     };
-  }, [token, moveToTop, markAsRead, refresh]);
+  }, [token, moveToTop, markAsRead]);
+
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // INITIAL LOAD
+  // INITIAL LOAD - Only fetch once, preserve state across navigation
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
     if (!token) return;
 
+    // IMPORTANT: Only fetch if NOT already initialized
     if (!isInitialized) {
-      fetchConversations(1, "", [], false, true);
+      // 🔥 silent=true so REST never overwrites WS state
+      fetchConversations(1, "", [], false, false);
       fetchTags();
     }
 
+
+    // Background refresh interval
     refreshIntervalRef.current = setInterval(() => {
       const cacheAge = Date.now() - lastFetchTime;
       if (cacheAge > CACHE_TTL && !isLoadingRef.current && isInitialized && !MODULE_IS_SELECTING) {
@@ -514,6 +485,7 @@ export const ChatProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
+      // State
       conversations: allConversations,
       isInitialLoading,
       isLoadingMore,
@@ -525,6 +497,8 @@ export const ChatProvider = ({ children }) => {
       serverSearch,
       serverTags,
       isInitialized,
+
+      // Actions
       loadMore,
       refresh,
       searchConversations,
@@ -532,6 +506,8 @@ export const ChatProvider = ({ children }) => {
       moveToTop,
       markAsRead,
       fetchTags,
+      
+      // ⭐ Module-level scroll position (survives remounts!)
       setSavedScrollPosition,
       getSavedScrollPosition,
       forceSavedScrollPosition,
@@ -567,6 +543,10 @@ export const ChatProvider = ({ children }) => {
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOK - Use this in components
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const useChatContext = () => {
   const context = useContext(ChatContext);
