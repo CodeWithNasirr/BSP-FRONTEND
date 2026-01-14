@@ -15,29 +15,22 @@ import MarkPurchaseModal from "./MarkPurchaseModal";
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * VIRTUALIZED WHATSAPP-STYLE CHAT LIST (FIXED VERSION)
+ * FIXED WHATSAPP-STYLE CHAT LIST
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * FIXES:
- * ✅ Infinite scroll now loads ALL pages (not just page 2)
- * ✅ Cached state - no reload when returning from chat
- * ✅ Proper scroll event handling for load detection
+ * KEY FIXES:
+ * ✅ Always fetch fresh data on WebSocket "new_message" event
+ * ✅ Reduced cache TTL to 10 seconds for real-time feel
+ * ✅ Proper handling of new messages whether user is on chatlist or not
+ * ✅ Cache invalidation on navigation back to chatlist
  */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 📐 CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
 
 const ITEM_HEIGHT = 88;
 const BUFFER_SIZE = 5;
 const OVERSCAN = 3;
-const SCROLL_THRESHOLD = 300; // px from bottom to trigger load
+const SCROLL_THRESHOLD = 300;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 💾 SIMPLE CACHE (persists across component mounts)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Cache object lives outside component - survives unmount/remount
+// Cache persists across component mounts
 const listCache = {
   conversations: [],
   page: 1,
@@ -48,12 +41,9 @@ const listCache = {
   lastFetchTime: 0,
 };
 
-const CACHE_TTL = 30000; // 30 seconds - refetch if older
+const CACHE_TTL = 10000; // ✅ REDUCED to 10 seconds (from 30)
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🎨 VIRTUALIZED CHAT ITEM
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Virtualized Chat Item Component
 const VirtualChatItem = memo(
   ({ conv, style, onSelect, onMarkPurchase, formatTimestamp }) => (
     <div
@@ -63,7 +53,6 @@ const VirtualChatItem = memo(
                  border-b border-gray-50 transition-colors"
       onClick={() => onSelect(conv.recipient)}
     >
-      {/* Avatar */}
       <div className="flex-shrink-0">
         <div
           className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 
@@ -73,7 +62,6 @@ const VirtualChatItem = memo(
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0 py-0.5">
         <div className="flex items-baseline justify-between gap-2">
           <h4 className="font-semibold text-gray-900 truncate text-[15px]">
@@ -138,14 +126,9 @@ const VirtualChatItem = memo(
 
 VirtualChatItem.displayName = "VirtualChatItem";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🏠 MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Main Component
 const ChatListVirtualized = ({ onSelectConversation }) => {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // STATE - Initialize from cache if available
-  // ═══════════════════════════════════════════════════════════════════════════
+  // State
   const [conversations, setConversations] = useState(() => listCache.conversations);
   const [searchQuery, setSearchQuery] = useState(() => listCache.searchQuery);
   const [debouncedSearch, setDebouncedSearch] = useState(() => listCache.searchQuery);
@@ -154,20 +137,17 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   const [showTags, setShowTags] = useState(false);
   const token = localStorage.getItem("authToken");
 
-  // Pagination
   const [page, setPage] = useState(() => listCache.page);
   const [hasMore, setHasMore] = useState(() => listCache.hasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(() => listCache.conversations.length === 0);
-
-  // New messages indicator
   const [newMessagesCount, setNewMessagesCount] = useState(0);
-
-  // Scroll state for virtualization
   const [scrollTop, setScrollTop] = useState(() => listCache.scrollTop);
   const [containerHeight, setContainerHeight] = useState(0);
 
-  // Modal
+  // ✅ NEW: Track if user is currently viewing chatlist
+  const [isVisible, setIsVisible] = useState(true);
+
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [purchaseForm, setPurchaseForm] = useState({
@@ -177,30 +157,43 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     tagInput: "",
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // REFS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Refs
   const listContainerRef = useRef(null);
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef(null);
-
-  // Stable refs for async callbacks
   const pageRef = useRef(page);
   const hasMoreRef = useRef(hasMore);
   const searchRef = useRef(debouncedSearch);
   const tagsRef = useRef(selectedTags);
   const conversationsRef = useRef(conversations);
 
-  // Keep refs updated
   useEffect(() => { pageRef.current = page; }, [page]);
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { searchRef.current = debouncedSearch; }, [debouncedSearch]);
   useEffect(() => { tagsRef.current = selectedTags; }, [selectedTags]);
   useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CACHE SYNC - Save state to cache on changes
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ NEW: Track visibility to know when to refresh
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setIsVisible(true);
+        // ✅ Force refresh when returning to chatlist
+        const cacheAge = Date.now() - listCache.lastFetchTime;
+        if (cacheAge > CACHE_TTL) {
+          console.log("🔄 Chatlist became visible, refreshing...");
+          fetchChatListInternal(1, searchRef.current, tagsRef.current, false);
+        }
+      } else {
+        setIsVisible(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Cache sync
   useEffect(() => {
     listCache.conversations = conversations;
     listCache.page = page;
@@ -209,23 +202,19 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     listCache.selectedTags = selectedTags;
   }, [conversations, page, hasMore, debouncedSearch, selectedTags]);
 
-  // Save scroll position on scroll
   const saveScrollPosition = useCallback(() => {
     if (listContainerRef.current) {
       listCache.scrollTop = listContainerRef.current.scrollTop;
     }
   }, []);
 
-  // Restore scroll position on mount
   useEffect(() => {
     if (listContainerRef.current && listCache.scrollTop > 0) {
       listContainerRef.current.scrollTop = listCache.scrollTop;
     }
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VIRTUALIZATION CALCULATIONS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Virtualization
   const totalHeight = conversations.length * ITEM_HEIGHT;
 
   const visibleRange = useMemo(() => {
@@ -256,9 +245,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     return items;
   }, [visibleRange, conversations]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SCROLL HANDLER (Fixed - proper infinite scroll detection)
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Scroll handler
   useEffect(() => {
     const container = listContainerRef.current;
     if (!container) return;
@@ -273,13 +260,9 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           const scrollHeight = container.scrollHeight;
           const clientHeight = container.clientHeight;
           
-          // Update scroll position for virtualization
           setScrollTop(currentScrollTop);
-          
-          // Save to cache
           listCache.scrollTop = currentScrollTop;
 
-          // ⭐ KEY FIX: Check if near bottom and should load more
           const distanceFromBottom = scrollHeight - currentScrollTop - clientHeight;
           
           if (
@@ -287,7 +270,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
             hasMoreRef.current &&
             !isLoadingRef.current
           ) {
-            // Trigger load more
             loadMoreConversations();
           }
 
@@ -301,7 +283,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       setContainerHeight(container.clientHeight);
     };
 
-    // Initial measurement
     handleResize();
     
     container.addEventListener("scroll", handleScroll, { passive: true });
@@ -312,36 +293,22 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       container.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
     };
-  }, []); // Empty deps - refs handle the values
+  }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LOAD MORE FUNCTION (Separated for clarity)
-  // ═══════════════════════════════════════════════════════════════════════════
   const loadMoreConversations = useCallback(() => {
     if (isLoadingRef.current || !hasMoreRef.current) return;
-
     const nextPage = pageRef.current + 1;
-    // console.log(`📜 Loading page ${nextPage}...`);
-    
     setPage(nextPage);
     fetchChatListInternal(nextPage, searchRef.current, tagsRef.current, true);
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FETCH CHAT LIST (Core API call)
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ FIXED: Core fetch function
   const fetchChatListInternal = useCallback(
     async (pageNum, query, tags, isAppending = false) => {
-      // Prevent duplicate fetches
-      if (isLoadingRef.current) {
-        // console.log("⏳ Already loading, skipping...");
-        return;
-      }
+      if (isLoadingRef.current) return;
       
       isLoadingRef.current = true;
-      // console.log(`📡 Fetching page ${pageNum}, appending: ${isAppending}`);
 
-      // Cancel pending request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -368,29 +335,23 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
         const data = response.data;
         const newItems = data.results || [];
-        
-        // console.log(`✅ Received ${newItems.length} items, hasNext: ${!!data.next}`);
 
         if (isAppending) {
-          // Append new items, deduplicate
           setConversations((prev) => {
             const ids = new Set(prev.map((c) => c.recipient));
             const uniqueNew = newItems.filter((c) => !ids.has(c.recipient));
-            // console.log(`📝 Appending ${uniqueNew.length} unique items`);
             return [...prev, ...uniqueNew];
           });
         } else {
-          // Fresh load
           setConversations(newItems);
           setNewMessagesCount(0);
         }
 
-        // Update hasMore
         const hasNext = !!data.next;
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
         
-        // Update cache timestamp
+        // ✅ Update cache timestamp
         listCache.lastFetchTime = Date.now();
 
       } catch (err) {
@@ -407,9 +368,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     [token]
   );
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DEBOUNCED SEARCH
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Debounced search
   const debouncedSetSearch = useMemo(
     () => debounce((val) => setDebouncedSearch(val), 400),
     []
@@ -425,30 +384,27 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
   useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INITIAL LOAD & FILTER CHANGES
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Initial load
   useEffect(() => {
     if (!token) return;
 
-    // Check if we should use cache or fetch fresh
     const cacheAge = Date.now() - listCache.lastFetchTime;
     const filtersChanged = 
       listCache.searchQuery !== debouncedSearch ||
       JSON.stringify(listCache.selectedTags) !== JSON.stringify(selectedTags);
 
+    // ✅ Use cache only if fresh and filters haven't changed
     if (
       listCache.conversations.length > 0 &&
       cacheAge < CACHE_TTL &&
       !filtersChanged
     ) {
-      // console.log("📦 Using cached data");
+      console.log("📦 Using cached data");
       setIsInitialLoad(false);
       return;
     }
 
-    // Fetch fresh data
-    // console.log("🔄 Fetching fresh data");
+    console.log("🔄 Fetching fresh data");
     setPage(1);
     pageRef.current = 1;
     setHasMore(true);
@@ -462,28 +418,19 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     fetchChatListInternal(1, debouncedSearch, selectedTags, false);
   }, [token, debouncedSearch, selectedTags, fetchChatListInternal]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CHAT SELECTION (Preserves cache)
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Chat selection
   const handleSelect = useCallback(
     (recipient) => {
-      // Mark as read locally
       setConversations((prev) =>
         prev.map((c) => (c.recipient === recipient ? { ...c, unread_count: 0 } : c))
       );
-
-      // Save scroll position before navigating
       saveScrollPosition();
-
-      // Call parent handler
       onSelectConversation(recipient);
     },
     [onSelectConversation, saveScrollPosition]
   );
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WEBSOCKET
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ FIXED: WebSocket handler
   useEffect(() => {
     if (!token) return;
 
@@ -501,6 +448,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        console.log("✅ WebSocket connected");
         pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "pong" }));
@@ -512,6 +460,8 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         if (!isMounted) return;
         try {
           const data = JSON.parse(e.data || "{}");
+          
+          // Handle ping
           if (data.type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
             return;
@@ -520,27 +470,29 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           const action = data.message?.action;
           const payload = data.message?.data;
 
-          if (action === "refresh_chatlist") {
-            // Invalidate cache and refetch
+          console.log("📨 WebSocket message:", action, payload);
+
+          // ✅ FIX: Always refresh on new_message action
+          if (action === "new_message") {
+            console.log("🔔 New message received, refreshing chat list...");
+            
+            // Invalidate cache and fetch fresh data
             listCache.lastFetchTime = 0;
             fetchChatListInternal(1, searchRef.current, tagsRef.current, false);
-          } else if (action === "new_message" && payload) {
-            // Move conversation to top
-            setConversations((prev) => {
-              const idx = prev.findIndex((c) => c.recipient === payload.recipient);
-              const updated = {
-                recipient: payload.recipient,
-                user_name: payload.user_name || prev[idx]?.user_name || "Unknown",
-                last_message_text: payload.text_content || "",
-                last_message_at: payload.timestamp || new Date().toISOString(),
-                tags: payload.tags || prev[idx]?.tags || [],
-                unread_count: (prev[idx]?.unread_count || 0) + 1,
-              };
-              if (idx === -1) return [updated, ...prev];
-              const list = prev.filter((_, i) => i !== idx);
-              return [updated, ...list];
-            });
-            setNewMessagesCount((c) => c + 1);
+            
+            // Show notification if user is not on chatlist
+            if (!document.hasFocus() || document.visibilityState !== 'visible') {
+              setNewMessagesCount((c) => c + 1);
+            }
+          } else if (action === "mark_read" && payload) {
+            // Update unread count locally without full refresh
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.recipient === payload.recipient
+                  ? { ...c, unread_count: 0 }
+                  : c
+              )
+            );
           }
         } catch (err) {
           console.error("WS parse error:", err);
@@ -548,12 +500,16 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       };
 
       ws.onclose = () => {
+        console.log("❌ WebSocket closed, reconnecting...");
         if (isMounted) {
           reconnectTimeout = setTimeout(connect, 2000);
         }
       };
       
-      ws.onerror = () => ws.close();
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        ws.close();
+      };
     };
 
     connect();
@@ -566,9 +522,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     };
   }, [token, fetchChatListInternal]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TAG HANDLERS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Tag handlers
   const handleTagChange = useCallback((tag) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -587,9 +541,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       .catch(() => {});
   }, [token]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MODAL
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Modal handlers
   const handleOpenModal = useCallback((contact) => {
     setSelectedContact(contact);
     setPurchaseForm({ amount: "", location: "", tags: contact.tags || [], tagInput: "" });
@@ -601,9 +553,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     setSelectedContact(null);
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // UTILS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Utils
   const formatTimestamp = useCallback((ts) => {
     if (!ts) return "";
     const d = new Date(ts);
@@ -630,9 +580,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
   const isScrolledDown = scrollTop > 200;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Render
   return (
     <div className="flex flex-col h-full bg-white relative">
       {/* Header */}
@@ -674,7 +622,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
             </div>
           )}
 
-          {/* Active filters */}
           {(selectedTags.length > 0 || debouncedSearch) && (
             <div className="flex items-center gap-2 mt-2 text-xs">
               <span className="text-gray-500">Filters:</span>
@@ -709,13 +656,12 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         </button>
       )}
 
-      {/* Virtualized List Container */}
+      {/* Virtualized List */}
       <div
         ref={listContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        {/* Loading */}
         {isInitialLoad && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -723,7 +669,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           </div>
         )}
 
-        {/* Empty */}
         {!isInitialLoad && conversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -742,7 +687,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           </div>
         )}
 
-        {/* Virtualized List */}
         {!isInitialLoad && conversations.length > 0 && (
           <div style={{ height: totalHeight, position: "relative" }}>
             {visibleItems.map(({ conv, style }) => (
@@ -758,7 +702,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           </div>
         )}
 
-        {/* Loading More */}
         {isLoadingMore && (
           <div className="flex items-center justify-center py-4">
             <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -766,7 +709,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           </div>
         )}
 
-        {/* End indicator */}
         {!hasMore && conversations.length > 10 && (
           <div className="text-center py-6 text-xs text-gray-400">
             — End of conversations —
@@ -774,7 +716,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         )}
       </div>
 
-      {/* Scroll to Top */}
       {isScrolledDown && newMessagesCount === 0 && (
         <button
           onClick={scrollToTop}
@@ -785,7 +726,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         </button>
       )}
 
-      {/* Modal */}
       <MarkPurchaseModal
         show={showPurchaseModal}
         onClose={handleCloseModal}
