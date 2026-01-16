@@ -40,7 +40,7 @@ const MessageNode = ({ data, selected }) => {
               autoClose: 2000,
             });
       } catch (err) {
-        toast.update("media-upload", {
+        toast.info("media-upload", {
           render: "Upload failed",
           type: "error",
           isLoading: false,
