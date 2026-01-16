@@ -19,7 +19,7 @@ const MEDIA_RULES = {
     "audio/mpeg",
     "audio/ogg",
     "audio/opus",
-    // "audio/mp4",     // .m4a (standard)
+    "audio/mp4",     // .m4a (standard)
     // "audio/x-m4a",   // .m4a (legacy / optional)
   ],
 
