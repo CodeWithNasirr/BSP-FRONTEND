@@ -19,8 +19,8 @@ const MEDIA_RULES = {
     "audio/mpeg",
     "audio/ogg",
     "audio/opus",
-    "audio/mp4",     // .m4a (standard)
-    "audio/x-m4a",   // .m4a (legacy / optional)
+    // "audio/mp4",     // .m4a (standard)
+    // "audio/x-m4a",   // .m4a (legacy / optional)
   ],
 
     maxSize: 16 * 1024 * 1024, // 16 MB
