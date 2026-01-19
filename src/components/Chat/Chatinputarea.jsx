@@ -289,14 +289,14 @@ const ChatInputArea = ({
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 w-full">
               <input
                 type="text"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && confirmFileSend()}
                 placeholder="Add a caption..."
-                className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                className="flex-1 min-w-0 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100"
                 style={{ fontSize: '16px' }}
               />
               <button
@@ -462,7 +462,7 @@ const ChatInputArea = ({
           )}
 
           {/* Input Container */}
-          <div className="flex-1 flex items-end bg-gray-100 rounded-[24px] min-h-[44px] focus-within:bg-white focus-within:ring-2 focus-within:ring-green-200 focus-within:shadow-sm transition-all">
+          <div className="relative flex-1 flex items-end bg-gray-100 rounded-[24px] min-h-[44px] focus-within:bg-white focus-within:ring-2 focus-within:ring-green-200 focus-within:shadow-sm transition-all">
             <button
               type="button"
               onClick={() => setShowEmojiPicker(prev => !prev)}
@@ -474,15 +474,24 @@ const ChatInputArea = ({
             </button>
 
             <button
-             type="button"
+              type="button"
               onClick={() => {
                 setShowScheduler(prev => !prev);
-                setShowEmojiPicker(false); // ✅ close emoji if open
+                setShowEmojiPicker(false);
               }}
-              className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-700"
+              className="
+                absolute right-2 bottom-2
+                sm:static sm:right-auto sm:bottom-auto
+                w-9 h-9
+                flex items-center justify-center
+                text-gray-500 hover:text-gray-700
+                bg-white sm:bg-transparent
+                rounded-full shadow sm:shadow-none
+              "
             >
               ⏰
             </button>
+
 
 
             <textarea
@@ -493,7 +502,7 @@ const ChatInputArea = ({
               placeholder="Message"
               maxLength={1000}
               rows={1}
-              className="flex-1 py-3 pr-3 bg-transparent text-gray-900 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-[120px] leading-5 scrollbar-hide"
+              className="flex-1 py-3 pr-12 sm:pr-3 bg-transparent text-gray-900 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-[120px] leading-5 scrollbar-hide"
               style={{ fontSize: '16px' }}
             />
           </div>
