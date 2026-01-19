@@ -27,6 +27,74 @@ const ChatWindow = ({ recipient }) => {
   const [selectedSessionId, setSessionFlowId] = useState(null);
   const [showFlowSelector, setShowFlowSelector] = useState(false);
 
+  // ========== sheduler logic here  ==========
+  const [scheduledMessages, setScheduledMessages] = useState([]);
+  const [, forceUpdate] = useState(0);
+  console.log(scheduledMessages,"ASDADADSSSSSSSSSSSSSSSS")
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate(v => v + 1); // re-render every minute
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+  const fetchScheduledMessages = async () => {
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/api/scheduled/${recipient}/`,
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        setScheduledMessages(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch scheduled messages", err);
+      }
+    };
+  useEffect(() => {
+    if (!recipient || !token) return;
+    fetchScheduledMessages();
+    }, [recipient, token]);
+
+
+
+  const handleDeleteScheduled = async (id) => {
+      try {
+        await axios.delete(
+          `${API_BASE_URL}/api/scheduled/delete/${id}/`,
+          { headers: { Authorization: `Token ${token}` } }
+        );
+
+        setScheduledMessages(prev => prev.filter(m => m.id !== id));
+        toast.success("Scheduled message deleted");
+      } catch (err) {
+        toast.error("Failed to delete scheduled message");
+      }
+    };
+
+    const getRemainingTime = (sendAt) => {
+      const now = new Date();
+      const target = new Date(sendAt);
+      const diffMs = target - now;
+
+      if (diffMs <= 0) return "sending now";
+
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const days = Math.floor(totalMinutes / (60 * 24));
+      const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+      const minutes = totalMinutes % 60;
+
+      if (days > 0) return `in ${days}d ${hours}h`;
+      if (hours > 0) return `in ${hours}h ${minutes}m`;
+      return `in ${minutes}m`;
+    };
+
+ 
+
+
+
+
+
   // ═══════════════════════════════════════════════════════════════════════════
   // FILE TYPE CONFIGURATION
   // ═══════════════════════════════════════════════════════════════════════════
@@ -392,8 +460,26 @@ const ChatWindow = ({ recipient }) => {
   /**
    * Handle text/interactive message from ChatInputArea
    */
-  const handleSendText = async ({ message_text, buttons = [] }) => {
+  const handleSendText = async ({ message_text, buttons = [],scheduleAt = null }) => {
     if (!message_text.trim()) return;
+
+    // 🕒 SCHEDULED
+    if (scheduleAt) {
+      await axios.post(
+        `${API_BASE_URL}/api/chat/schedule-message/`,
+        {
+          recipient,
+          message_text,
+          buttons,
+          send_at: scheduleAt,
+        },
+        { headers: { Authorization: `Token ${token}` } }
+      );
+
+      toast.success("Message scheduled");
+      await fetchScheduledMessages();
+      return;
+    }
 
     const tempId = "temp_" + Date.now();
 
@@ -420,17 +506,19 @@ const ChatWindow = ({ recipient }) => {
         url: "",
       };
 
+
       await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, body, {
         headers: {
           Authorization: `Token ${token}`,
           "Content-Type": "application/json",
         },
       });
-
+     
       setMessages(prev =>
         prev.map(m => (m.temp_id === tempId ? { ...m, status: "sent" } : m))
       );
-    } catch (error) {
+    }
+     catch (error) {
       console.error("Error sending text message:", error);
       setMessages(prev =>
         prev.map(m => (m.temp_id === tempId ? { ...m, status: "failed" } : m))
@@ -444,7 +532,7 @@ const ChatWindow = ({ recipient }) => {
   /**
    * Handle file upload from ChatInputArea
    */
-  const handleSendFile = async ({ file, caption = "" }) => {
+  const handleSendFile = async ({ file, caption = "" , scheduleAt = null }) => {
     if (!file) return;
 
     if (!isFileTypeAllowed(file)) {
@@ -456,6 +544,27 @@ const ChatWindow = ({ recipient }) => {
       toast.error(`File too large. Maximum: ${formatFileSize(allowedFiles.maxSize)}`);
       return;
     }
+
+    // 🕒 SCHEDULED
+    if (scheduleAt) {
+      const formData = new FormData();
+      formData.append("recipient", recipient);
+      formData.append("message_text", caption);
+      formData.append("url", file);
+      formData.append("send_at", scheduleAt);
+
+      await axios.post(
+        `${API_BASE_URL}/api/chat/schedule-message/`,
+        formData,
+        { headers: { Authorization: `Token ${token}` } }
+      );
+
+      toast.success("File scheduled");
+      await fetchScheduledMessages();
+      return;
+    }
+
+
 
     const tempId = "temp_" + Date.now();
 
@@ -487,9 +596,12 @@ const ChatWindow = ({ recipient }) => {
         },
       });
 
+   
       setMessages(prev =>
         prev.map(m => (m.temp_id === tempId ? { ...m, status: "sent" } : m))
       );
+     
+
     } catch (error) {
       console.error("Error sending file:", error);
       setMessages(prev =>
@@ -504,7 +616,26 @@ const ChatWindow = ({ recipient }) => {
   /**
    * Handle voice message from ChatInputArea
    */
-  const handleSendVoice = async (audioFile, duration) => {
+  const handleSendVoice = async (audioFile, duration,scheduleAt = null) => {
+    // 🕒 SCHEDULED
+    if (scheduleAt) {
+      const formData = new FormData();
+      formData.append("recipient", recipient);
+      formData.append("url", audioFile);
+      formData.append("voice_duration", duration);
+      formData.append("send_at", scheduleAt);
+
+      await axios.post(
+        `${API_BASE_URL}/api/chat/schedule-message/`,
+        formData,
+        { headers: { Authorization: `Token ${token}` } }
+      );
+
+      toast.success("Voice message scheduled");
+      await fetchScheduledMessages();
+      return;
+    }
+
     const tempId = "temp_" + Date.now();
 
     const optimisticMessage = {
@@ -527,6 +658,7 @@ const ChatWindow = ({ recipient }) => {
       formData.append("recipient", recipient);
       formData.append("message_text", "");
       formData.append("url", audioFile);
+
 
       await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, {
         headers: {
@@ -841,6 +973,27 @@ const ChatWindow = ({ recipient }) => {
           ref={chatContainerRef}
           className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
         >
+          {scheduledMessages.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {scheduledMessages.map(msg => (
+              <div
+                key={msg.id}
+                className="flex justify-center"
+              >
+                <div className="flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs shadow">
+                  ⏰ Scheduled {getRemainingTime(msg.send_at)}
+                  <button
+                    onClick={() => handleDeleteScheduled(msg.id)}
+                    className="ml-2 text-red-600 hover:text-red-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
           <ul className="flex flex-col gap-3">
             {Object.keys(groupedMessages)
               .sort((a, b) => new Date(a) - new Date(b))

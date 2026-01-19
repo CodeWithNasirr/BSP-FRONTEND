@@ -51,6 +51,13 @@ const ChatInputArea = ({
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
 
+  const [scheduleAt, setScheduleAt] = useState(null);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const resetScheduler = () => {
+    setShowScheduler(false);
+    setScheduleAt(null);
+  };
+
   // Refs
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -106,8 +113,10 @@ const ChatInputArea = ({
       onSendText?.({
         message_text: messageText.trim(),
         buttons: interactiveButtons,
+        scheduleAt,
       });
       resetForm();
+      resetScheduler();
       return;
     }
 
@@ -116,8 +125,10 @@ const ChatInputArea = ({
       onSendText?.({
         message_text: messageText.trim(),
         buttons: [],
+        scheduleAt,
       });
       setMessageText('');
+      resetScheduler();
       return;
     }
 
@@ -126,9 +137,11 @@ const ChatInputArea = ({
       onSendFile?.({
         file: selectedFile,
         caption: messageText.trim(),
+        scheduleAt,
       });
       cancelFile();
       setMessageText('');
+      resetScheduler();
     }
   };
 
@@ -174,8 +187,9 @@ const ChatInputArea = ({
   };
 
   const handleVoiceSend = (audioFile, duration) => {
-    onSendVoice?.(audioFile, duration);
+    onSendVoice?.(audioFile, duration,scheduleAt);
     setIsVoiceMode(false);
+    resetScheduler();
   };
 
   const resetForm = () => {
@@ -183,6 +197,7 @@ const ChatInputArea = ({
     setInteractiveButtons([]);
     setIsInteractiveMode(false);
     setNewButtonTitle('');
+    resetScheduler();
   };
 
   const addButton = () => {
@@ -392,6 +407,34 @@ const ChatInputArea = ({
           <div className="fixed inset-0 bg-black/20 -z-10 sm:hidden" onClick={() => setShowEmojiPicker(false)} />
         </div>
       )}
+      {/* Scheduler Picker */}
+      {showScheduler && (
+        <div className="absolute bottom-full left-0 right-0 sm:left-3 sm:right-auto mb-1 z-50">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-3">
+            <label className="block text-xs text-gray-500 mb-1">
+              Schedule message
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleAt || ""}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
+            />
+            <button
+              type="button"
+              onClick={() => setShowScheduler(false)}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+          <div
+            className="fixed inset-0 bg-black/20 -z-10 sm:hidden"
+            onClick={() => setShowScheduler(false)}
+          />
+        </div>
+      )}
+
 
       {/* Main Input */}
       {!selectedFile && (
@@ -429,6 +472,18 @@ const ChatInputArea = ({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
               </svg>
             </button>
+
+            <button
+             type="button"
+              onClick={() => {
+                setShowScheduler(prev => !prev);
+                setShowEmojiPicker(false); // ✅ close emoji if open
+              }}
+              className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-700"
+            >
+              ⏰
+            </button>
+
 
             <textarea
               ref={textareaRef}
