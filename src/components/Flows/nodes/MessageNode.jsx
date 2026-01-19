@@ -16,6 +16,8 @@ const MessageNode = ({ data, selected }) => {
   const [radius, setRadius] = useState(data.radius || '5');
   const [collectInput, setCollectInput] = useState(data.collect_input || false);
   const [inputKey, setInputKey] = useState(data.input_key || '');
+  const [stopFlow, setStopFlow] = useState(data.stop_flow || false);
+
  
   const handleFileUpload = async (file) => {
       // toast.loading("Uploading media...", { id: "media-upload" });
@@ -74,6 +76,7 @@ const MessageNode = ({ data, selected }) => {
     }
     data.collect_input = collectInput;
     data.input_key = collectInput ? inputKey : '';
+    data.stop_flow = stopFlow;   // ✅ NEW
     setEditing(false);
   }; 
 
@@ -90,6 +93,11 @@ const MessageNode = ({ data, selected }) => {
           <Pencil size={14} />
         </button>
       </div>
+      {data.stop_flow && (
+        <div className="text-xs mt-2 p-1 bg-red-50 text-red-600 rounded">
+          🚫 Flow stops here
+        </div>
+        )}
 
       {editing ? (
         <div className="space-y-2 mb-2">
@@ -100,16 +108,32 @@ const MessageNode = ({ data, selected }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <label className="flex items-center text-xs cursor-pointer">
-            <Upload size={14} className="mr-1" />
-            Upload Media
-            <input
-              type="file"
-              accept="image/*,video/*,audio/*"
-              hidden
-              onChange={(e) => handleFileUpload(e.target.files[0])}
-            />
-          </label>
+          <div className="flex justify-center">
+            <label className="flex items-center gap-2 text-xs cursor-pointer 
+                              bg-blue-50 hover:bg-blue-100 
+                              border border-blue-200 
+                              text-blue-700 px-3 py-2 
+                              rounded-md transition">
+              <Upload size={16} />
+              Upload Media
+              <input
+                type="file"
+                accept="image/*,video/*,audio/*"
+                hidden
+                onChange={(e) => handleFileUpload(e.target.files[0])}
+              />
+            </label>
+          </div>
+
+           <input
+                type="checkbox"
+                checked={stopFlow}
+                onChange={(e) => setStopFlow(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-xs text-red-600 font-medium">
+                Stop flow after this message
+              </span>
           <label className="flex items-center">
             <input
               type="checkbox"
@@ -128,6 +152,7 @@ const MessageNode = ({ data, selected }) => {
             />
             <span className="text-xs">Collect Location</span>
           </label>
+          
           {collectLocation && (
             <div className="space-y-1">
               <input
@@ -153,6 +178,10 @@ const MessageNode = ({ data, selected }) => {
                 min="0"
                 step="0.1"
               />
+              <label className="flex items-center">
+             
+            </label>
+
             </div>
           )}
           <label className="flex items-center">
@@ -164,6 +193,7 @@ const MessageNode = ({ data, selected }) => {
             />
             <span className="text-xs">Collect Input</span>
           </label>
+          
           {collectInput && (
             <input
               type="text"
@@ -173,6 +203,7 @@ const MessageNode = ({ data, selected }) => {
               onChange={(e) => setInputKey(e.target.value)}
             />
           )}
+          
           <button
             onClick={handleSave}
             className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
