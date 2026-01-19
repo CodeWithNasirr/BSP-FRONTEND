@@ -100,8 +100,8 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
         >
           <Image className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium text-sm">Image + Text + Buttons</h4>
-            <p className="text-xs text-gray-500">Message with image and buttons</p>
+            <h4 className="font-medium text-sm">Media + Text + Buttons</h4>
+            <p className="text-xs text-gray-500">Message with Media and buttons</p>
           </div>
         </div> 
 

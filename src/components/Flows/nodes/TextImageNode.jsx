@@ -12,6 +12,7 @@ const TextButtonsNode = ({ data, selected }) => {
   const [buttons, setButtons] = useState(data.buttons || []);
   const [mediaUrl, setMediaUrl] = useState(data.media_url || "");
   const [mediaType, setMediaType] = useState(data.media_type || "");
+  const [stopFlow, setStopFlow] = useState(data.stop_flow || false);
    
 
   const handleFileUpload = async (file) => {
@@ -30,6 +31,8 @@ const TextButtonsNode = ({ data, selected }) => {
       data.message = message;
       data.footerText = footer;
       data.buttons = buttons;
+      data.stop_flow = stopFlow;
+
 
       // ✅ Auto-close editor (auto-save UX)
       setEditing(false);
@@ -100,6 +103,7 @@ const TextButtonsNode = ({ data, selected }) => {
   data.buttons = buttons;
   data.media_url = mediaUrl;
   data.media_type = mediaType;
+  data.stop_flow = stopFlow;   // ✅ NEW
 
   setEditing(false);
 };
@@ -109,15 +113,32 @@ const TextButtonsNode = ({ data, selected }) => {
     <div className={`px-4 py-3 rounded-lg bg-node-message border ${selected ? 'border-blue-400' : 'border-blue-200'} min-w-[220px] max-w-[300px]`}>
       <Handle type="target" position={Position.Top} />
 
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center">
-          <MessageSquare className="mr-2 text-blue-500" size={16} />
-          <div className="text-sm font-medium text-blue-800">Image + Text + Buttons</div>
+      <div className="mb-2">
+        {/* Header row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <MessageSquare className="mr-2 text-blue-500" size={16} />
+            <div className="text-sm font-medium text-blue-800">
+              Media + Text + Buttons
+            </div>
+          </div>
+
+          <button
+            onClick={() => setEditing(!editing)}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            <Pencil size={14} />
+          </button>
         </div>
-        <button onClick={() => setEditing(!editing)} className="text-blue-500 hover:text-blue-700">
-          <Pencil size={14} />
-        </button>
+
+        {/* Stop-flow badge */}
+        {data.stop_flow && (
+          <div className="mt-2 text-xs p-1 bg-red-50 text-red-600 rounded text-center">
+            🚫 Flow stops here
+          </div>
+        )}
       </div>
+
 
       {editing ? (
         <div className="space-y-2 mb-2">
@@ -134,6 +155,16 @@ const TextButtonsNode = ({ data, selected }) => {
               />
             </label>
           </div>
+           <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={stopFlow}
+              onChange={(e) => setStopFlow(e.target.checked)}
+            />
+            <span className="text-xs text-red-600 font-medium">
+              Stop flow after this message
+            </span>
+          </label>
 
           <textarea
             className="w-full text-xs p-2 border border-blue-200 rounded"

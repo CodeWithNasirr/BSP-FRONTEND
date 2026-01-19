@@ -12,6 +12,9 @@ const TextButtonsNode = ({ data, selected }) => {
     data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false, checkout: false }]
   );
 
+  const [stopFlow, setStopFlow] = useState(data.stop_flow || false);
+  
+
   const handleAddButton = () => {
     if (buttons.length >= MAX_BUTTONS) return; // 🚫 hard stop
 
@@ -56,6 +59,7 @@ const TextButtonsNode = ({ data, selected }) => {
   const handleSave = () => {
     data.message = message;
     data.buttons = buttons;
+    data.stop_flow = stopFlow;   // ✅ NEW
     setEditing(false);
   };
 
@@ -63,18 +67,44 @@ const TextButtonsNode = ({ data, selected }) => {
     <div className={`px-4 py-3 rounded-lg bg-node-message border ${selected ? 'border-blue-400' : 'border-blue-200'} min-w-[220px] max-w-[300px]`}>
       <Handle type="target" position={Position.Top} />
 
-      <div className="flex items-center justify-between mb-2">
+    <div className="mb-2">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center">
           <MessageSquare className="mr-2 text-blue-500" size={16} />
-          <div className="text-sm font-medium text-blue-800">Text + Buttons</div>
+          <div className="text-sm font-medium text-blue-800">
+            Text + Buttons
+          </div>
         </div>
-        <button onClick={() => setEditing(!editing)} className="text-blue-500 hover:text-blue-700">
+
+        <button
+          onClick={() => setEditing(!editing)}
+          className="text-blue-500 hover:text-blue-700"
+        >
           <Pencil size={14} />
         </button>
       </div>
 
+      {/* Stop flow indicator */}
+      {data.stop_flow && (
+        <div className="mt-2 text-xs p-1 bg-red-50 text-red-600 rounded text-center">
+          🚫 Flow stops here
+        </div>
+      )}
+    </div>
+
+
       {editing ? (
         <div className="space-y-2 mb-2">
+           <input
+                type="checkbox"
+                checked={stopFlow}
+                onChange={(e) => setStopFlow(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-xs text-red-600 font-medium">
+                Stop flow after this message
+              </span>
           <textarea
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}
@@ -82,6 +112,8 @@ const TextButtonsNode = ({ data, selected }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
+         
+
 
           {buttons.map((btn, index) => (
             <div key={index} className="space-y-1 border p-2 rounded">
@@ -197,6 +229,7 @@ const TextButtonsNode = ({ data, selected }) => {
           </div>
         </>
       )}
+
 
       {/* Dynamic source handles for each button */}
       {buttons.map((_, index) => (
