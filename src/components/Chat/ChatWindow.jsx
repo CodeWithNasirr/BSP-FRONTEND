@@ -30,7 +30,7 @@ const ChatWindow = ({ recipient }) => {
   // ========== sheduler logic here  ==========
   const [scheduledMessages, setScheduledMessages] = useState([]);
   const [, forceUpdate] = useState(0);
-  console.log(scheduledMessages,"ASDADADSSSSSSSSSSSSSSSS")
+
   useEffect(() => {
     const interval = setInterval(() => {
       forceUpdate(v => v + 1); // re-render every minute
@@ -968,31 +968,35 @@ const ChatWindow = ({ recipient }) => {
           </div>
         )}
 
+        {/* Scheduled Messages Status Bar */}
+        {scheduledMessages.length > 0 && (
+          <div className="sticky top-[56px] z-40 bg-yellow-50 border-b border-yellow-200 px-3 py-2">
+            <div className="flex flex-col gap-2">
+              {scheduledMessages.map(msg => (
+                <div
+                  key={msg.id}
+                  className="flex items-center justify-between text-xs bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-full shadow"
+                >
+                  <span>
+                    ⏰ Scheduled {getRemainingTime(msg.send_at)}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteScheduled(msg.id)}
+                    className="ml-2 text-red-600 hover:text-red-800 font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Chat Messages */}
         <div
           ref={chatContainerRef}
           className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
         >
-          {scheduledMessages.length > 0 && (
-          <div className="mb-4 space-y-2">
-            {scheduledMessages.map(msg => (
-              <div
-                key={msg.id}
-                className="flex justify-center"
-              >
-                <div className="flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs shadow">
-                  ⏰ Scheduled {getRemainingTime(msg.send_at)}
-                  <button
-                    onClick={() => handleDeleteScheduled(msg.id)}
-                    className="ml-2 text-red-600 hover:text-red-800"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
           <ul className="flex flex-col gap-3">
             {Object.keys(groupedMessages)
