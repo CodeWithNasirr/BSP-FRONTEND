@@ -463,6 +463,12 @@ const ChatWindow = ({ recipient }) => {
   const handleSendText = async ({ message_text, buttons = [],scheduleAt = null }) => {
     if (!message_text.trim()) return;
 
+
+    if (scheduleAt && subscriptionStatus?.plan === 'BASIC') {
+      toast.error("Scheduling is not available on the Basic plan");
+      return;
+    }
+
     // 🕒 SCHEDULED
     if (scheduleAt) {
       await axios.post(

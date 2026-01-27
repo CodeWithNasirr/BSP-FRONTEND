@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 import VoiceRecorder from './VoiceRecorder';
+import { toast } from 'react-toastify';
 
 /**
  * ChatInputArea - WhatsApp-style chat input
@@ -57,6 +58,14 @@ const ChatInputArea = ({
     setShowScheduler(false);
     setScheduleAt(null);
   };
+
+
+  const isBasicPlan =
+    subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
+
+
+  const plan = subscriptionStatus?.plan?.toUpperCase();
+
 
   // Refs
   const textareaRef = useRef(null);
@@ -155,6 +164,11 @@ const ChatInputArea = ({
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (isBasicPlan) {
+    toast.error("Upgrade required to send media files");
+    return;
+  }
 
     // Validate file type
     // if (allowedFiles.types.length > 0 && !allowedFiles.types.includes(file.type)) {
@@ -473,6 +487,7 @@ const ChatInputArea = ({
               </svg>
             </button>
 
+            {!isBasicPlan && (
             <button
               type="button"
               onClick={() => {
@@ -491,6 +506,7 @@ const ChatInputArea = ({
             >
               ⏰
             </button>
+            )}
 
 
 

@@ -32,7 +32,11 @@ function CreateCampaigns() {
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
   const token = localStorage.getItem('authToken');
   const [variables, setVariables] = useState([]);
-  const { isConnected } = useContext(Context);
+  const { isConnected,subscriptionStatus } = useContext(Context);
+
+  const isBasicPlan =
+    subscriptionStatus?.is_active && subscriptionStatus?.plan === 'BASIC';
+
 
   // Fetch templates, groups, contacts, and segments
   useEffect(() => {
@@ -359,11 +363,20 @@ function CreateCampaigns() {
                         id="template_name"
                       >
                         <option value="" disabled>Select a template</option>
-                        {templates.map((template, index) => (
-                          <option key={index} value={template.template_name}>
+                       {templates.map((template, index) => {
+                        const isMediaTemplate = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(
+                          template.header_type?.toUpperCase()
+                        );
+
+                        const disabled = isBasicPlan && isMediaTemplate;
+
+                        return (
+                          <option key={index} value={template.template_name} disabled={disabled}>
                             {template.template_name}
+                            {disabled ? ' (Upgrade required)' : ''}
                           </option>
-                        ))}
+                        );
+                      })}
                       </select>
                     </div>
 
