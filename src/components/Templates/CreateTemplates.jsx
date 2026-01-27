@@ -124,13 +124,13 @@ const headerButtonClick = (btn) => {
       return;
     }
     // 1️⃣ META BUTTON LIMIT RULES
-    const quickRepliesCount = formData.buttons.filter(b => b.type === "QUICK-REPLIES").length;
+    const quickRepliesCount = formData.buttons.filter(b => b.type === "QUICK_REPLY").length;
     const callbackCallCount = formData.buttons.filter(b =>
         b.type === "CALLBACK" || b.type === "PHONE_CALL"
     ).length;
 
     // a) Quick replies limit = 10
-    if (type === "QUICK-REPLIES" && quickRepliesCount >= 10) {
+    if (type === "QUICK_REPLY" && quickRepliesCount >= 10) {
         toast.error("You can add a maximum of 10 quick reply buttons.");
         return;
     }
@@ -632,7 +632,7 @@ const headerButtonClick = (btn) => {
 
                     <button
                       type="button"
-                      onMouseDown={() => bottomButtonClick("QUICK-REPLIES")}
+                      onMouseDown={() => bottomButtonClick("QUICK_REPLY")}
                       className="px-4 py-2 bg-slate-100 rounded-lg"
                     >
                       Add Quick Reply
@@ -810,7 +810,7 @@ const headerButtonClick = (btn) => {
               )}
 
 
-                {activeBottomButton === "QUICK-REPLIES" && isVisible && (
+                {activeBottomButton === "QUICK_REPLY" && isVisible && (
                 <div className="mt-4 mb-8">
                   <div className="bg-[#f9f9fa] p-4 rounded-lg">
 
@@ -837,7 +837,7 @@ const headerButtonClick = (btn) => {
 
                     <button
                       type="button"
-                      onMouseDown={() => addButton("QUICK-REPLIES")}
+                      onMouseDown={() => addButton("QUICK_REPLY")}
                       className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg"
                     >
                       Add Button
