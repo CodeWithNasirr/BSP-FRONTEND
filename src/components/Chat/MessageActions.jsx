@@ -1,11 +1,15 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // src/components/Chat/MessageActions.jsx
 // WhatsApp-style hover/long-press action menu for messages
+//
+// CHANGES:
+// ✅ Forward button now ENABLED with onForward callback
+// ✅ All three actions: Copy, Reply, Forward
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useRef } from "react";
 
-const MessageActions = ({ msg, onCopy, onReply, onClose, isOutbound }) => {
+const MessageActions = ({ msg, onCopy, onReply, onForward, onClose, isOutbound }) => {
   const menuRef = useRef(null);
 
   // Close on outside click
@@ -71,13 +75,16 @@ const MessageActions = ({ msg, onCopy, onReply, onClose, isOutbound }) => {
         Reply
       </button>
 
-      {/* Forward (future-ready, disabled) */}
+      {/* Forward — ✅ NOW ENABLED */}
       <button
-        disabled
-        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-400 
-                   cursor-not-allowed opacity-50"
+        onClick={() => {
+          onForward(msg);
+          onClose();
+        }}
+        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 
+                   hover:bg-gray-50 active:bg-gray-100 transition-colors"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
