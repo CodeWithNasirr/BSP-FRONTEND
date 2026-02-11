@@ -57,7 +57,7 @@ const MarkPurchaseModal = ({
 
       toast.success('Purchase marked successfully');
       onClose();
-      // fetchChatList();
+      fetchChatList();
     } catch (error) {
       console.log(error)
       toast.error(error.response?.data?.error || 'Failed to mark purchase');
