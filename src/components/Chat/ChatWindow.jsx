@@ -1422,7 +1422,7 @@ const ChatWindow = ({ recipient }) => {
           if (!acc.some((m) => msg.message_id && m.message_id === msg.message_id)) acc.push(msg);
           return acc;
         }, []);
-tx
+
         if (uniqueMessages.length > 0) {
           setContactName(
             uniqueMessages[0].user_name
