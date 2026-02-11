@@ -392,3 +392,132 @@ textarea::-webkit-scrollbar {
     color: #9ca3af;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * Custom animations for WhatsApp Business upgrade components
+ * 
+ * ADD TO: src/index.css or src/globals.css (after Tailwind imports)
+ * 
+ * OR if using tailwind.config.js, add under `theme.extend.animation` and
+ * `theme.extend.keyframes` (see bottom of this file for config version)
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Scale In (for menus, modals, confirmations) ── */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.15s ease-out forwards;
+}
+
+/* ── Slide Up (for reply preview, broadcast composer) ── */
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.2s ease-out forwards;
+}
+
+/* ── Slide Down (for selection header) ── */
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+/* ── Fade In (general use) ── */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* ── Flash Highlight (for scroll-to-message reply) ── */
+@keyframes flashHighlight {
+  0% {
+    background-color: rgb(254, 249, 195); /* yellow-100 */
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-flashHighlight {
+  animation: flashHighlight 2s ease-out forwards;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * TAILWIND CONFIG VERSION
+ * 
+ * If you prefer to add these via tailwind.config.js instead of raw CSS,
+ * add this to your tailwind.config.js:
+ * 
+ * module.exports = {
+ *   theme: {
+ *     extend: {
+ *       animation: {
+ *         scaleIn: 'scaleIn 0.15s ease-out forwards',
+ *         slideUp: 'slideUp 0.2s ease-out forwards',
+ *         slideDown: 'slideDown 0.2s ease-out forwards',
+ *         fadeIn: 'fadeIn 0.2s ease-out forwards',
+ *         flashHighlight: 'flashHighlight 2s ease-out forwards',
+ *       },
+ *       keyframes: {
+ *         scaleIn: {
+ *           '0%': { opacity: '0', transform: 'scale(0.9)' },
+ *           '100%': { opacity: '1', transform: 'scale(1)' },
+ *         },
+ *         slideUp: {
+ *           '0%': { opacity: '0', transform: 'translateY(10px)' },
+ *           '100%': { opacity: '1', transform: 'translateY(0)' },
+ *         },
+ *         slideDown: {
+ *           '0%': { opacity: '0', transform: 'translateY(-100%)' },
+ *           '100%': { opacity: '1', transform: 'translateY(0)' },
+ *         },
+ *         fadeIn: {
+ *           '0%': { opacity: '0' },
+ *           '100%': { opacity: '1' },
+ *         },
+ *         flashHighlight: {
+ *           '0%': { backgroundColor: 'rgb(254, 249, 195)' },
+ *           '100%': { backgroundColor: 'transparent' },
+ *         },
+ *       },
+ *     },
+ *   },
+ * };
+ * ═══════════════════════════════════════════════════════════════════════════════ */

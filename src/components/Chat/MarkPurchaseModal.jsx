@@ -47,7 +47,7 @@ const MarkPurchaseModal = ({
         `${API_BASE_URL}/api/contacts/mark-purchase/`,
         {
           phone_number: contact.recipient,
-          full_name: contact.user_name,
+         full_name: purchaseForm.full_name,
           location: purchaseForm.location,
           amount: purchaseForm.amount,
           tags: purchaseForm.tags,
@@ -57,7 +57,7 @@ const MarkPurchaseModal = ({
 
       toast.success('Purchase marked successfully');
       onClose();
-      fetchChatList();
+      // fetchChatList();
     } catch (error) {
       console.log(error)
       toast.error(error.response?.data?.error || 'Failed to mark purchase');
@@ -82,6 +82,28 @@ const MarkPurchaseModal = ({
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
             />
           </div>
+
+            {/* Username */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Customer Name
+            </label>
+            <input
+              type="text"
+              value={purchaseForm.full_name || ""}
+              onChange={(e) =>
+                setPurchaseForm(prev => ({
+                  ...prev,
+                  full_name: e.target.value
+                }))
+              }
+              placeholder="Enter customer name"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg
+                        focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+        
+
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Location</label>
