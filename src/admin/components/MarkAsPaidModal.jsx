@@ -232,7 +232,7 @@ export default function MarkAsPaidModal({
               </div>
 
               <div className="flex gap-2 pt-1">
-                {[10, 20, 30, 40].map((rate) => (
+                {[10,12.52, 20, 30, 40].map((rate) => (
                   <button
                     key={rate}
                     type="button"
