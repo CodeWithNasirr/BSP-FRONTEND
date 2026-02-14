@@ -82,7 +82,7 @@ export default function SubAdminDashboard() {
         />
         <StatCard
           title="My Revenue"
-          value={`₹${Number(data.total_revenue_generated).toLocaleString()}`}
+          value={`₹${Number(data.total_commission_earned).toLocaleString()}`}
           icon={DollarSign}
           accent="amber"
         />
