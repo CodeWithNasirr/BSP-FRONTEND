@@ -83,7 +83,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between w-full xl:w-auto mb-2 xl:mb-0">
               <a className="flex items-center w-[7rem] h-5 sm:w-[12rem]" href="/">
               <img src={assest.logo} alt="" />
-                {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsappGptx</span> */}
+                {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Numlockitsolutions</span> */}
               </a>
               <div className="flex xl:hidden items-center gap-2">
                 <button 
@@ -235,10 +235,10 @@ export default function LandingPage() {
             <div className="lg:w-1/2 text-center lg:text-left">
               <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-4">AI-POWERED WHATSAPP MARKETING</p>
               <h1 className="text-2xl md:text-3xl lg:text-3xl font-bold mb-6">
-                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-500 pb-[5px]">Advanced WhatsApp Automation with WhatsappGptx</span>
+                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-500 pb-[5px]">Advanced WhatsApp Automation with Numlockitsolutions</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
-                Transform your business communications with WhatsappGptx's powerful AI-driven WhatsApp Business API solutions.
+                Transform your business communications with Numlockitsolutions's powerful AI-driven WhatsApp Business API solutions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <a href="/register" className="bg-gradient-to-r from-green-600 to-emerald-500 text-white px-6 py-3 rounded-full text-lg font-semibold hover:opacity-90 transition-opacity inline-flex items-center justify-center">
@@ -263,7 +263,7 @@ export default function LandingPage() {
                 <div className="relative">
                   <img 
                     src={assest.Dashboard}
-                    alt="WhatsappGptx Dashboard Preview" 
+                    alt="Numlockitsolutions Dashboard Preview" 
                     className="relative z-10 rounded-xl shadow-xl border border-gray-200" 
                   />
                 </div>
@@ -321,7 +321,7 @@ export default function LandingPage() {
                 <span className="text-2xl font-bold text-orange-500">+</span>
               </div>
               <h3 className="text-sm font-semibold text-gray-500 mt-2">BUSINESSES</h3>
-              <p className="text-gray-600 mt-2 max-w-xs mx-auto">Trust WhatsappGptxto grow their customer engagement</p>
+              <p className="text-gray-600 mt-2 max-w-xs mx-auto">Trust Numlockitsolutionsto grow their customer engagement</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center">
@@ -342,7 +342,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900">Native Integrations</h2>
-            <p className="text-gray-600 mt-4 max-w-2xl mx-auto">Connect WhatsappGptxwith your favorite tools and services</p>
+            <p className="text-gray-600 mt-4 max-w-2xl mx-auto">Connect Numlockitsolutionswith your favorite tools and services</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-center">
@@ -384,7 +384,7 @@ export default function LandingPage() {
                     <h3 className="text-3xl font-bold text-gray-900">Multi-Agent Chat Inbox</h3>
                   </div>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    With WhatsappGptxConnect CRM, you can enable a multi-agent chat system for seamless sales and support. Multiple agents can respond to incoming messages with access control and performance monitoring.
+                    With NumlockitsolutionsConnect CRM, you can enable a multi-agent chat system for seamless sales and support. Multiple agents can respond to incoming messages with access control and performance monitoring.
                   </p>
                   <ul className="list-disc pl-4 space-y-2">
                     <li className="text-lg text-gray-700">WhatsApp-like interface for seamless communication</li>
@@ -451,7 +451,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto gap-6">
             <div className="flex-1 space-y-3">
               <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: '1.2' }}>Ready to transform your WhatsApp marketing?</h2>
-              <p className="text-lg text-green-50 max-w-xl">Join thousands of businesses already growing with WhatsappGptx</p>
+              <p className="text-lg text-green-50 max-w-xl">Join thousands of businesses already growing with Numlockitsolutions</p>
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center text-sm text-green-50">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400 mr-2"></div>
@@ -465,7 +465,7 @@ export default function LandingPage() {
             </div>
             <div>
               <a className="inline-flex items-center gap-2 bg-white text-[#075E54] px-8 py-4 rounded-full font-semibold text-lg hover:bg-green-50 transition-colors duration-300 shadow-lg hover:shadow-xl" href="/register">
-                Get Started with WhatsappGptx
+                Get Started with Numlockitsolutions
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right w-5 h-5">
                   <path d="M5 12h14"></path>
                   <path d="m12 5 7 7-7 7"></path>
@@ -488,7 +488,7 @@ export default function LandingPage() {
                 <div className="flex items-center w-[7rem] h-5 sm:w-[12rem]">
                  
                   <img src={assest.logo} alt="" />
-                    {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">WhatsappGptx</span> */} 
+                    {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Numlockitsolutions</span> */} 
                  
                 </div>
                 <p className="text-gray-600">WhatsApp Business Solution Provider</p>
@@ -568,7 +568,7 @@ export default function LandingPage() {
             
             <div className="border-t border-gray-200/50 pt-8 mt-8 w-full">
               <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 w-full max-w-6xl">
-                <p className="text-gray-500 text-sm">© {new Date().getFullYear()} WhatsappGptx. All rights reserved.</p>
+                <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Numlockitsolutions. All rights reserved.</p>
               </div>
             </div>
           </div>
