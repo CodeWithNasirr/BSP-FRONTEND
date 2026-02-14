@@ -300,7 +300,7 @@ export default function LandingPage() {
           
       {/* Price Section */}
       <section id='pricing' className='relative bg-gradient-to-b from-green-50 to-white py-10'>
-        <Subscriptions/>
+        {/* <Subscriptions/> */}
       </section>
 
       {/* Stats Section */}
