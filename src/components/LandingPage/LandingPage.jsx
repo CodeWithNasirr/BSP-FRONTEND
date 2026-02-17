@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect, useRef } from 'react';
 import { SiWhatsapp } from "react-icons/si";
 import { assest } from '../../assets/assets';
 import Subscriptions from '../Subscriptions/Subscription';
 import { Link } from 'react-router-dom';
+
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-// WhatsappGPTX
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [visibleSections, setVisibleSections] = useState(new Set());
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -15,54 +18,186 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Intersection observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set([...prev, entry.target.id]));
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    document.querySelectorAll('[data-animate]').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const features = [
     {
       id: 1,
       title: "AI Chatbot Builder",
-      description: "Create feature-rich chatbots without coding. Automate customer interactions effortlessly.",
+      description: "Create feature-rich chatbots without coding. Automate customer interactions effortlessly with intelligent conversation flows.",
       icon: (
-        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 640 512" className="text-4xl mb-4 text-white/90" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32,224H64V416H32A31.96166,31.96166,0,0,1,0,384V256A31.96166,31.96166,0,0,1,32,224Zm512-48V448a64.06328,64.06328,0,0,1-64,64H160a64.06328,64.06328,0,0,1-64-64V176a79.974,79.974,0,0,1,80-80H288V32a32,32,0,0,1,64,0V96H464A79.974,79.974,0,0,1,544,176ZM264,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,264,256Zm-8,128H192v32h64Zm96,0H288v32h64ZM456,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,456,256Zm-8,128H384v32h64ZM640,256V384a31.96166,31.96166,0,0,1-32,32H576V224h32A31.96166,31.96166,0,0,1,640,256Z"></path>
+        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 640 512" className="w-7 h-7" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32,224H64V416H32A31.96166,31.96166,0,0,1,0,384V256A31.96166,31.96166,0,0,1,32,224Zm512-48V448a64.06328,64.06328,0,0,1-64,64H160a64.06328,64.06328,0,0,1-64-64V176a79.974,79.974,0,0,1,80-80H288V32a32,32,0,0,1,64,0V96H464A79.974,79.974,0,0,1,544,176ZM264,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,264,256Zm-8,128H192v32h64Zm96,0H288v32h64ZM456,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,456,256Zm-8,128H384v32h64ZM640,256V384a31.96166,31.96166,0,0,1-32,32H576V224h32A31.96166,31.96166,0,0,1,640,256Z" />
         </svg>
       ),
-      bg: "from-green-700 to-green-600"
     },
     {
       id: 2,
       title: "WhatsApp Commerce",
-      description: "Seamless e-commerce within WhatsApp. Integrate with popular platforms or custom solutions.",
+      description: "Seamless e-commerce within WhatsApp. Integrate with Shopify, WooCommerce, or custom solutions instantly.",
       icon: (
-        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" className="text-4xl mb-4 text-white/90" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-          <path d="M528.12 301.319l47.273-208C578.806 78.301 567.391 64 551.99 64H159.208l-9.166-44.81C147.758 8.021 137.93 0 126.529 0H24C10.745 0 0 10.745 0 24v16c0 13.255 10.745 24 24 24h69.883l70.248 343.435C147.325 417.1 136 435.222 136 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-15.674-6.447-29.835-16.824-40h209.647C430.447 426.165 424 440.326 424 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-22.172-12.888-41.332-31.579-50.405l5.517-24.276c3.413-15.018-8.002-29.319-23.403-29.319H218.117l-6.545-32h293.145c11.206 0 20.92-7.754 23.403-18.681z"></path>
+        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" className="w-7 h-7" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+          <path d="M528.12 301.319l47.273-208C578.806 78.301 567.391 64 551.99 64H159.208l-9.166-44.81C147.758 8.021 137.93 0 126.529 0H24C10.745 0 0 10.745 0 24v16c0 13.255 10.745 24 24 24h69.883l70.248 343.435C147.325 417.1 136 435.222 136 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-15.674-6.447-29.835-16.824-40h209.647C430.447 426.165 424 440.326 424 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-22.172-12.888-41.332-31.579-50.405l5.517-24.276c3.413-15.018-8.002-29.319-23.403-29.319H218.117l-6.545-32h293.145c11.206 0 20.92-7.754 23.403-18.681z" />
         </svg>
       ),
-      bg: "from-emerald-600 to-emerald-500"
     },
     {
       id: 3,
       title: "Mass Messaging Hub",
-      description: "Send bulk WhatsApp messages instantly. Manage team responses for incoming customer chats.",
+      description: "Send bulk WhatsApp messages instantly. Manage team responses for incoming customer chats at scale.",
       icon: (
-        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 640 512" className="text-4xl mb-4 text-white/90" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-          <path d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"></path>
+        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 640 512" className="w-7 h-7" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+          <path d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z" />
         </svg>
       ),
-      bg: "from-teal-500 to-teal-400"
     },
     {
       id: 4,
       title: "GPT-4 AI Assistant",
-      description: "Harness OpenAI's power within WhatsApp. Provide intelligent, context-aware responses.",
+      description: "Harness OpenAI's power within WhatsApp. Provide intelligent, context-aware responses 24/7.",
       icon: (
-        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" className="text-4xl mb-4 text-white/90" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-          <path d="M208 0c-29.9 0-54.7 20.5-61.8 48.2-.8 0-1.4-.2-2.2-.2-35.3 0-64 28.7-64 64 0 4.8.6 9.5 1.7 14C52.5 138 32 166.6 32 200c0 12.6 3.2 24.3 8.3 34.9C16.3 248.7 0 274.3 0 304c0 33.3 20.4 61.9 49.4 73.9-.9 4.6-1.4 9.3-1.4 14.1 0 39.8 32.2 72 72 72 4.1 0 8.1-.5 12-1.2 9.6 28.5 36.2 49.2 68 49.2 39.8 0 72-32.2 72-72V64c0-35.3-28.7-64-64-64zm368 304c0-29.7-16.3-55.3-40.3-69.1 5.2-10.6 8.3-22.3 8.3-34.9 0-33.4-20.5-62-49.7-74 1-4.5 1.7-9.2 1.7-14 0-35.3-28.7-64-64-64-.8 0-1.5.2-2.2.2C422.7 20.5 397.9 0 368 0c-35.3 0-64 28.6-64 64v376c0 39.8 32.2 72 72 72 31.8 0 58.4-20.7 68-49.2 3.9.7 7.9 1.2 12 1.2 39.8 0 72-32.2 72-72 0-4.8-.5-9.5-1.4-14.1 29-12 49.4-40.6 49.4-73.9z"></path>
+        <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" className="w-7 h-7" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+          <path d="M208 0c-29.9 0-54.7 20.5-61.8 48.2-.8 0-1.4-.2-2.2-.2-35.3 0-64 28.7-64 64 0 4.8.6 9.5 1.7 14C52.5 138 32 166.6 32 200c0 12.6 3.2 24.3 8.3 34.9C16.3 248.7 0 274.3 0 304c0 33.3 20.4 61.9 49.4 73.9-.9 4.6-1.4 9.3-1.4 14.1 0 39.8 32.2 72 72 72 4.1 0 8.1-.5 12-1.2 9.6 28.5 36.2 49.2 68 49.2 39.8 0 72-32.2 72-72V64c0-35.3-28.7-64-64-64zm368 304c0-29.7-16.3-55.3-40.3-69.1 5.2-10.6 8.3-22.3 8.3-34.9 0-33.4-20.5-62-49.7-74 1-4.5 1.7-9.2 1.7-14 0-35.3-28.7-64-64-64-.8 0-1.5.2-2.2.2C422.7 20.5 397.9 0 368 0c-35.3 0-64 28.6-64 64v376c0 39.8 32.2 72 72 72 31.8 0 58.4-20.7 68-49.2 3.9.7 7.9 1.2 12 1.2 39.8 0 72-32.2 72-72 0-4.8-.5-9.5-1.4-14.1 29-12 49.4-40.6 49.4-73.9z" />
         </svg>
       ),
-      bg: "from-green-500 to-green-400"
-    }
+    },
+    {
+      id: 5,
+      title: "Analytics Dashboard",
+      description: "Track message delivery, open rates, and engagement metrics with real-time analytics and reporting.",
+      icon: (
+        <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3v18h18M9 17V9m4 8V5m4 12v-4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      id: 6,
+      title: "Template Manager",
+      description: "Create, manage, and get WhatsApp message templates approved faster with our intuitive template builder.",
+      icon: (
+        <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
   ];
 
-  const integrations = [
+  const testimonials = [
+    {
+      name: "Rahul Sharma",
+      role: "Founder, ShopEasy",
+      avatar: "RS",
+      rating: 5,
+      text: "Whatsappgptx transformed how we engage with customers. Our response rate improved by 340% and sales increased by 60% in just 3 months.",
+    },
+    {
+      name: "Priya Patel",
+      role: "Marketing Head, FreshMart",
+      avatar: "PP",
+      rating: 5,
+      text: "The chatbot builder is incredibly powerful yet simple. We automated 80% of our customer queries and our team can now focus on complex issues.",
+    },
+    {
+      name: "Amit Verma",
+      role: "CEO, TechNova Solutions",
+      avatar: "AV",
+      rating: 5,
+      text: "Best WhatsApp marketing platform we've used. The mass messaging feature alone saved us 20+ hours per week. Highly recommended!",
+    },
+    {
+      name: "Sarah Khan",
+      role: "Operations Manager, StyleHub",
+      avatar: "SK",
+      rating: 5,
+      text: "The multi-agent inbox is a game-changer. Our support team efficiency doubled and customer satisfaction scores are at an all-time high.",
+    },
+    {
+      name: "David Chen",
+      role: "Director, GlobalTrade Co.",
+      avatar: "DC",
+      rating: 5,
+      text: "We integrated Whatsappgptx with our Shopify store seamlessly. The WhatsApp commerce features drive 35% of our total online revenue now.",
+    },
+  ];
+
+  const affiliatePerks = [
+    {
+      title: "20% Recurring Commission",
+      description: "Earn 20% on every payment your referrals make — not just the first month, but every single month they stay subscribed.",
+      icon: (
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+      ),
+    },
+    {
+      title: "90-Day Cookie Window",
+      description: "Your referral link stays active for 90 days. If someone clicks today and signs up in 3 months, you still get credit.",
+      icon: (
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+    },
+    {
+      title: "Real-Time Dashboard",
+      description: "Track clicks, conversions, and earnings in real-time. See exactly how much you're earning with full transparency.",
+      icon: (
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      ),
+    },
+    {
+      title: "Marketing Resources",
+      description: "Get access to banners, email templates, and pre-written content to help you promote and maximize conversions.",
+      icon: (
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+      ),
+    },
+  ];
+
+  const commissionTiers = [
+    { referrals: "1–10", rate: "20%", bonus: "—" },
+    { referrals: "11–50", rate: "25%", bonus: "₹5,000 bonus" },
+    { referrals: "51–100", rate: "30%", bonus: "₹15,000 bonus" },
+    { referrals: "100+", rate: "35%", bonus: "Custom deal" },
+  ];
+
+  const partners = [
     { name: "Shopify", logo: "/images/integrations/shopify.png" },
     { name: "WooCommerce", logo: "/images/integrations/woocommerce.webp" },
     { name: "OpenAI", logo: "/images/integrations/openai.png" },
@@ -73,507 +208,612 @@ export default function LandingPage() {
     { name: "Make", logo: "/images/integrations/make.png" },
   ];
 
+  const sectionClass = (id) =>
+    `transition-all duration-700 ${visibleSections.has(id) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`;
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
 
-      {/* Header */}
-      <header className={`fixed w-full bg-white shadow-md transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-none'} z-50`}>
-        <div className="container mx-auto px-4 py-3 md:py-4">
-          <div className="flex flex-col xl:flex-row items-center justify-between">
-            <div className="flex items-center justify-between w-full xl:w-auto mb-2 xl:mb-0">
-              <a className="flex items-center w-[7rem] h-5 sm:w-[12rem]" href="/">
-              <img src={assest.logo} alt="" />
-                {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Numlockitsolutions</span> */}
-              </a>
-              <div className="flex xl:hidden items-center gap-2">
-                <button 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="text-gray-600 hover:text-gray-800 px-2 py-1 flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {isMenuOpen ? (
-                      <path d="M18 6L6 18M6 6l12 12"></path>
-                    ) : (
-                      <path d="M3 12h18M3 6h18M3 18h18"></path>
-                    )}
-                  </svg>
-                </button>
-              </div>
-            </div>
+      {/* ──────────────── HEADER ──────────────── */}
+      <header className={`fixed w-full bg-white/95 backdrop-blur-md border-b transition-all duration-300 ${isScrolled ? 'border-gray-200 shadow-sm' : 'border-transparent'} z-50`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-[72px]">
+            {/* Logo */}
+            <a className="flex items-center shrink-0" href="/">
+              <img src={assest.logo} alt="Whatsappgptx" className="h-6 sm:h-8 w-auto" />
+            </a>
 
-            {/* Mobile Menu */}
-            <div className={`${isMenuOpen ? 'block' : 'hidden'} xl:hidden w-full py-4`}>
-              <nav className="flex flex-col space-y-4">
-                <a className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" href="#features">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
-                  </svg>
-                  Features
-                </a>
-                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/contact-us"}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                  </svg>
-                  ContactUs
-                </Link>
-                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/terms-policy"}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                  </svg>
-                  TermsAndConditions
-                </Link>
-                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/privacy"}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                  </svg>
-                  Privacy
-                </Link>
-                <a className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" href="#pricing">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <line x1="12" x2="12" y1="2" y2="22"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
-                  Pricing
-                </a>
-                <div className="flex space-x-4 pt-4">
-                  <a className="text-sm text-white px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-300 flex items-center shadow-md" href="/login">
-                    Login
+            {/* Desktop Nav */}
+            <nav className="hidden lg:flex items-center gap-1">
+              {[
+                { label: 'Features', href: '#features' },
+                { label: 'Testimonials', href: '#testimonials' },
+                { label: 'Pricing', href: '#pricing' },
+                { label: 'Affiliates', href: '#affiliates' },
+                { label: 'Contact', to: '/contact-us' },
+              ].map((item) =>
+                item.to ? (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#075E54] rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#075E54] rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    {item.label}
                   </a>
-                  <a className="text-sm text-white px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 flex items-center shadow-md" href="/register">
-                    Sign Up
-                  </a>
-                </div>
-              </nav>
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden xl:flex flex-wrap justify-center xl:justify-start space-x-2 xl:space-x-6 mb-2 xl:mb-0">
-              <a className="text-sm xl:text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" href="#features">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                  <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
-                </svg>
-                Features
-              </a>
-              <Link className="text-sm xl:text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/privacy"} >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                  <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                  <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                  <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                </svg>
-                Privacy
-              </Link>
-                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/contact-us"}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                  </svg>
-                  ContactUs
-                </Link>
-                <Link className="text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" to={"/terms-policy"}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"></path>
-                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"></path>
-                    <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"></path>
-                  </svg>
-                  TermsAndConditions
-                </Link>
-              <a className="text-sm xl:text-base hover:text-green-600 flex items-center px-2 py-1 transition-colors duration-200 group text-gray-600" href="#pricing">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1 transition-colors duration-200 text-gray-600 group-hover:text-green-600">
-                  <line x1="12" x2="12" y1="2" y2="22"></line>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-                Pricing
-              </a>
+                )
+              )}
             </nav>
-            <div className="hidden xl:flex items-center space-x-4">
-              <a className="text-sm xl:text-base text-gray-600 hover:text-gray-800 flex items-center" href="/login">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-0.5">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                  <polyline points="10 17 15 12 10 7"></polyline>
-                  <line x1="15" x2="3" y1="12" y2="12"></line>
-                </svg> 
-                Login
+
+            {/* Desktop CTA */}
+            <div className="hidden lg:flex items-center gap-3">
+              <a href="/login" className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-[#075E54] transition-colors">
+                Log in
               </a>
-              <a className="text-sm xl:text-base text-white px-3 md:px-5 py-1.5 md:py-2.5 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-300 flex items-center shadow-md" href="/register">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 md:w-4 h-3.5 md:h-4 mr-0.5">
-                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-                  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                  <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
-                </svg>
-                Sign Up
+              <a
+                href="/register"
+                className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                style={{ background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)' }}
+              >
+                Start Free Trial
               </a>
             </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                {isMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M3 12h18M3 6h18M3 18h18" />}
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile Menu */}
+          <div className={`lg:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-[500px] pb-6' : 'max-h-0'}`}>
+            <nav className="flex flex-col gap-1 pt-2">
+              {[
+                { label: 'Features', href: '#features' },
+                { label: 'Testimonials', href: '#testimonials' },
+                { label: 'Pricing', href: '#pricing' },
+                { label: 'Affiliates', href: '#affiliates' },
+                { label: 'Contact', to: '/contact-us' },
+                { label: 'Privacy', to: '/privacy' },
+                { label: 'Terms', to: '/terms-policy' },
+              ].map((item) =>
+                item.to ? (
+                  <Link key={item.label} to={item.to} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-[#075E54] hover:bg-gray-50 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a key={item.label} href={item.href} className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-[#075E54] hover:bg-gray-50 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                    {item.label}
+                  </a>
+                )
+              )}
+              <div className="flex gap-3 pt-3 px-4">
+                <a href="/login" className="flex-1 text-center px-4 py-2.5 text-sm font-medium text-[#075E54] border border-[#075E54] rounded-lg hover:bg-[#075E54]/5 transition-colors">
+                  Log in
+                </a>
+                <a href="/register" className="flex-1 text-center px-4 py-2.5 text-sm font-semibold text-white rounded-lg" style={{ background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)' }}>
+                  Sign Up
+                </a>
+              </div>
+            </nav>
           </div>
         </div>
       </header>
 
-
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-green-50 to-white">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(217,249,157,0.3),rgba(255,255,255,0))]"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-green-50/80 to-white"></div>
-          <div className="absolute inset-0">
-            <div className="absolute top-0 -left-4 w-3/4 h-1/2 bg-gradient-to-br from-green-200/30 via-green-100/10 to-transparent rounded-full blur-2xl transform rotate-12 animate-aurora" style={{ animationDuration: '8s' }}></div>
-            <div className="absolute top-1/4 -right-4 w-2/3 h-1/2 bg-gradient-to-bl from-emerald-200/20 via-green-100/10 to-transparent rounded-full blur-2xl transform -rotate-12 animate-aurora-reverse" style={{ animationDuration: '12s' }}></div>
-            <div className="absolute top-1/3 left-1/3 w-32 h-32 bg-green-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
-            <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-emerald-200/30 rounded-full blur-2xl animate-pulse" style={{ animationDuration: '6s' }}></div>
-          </div>
+      {/* ──────────────── HERO ──────────────── */}
+      <section className="relative pt-28 lg:pt-36 pb-20 lg:pb-28 overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#075E54]/[0.03] via-white to-[#25D366]/[0.04]" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#25D366]/[0.06] rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#075E54]/[0.04] rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
+          {/* Subtle grid */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #075E54 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
         </div>
-        
-        <div className="relative container mx-auto px-4 pt-16 md:pt-24 pb-16">
-          <div className="flex flex-col lg:flex-row items-center gap-8">
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             <div className="lg:w-1/2 text-center lg:text-left">
-              <p className="text-sm font-semibold text-green-600 tracking-wide uppercase mb-4">AI-POWERED WHATSAPP MARKETING</p>
-              <h1 className="text-2xl md:text-3xl lg:text-3xl font-bold mb-6">
-                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-500 pb-[5px]">Advanced WhatsApp Automation with Numlockitsolutions</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#25D366]/10 text-[#075E54] text-xs font-semibold tracking-wide uppercase mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse" />
+                Official WhatsApp Business API Partner
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] font-bold text-gray-900 leading-tight tracking-tight mb-6">
+                Automate, Engage &{' '}
+                <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #075E54, #25D366)' }}>
+                  Grow on WhatsApp
+                </span>
               </h1>
-              <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
-                Transform your business communications with Numlockitsolutions's powerful AI-driven WhatsApp Business API solutions.
+              <p className="text-lg text-gray-600 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8">
+                The all-in-one platform to send bulk campaigns, build AI chatbots, and manage team conversations — all through WhatsApp Business API.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a href="/register" className="bg-gradient-to-r from-green-600 to-emerald-500 text-white px-6 py-3 rounded-full text-lg font-semibold hover:opacity-90 transition-opacity inline-flex items-center justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <a
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-white rounded-xl shadow-lg shadow-[#075E54]/20 hover:shadow-xl hover:shadow-[#075E54]/25 transition-all duration-200"
+                  style={{ background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)' }}
+                >
                   Get Started Free
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </a>
-                <a href="https://alvo.chat/6l4J" className="bg-white text-gray-800 px-6 py-3 rounded-full text-lg font-semibold border-2 border-gray-200 hover:border-gray-300 transition-colors inline-flex items-center justify-center">
+                <a
+                  href="https://alvo.chat/6l4J"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-[#075E54] bg-white border-2 border-[#075E54]/15 rounded-xl hover:border-[#075E54]/30 hover:bg-[#075E54]/[0.02] transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                   Book a Demo
                 </a>
               </div>
-              <div className="mt-8 inline-flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <svg className="w-5 h-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd"></path>
-                  </svg>
-                  <span className="text-sm text-gray-600">Trusted by 100+ businesses</span>
-                </div>
+              <div className="flex flex-wrap items-center gap-6 justify-center lg:justify-start mt-8 text-sm text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  Free 14-day trial
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  credit card needed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  Cancel anytime
+                </span>
               </div>
             </div>
             <div className="lg:w-1/2 relative">
-              <div className="relative w-full">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                <div className="relative">
-                  <img 
-                    src={assest.Dashboard}
-                    alt="Numlockitsolutions Dashboard Preview" 
-                    className="relative z-10 rounded-xl shadow-xl border border-gray-200" 
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-green-600 tracking-wide uppercase">POWERFUL FEATURES</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Everything You Need for WhatsApp Marketing</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature) => (
-              <div key={feature.id} className={`relative group rounded-2xl overflow-hidden bg-gradient-to-br ${feature.bg} p-6 text-white h-full min-h-[280px] flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg`}>
-                <div>
-                  {feature.icon}
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-white/90 text-base leading-relaxed">{feature.description}</p>
-                </div>
-                <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10">
-                  {feature.icon}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-          
-      {/* Price Section */}
-      <section id='pricing' className='relative bg-gradient-to-b from-green-50 to-white py-10'>
-        {/* <Subscriptions/> */}
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-b from-green-50 to-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="flex items-center justify-center">
-                <span className="text-5xl font-bold text-gray-900">5</span>
-                <span className="text-2xl font-bold text-orange-500">+</span>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 mt-2">EMPLOYEES</h3>
-              <p className="text-gray-600 mt-2 max-w-xs mx-auto">Dedicated to developing perfect WhatsApp automation technology</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center">
-                <span className="text-5xl font-bold text-gray-900">100</span>
-                <span className="text-2xl font-bold text-orange-500">+</span>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 mt-2">BUSINESSES</h3>
-              <p className="text-gray-600 mt-2 max-w-xs mx-auto">Trust Numlockitsolutionsto grow their customer engagement</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center">
-                <span className="text-5xl font-bold text-gray-900">30</span>
-                <span className="text-2xl font-bold text-orange-500">+</span>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-500 mt-2">INTEGRATIONS</h3>
-              <p className="text-gray-600 mt-2 max-w-xs mx-auto">Seamlessly connect with your existing business tools</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* Integrations Section */}
-      {/* <section id="integrations" className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Native Integrations</h2>
-            <p className="text-gray-600 mt-4 max-w-2xl mx-auto">Connect Numlockitsolutionswith your favorite tools and services</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-center">
-            {integrations.map((integration, index) => (
-              <div key={index} className="flex items-center justify-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-                <img 
-                  src={integration.logo} 
-                  alt={integration.name} 
-                  className="w-auto h-12 object-contain grayscale hover:grayscale-0 transition-all duration-300" 
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#25D366]/20 to-[#075E54]/20 rounded-2xl blur-2xl opacity-40" />
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-gray-900/10 border border-gray-200/60">
+                <img
+                  src={assest.Dashboard}
+                  alt="Whatsappgptx Dashboard Preview"
+                  className="w-full h-auto"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────── TRUSTED BY / STATS ──────────────── */}
+      <section className="py-14 border-y border-gray-100 bg-gray-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '1000+', label: 'Active Businesses' },
+              { value: '2M+', label: 'Messages Sent' },
+              { value: '30+', label: 'Integrations' },
+              { value: '99.9%', label: 'Uptime SLA' },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl sm:text-4xl font-bold text-[#075E54]">{stat.value}</div>
+                <div className="mt-1 text-sm text-gray-500 font-medium">{stat.label}</div>
+              </div>
             ))}
           </div>
         </div>
-      </section> */}
+      </section>
 
-      {/* Feature Details Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="space-y-16">
-            {/* Feature 1 */}
-            <div className="bg-green-50 rounded-2xl overflow-hidden">
-              <div className="flex flex-col lg:flex-row items-center py-8 px-6 lg:px-12">
-                <div className="lg:w-1/2 mb-8 lg:mb-0">
-                  <img 
-                    src={assest.chats}
-                    alt="Multi-Agent Chat Inbox" 
-                    className="w-full h-auto rounded-lg shadow-md" 
-                  />
-                </div>
-                <div className="lg:w-1/2 lg:px-12 space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-4">
-                      <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" className="text-4xl text-green-700" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M567.938 243.908L462.25 85.374A48.003 48.003 0 0 0 422.311 64H153.689a48 48 0 0 0-39.938 21.374L8.062 243.908A47.994 47.994 0 0 0 0 270.533V400c0 26.51 21.49 48 48 48h480c26.51 0 48-21.49 48-48V270.533a47.994 47.994 0 0 0-8.062-26.625zM162.252 128h251.497l85.333 128H376l-32 64H232l-32-64H76.918l85.334-128z"></path>
-                      </svg>
-                      <span className="text-sm font-semibold px-3 py-1 bg-green-50 text-green-700 rounded-full">Team Inbox</span>
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">Multi-Agent Chat Inbox</h3>
-                  </div>
-                  <p className="text-lg text-gray-700 leading-relaxed">
-                    With NumlockitsolutionsConnect CRM, you can enable a multi-agent chat system for seamless sales and support. Multiple agents can respond to incoming messages with access control and performance monitoring.
-                  </p>
-                  <ul className="list-disc pl-4 space-y-2">
-                    <li className="text-lg text-gray-700">WhatsApp-like interface for seamless communication</li>
-                    <li className="text-lg text-gray-700">CRM-specific features for sales/support business chat</li>
-                    <li className="text-lg text-gray-700">Assign, reassign agents, teams & add tags</li>
-                    <li className="text-lg text-gray-700">Override the bot and assign chatbots dynamically</li>
-                  </ul>
-                  <a href="#features">
-                    <button className="bg-green-700 hover:bg-green-800 text-white px-8 py-3 rounded-full transition-colors duration-300 text-lg font-semibold hover:shadow-lg mt-4">
-                      Learn More
-                    </button>
-                  </a>
-                </div>
-              </div>
-            </div>
+      {/* ──────────────── FEATURES ──────────────── */}
+      <section id="features" data-animate className={`py-20 lg:py-28 ${sectionClass('features')}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="inline-block text-xs font-semibold tracking-widest uppercase text-[#128C7E] mb-3">Features</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              Everything you need for WhatsApp marketing
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">Powerful tools to automate conversations, drive sales, and delight customers — all from one dashboard.</p>
+          </div>
 
-            {/* Feature 2 */}
-            <div className="bg-white rounded-2xl overflow-hidden">
-              <div className="flex flex-col lg:flex-row-reverse items-center py-8 px-6 lg:px-12">
-                <div className="lg:w-1/2 mb-8 lg:mb-0">
-                  <img 
-                    src={assest.chat_flows}
-                    alt="No-Code Chatbot Builder" 
-                    className="w-full h-auto rounded-lg shadow-md" 
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <div
+                key={feature.id}
+                className="group relative rounded-2xl border border-gray-200 bg-white p-7 hover:border-[#25D366]/40 hover:shadow-lg hover:shadow-[#25D366]/5 transition-all duration-300"
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 text-white" style={{ background: 'linear-gradient(135deg, #075E54 0%, #25D366 100%)' }}>
+                  {feature.icon}
                 </div>
-                <div className="lg:w-1/2 lg:px-12 space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-4">
-                      <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 640 512" className="text-4xl text-green-600" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M32,224H64V416H32A31.96166,31.96166,0,0,1,0,384V256A31.96166,31.96166,0,0,1,32,224Zm512-48V448a64.06328,64.06328,0,0,1-64,64H160a64.06328,64.06328,0,0,1-64-64V176a79.974,79.974,0,0,1,80-80H288V32a32,32,0,0,1,64,0V96H464A79.974,79.974,0,0,1,544,176ZM264,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,264,256Zm-8,128H192v32h64Zm96,0H288v32h64ZM456,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,456,256Zm-8,128H384v32h64ZM640,256V384a31.96166,31.96166,0,0,1-32,32H576V224h32A31.96166,31.96166,0,0,1,640,256Z"></path>
-                      </svg>
-                      <span className="text-sm font-semibold px-3 py-1 bg-green-50 text-green-700 rounded-full">ChatBot Builder</span>
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">No-Code Chatbot Builder</h3>
-                  </div>
-                  <p className="text-lg text-gray-700 leading-relaxed">
-                    Build advanced chatbots for WhatsApp without any coding skills. Our no-code chatbot builder allows anyone to automate interactions and provide real-time responses to users.
-                  </p>
-                  <ul className="list-disc pl-4 space-y-2">
-                    <li className="text-lg text-gray-700">The most advanced no-code builder for WhatsApp</li>
-                    <li className="text-lg text-gray-700">Media, interactive lists & buttons, catalog support</li>
-                    <li className="text-lg text-gray-700">API & webhooks for real-time communication</li>
-                    <li className="text-lg text-gray-700">Powerful add-ons like OpenAI, Zapier, Google Apps</li>
-                  </ul>
-                  <a href="#features">
-                    <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full transition-colors duration-300 text-lg font-semibold hover:shadow-lg mt-4">
-                      Learn More
-                    </button>
-                  </a>
-                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-gray-500 leading-relaxed text-[15px]">{feature.description}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-br from-[#075E54] to-[#128C7E] text-white py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{ backgroundImage: "url('/pattern.svg')", backgroundSize: "30px" }}></div>
-        </div>
-        <div className="container mx-auto px-4 relative">
-          <div className="flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto gap-6">
-            <div className="flex-1 space-y-3">
-              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: '1.2' }}>Ready to transform your WhatsApp marketing?</h2>
-              <p className="text-lg text-green-50 max-w-xl">Join thousands of businesses already growing with Numlockitsolutions</p>
-              <div className="flex flex-wrap gap-4 mt-4">
-                <div className="flex items-center text-sm text-green-50">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 mr-2"></div>
-                  credit card required
-                </div>
-                <div className="flex items-center text-sm text-green-50">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 mr-2"></div>
-                  Free trial available
-                </div>
+      {/* ──────────────── FEATURE DETAILS ──────────────── */}
+      <section className="py-20 bg-gray-50/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24">
+          {/* Detail 1 */}
+          <div id="detail1" data-animate className={`flex flex-col lg:flex-row items-center gap-12 ${sectionClass('detail1')}`}>
+            <div className="lg:w-1/2">
+              <div className="rounded-2xl overflow-hidden shadow-xl shadow-gray-900/5 border border-gray-200/60">
+                <img src={assest.chats} alt="Multi-Agent Chat Inbox" className="w-full h-auto" />
               </div>
             </div>
-            <div>
-              <a className="inline-flex items-center gap-2 bg-white text-[#075E54] px-8 py-4 rounded-full font-semibold text-lg hover:bg-green-50 transition-colors duration-300 shadow-lg hover:shadow-xl" href="/register">
-                Get Started with Numlockitsolutions
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right w-5 h-5">
-                  <path d="M5 12h14"></path>
-                  <path d="m12 5 7 7-7 7"></path>
-                </svg>
+            <div className="lg:w-1/2 space-y-5">
+              <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-full bg-[#075E54]/10 text-[#075E54]">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 576 512"><path d="M567.938 243.908L462.25 85.374A48.003 48.003 0 0 0 422.311 64H153.689a48 48 0 0 0-39.938 21.374L8.062 243.908A47.994 47.994 0 0 0 0 270.533V400c0 26.51 21.49 48 48 48h480c26.51 0 48-21.49 48-48V270.533a47.994 47.994 0 0 0-8.062-26.625zM162.252 128h251.497l85.333 128H376l-32 64H232l-32-64H76.918l85.334-128z" /></svg>
+                Team Inbox
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">Multi-Agent Chat Inbox</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Enable seamless collaboration between sales and support teams. Multiple agents can respond to incoming WhatsApp messages with full access control and performance monitoring.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'WhatsApp-native interface for seamless communication',
+                  'CRM-grade features for sales and support workflows',
+                  'Assign, reassign agents, teams & custom tagging',
+                  'Override bots and assign chatbots dynamically',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-gray-600">
+                    <svg className="w-5 h-5 text-[#25D366] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#features" className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-lg mt-2" style={{ background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)' }}>
+                Learn More
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Detail 2 */}
+          <div id="detail2" data-animate className={`flex flex-col lg:flex-row-reverse items-center gap-12 ${sectionClass('detail2')}`}>
+            <div className="lg:w-1/2">
+              <div className="rounded-2xl overflow-hidden shadow-xl shadow-gray-900/5 border border-gray-200/60">
+                <img src={assest.chat_flows} alt="No-Code Chatbot Builder" className="w-full h-auto" />
+              </div>
+            </div>
+            <div className="lg:w-1/2 space-y-5">
+              <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-full bg-[#25D366]/10 text-[#075E54]">
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 640 512"><path d="M32,224H64V416H32A31.96166,31.96166,0,0,1,0,384V256A31.96166,31.96166,0,0,1,32,224Zm512-48V448a64.06328,64.06328,0,0,1-64,64H160a64.06328,64.06328,0,0,1-64-64V176a79.974,79.974,0,0,1,80-80H288V32a32,32,0,0,1,64,0V96H464A79.974,79.974,0,0,1,544,176ZM264,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,264,256Zm-8,128H192v32h64Zm96,0H288v32h64ZM456,256a40,40,0,1,0-40,40A39.997,39.997,0,0,0,456,256Zm-8,128H384v32h64ZM640,256V384a31.96166,31.96166,0,0,1-32,32H576V224h32A31.96166,31.96166,0,0,1,640,256Z" /></svg>
+                Chatbot Builder
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">No-Code Chatbot Builder</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Build advanced WhatsApp chatbots without writing a single line of code. Automate interactions, collect leads, and provide instant responses around the clock.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'The most advanced no-code builder for WhatsApp',
+                  'Media, interactive lists, buttons & catalog support',
+                  'API & webhooks for real-time integration',
+                  'Powerful add-ons: OpenAI, Zapier, Google Apps',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-gray-600">
+                    <svg className="w-5 h-5 text-[#25D366] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#features" className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white rounded-lg mt-2" style={{ background: 'linear-gradient(135deg, #128C7E 0%, #25D366 100%)' }}>
+                Learn More
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative w-full bg-white">
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 opacity-30">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(34,197,94,0.1),rgba(16,185,129,0.05))]"></div>
-        </div>
-        <div className="relative z-10 pt-16 pb-8">
-          <div className="container mx-auto px-4 flex flex-col items-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 w-full max-w-6xl">
-              <div className="space-y-6">
-                <div className="flex items-center w-[7rem] h-5 sm:w-[12rem]">
-                 
-                  <img src={assest.logo} alt="" />
-                    {/* <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Numlockitsolutions</span> */} 
-                 
+      {/* ──────────────── TESTIMONIALS ──────────────── */}
+      <section id="testimonials" data-animate className={`py-20 lg:py-28 bg-white ${sectionClass('testimonials')}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="inline-block text-xs font-semibold tracking-widest uppercase text-[#128C7E] mb-3">Testimonials</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              Trusted by businesses that grow on WhatsApp
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">See what our customers have to say about transforming their business with Whatsappgptx.</p>
+          </div>
+
+          {/* Desktop: grid of cards */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testimonials.slice(0, 6).map((t, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-gray-200 bg-white p-7 hover:shadow-lg hover:border-[#25D366]/30 transition-all duration-300"
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(t.rating)].map((_, idx) => (
+                    <svg key={idx} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
                 </div>
-                <p className="text-gray-600">WhatsApp Business Solution Provider</p>
-                <div className="flex space-x-4">
-                  <a target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-all duration-300" href="https://www.facebook.com/share/1C4Q7heRr8/ ">
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 320 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"></path>
-                    </svg>
-                  </a>
-                  <a target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-all duration-300" href="https://www.instagram.com/marketingbhaix?igsh=c2V6cDQ3ZWxoZDM3">
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path>
-                    </svg>
-                  </a>
-                  <a target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-all duration-300" href="https://youtube.com/@marketingbhaix?si=fohRSCB49AOsGRwm">
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"></path>
-                    </svg>
-                  </a>
-                  <a target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-all duration-300" href="https://alvo.chat/6l4J">
-                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 448 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path>
-                    </svg>
-                  </a>
+                <p className="text-gray-600 leading-relaxed mb-6 text-[15px]">"{t.text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: 'linear-gradient(135deg, #075E54, #25D366)' }}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{t.name}</div>
+                    <div className="text-xs text-gray-500">{t.role}</div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="">
-                <h3 className="text-lg font-semibold mb-6">Explore</h3>
-                <ul className="space-y-4">
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="#features"><span className="group-hover:translate-x-1 transition-transform duration-300">Features</span></Link></li>
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" href="#pricing"><span className="group-hover:translate-x-1 transition-transform duration-300">Pricing</span></Link></li>
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/contact-us"><span className="group-hover:translate-x-1 transition-transform duration-300">ContactUs</span></Link></li>
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/shipping-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">ShippingAndDelivery</span></Link></li>
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/terms-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">TermsAndConditions</span></Link></li>
-                  <li><Link className="text-gray-600 hover:text-green-500 transition-all duration-300 flex items-center group" to="/refund-policy"><span className="group-hover:translate-x-1 transition-transform duration-300">CancellationAndRefund</span></Link></li>
-                </ul>
+            ))}
+          </div>
+
+          {/* Mobile: carousel */}
+          <div className="md:hidden">
+            <div className="rounded-2xl border border-gray-200 bg-white p-7">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(testimonials[activeTestimonial].rating)].map((_, idx) => (
+                  <svg key={idx} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
               </div>
-{/*               
-              <div className="">
-                <h3 className="text-lg font-semibold mb-6">Resources</h3>
-                <ul className="space-y-4">
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/blog"><span className="group-hover:translate-x-1 transition-transform duration-300">Blog</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/help-center"><span className="group-hover:translate-x-1 transition-transform duration-300">Help Center</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/webinars"><span className="group-hover:translate-x-1 transition-transform duration-300">Webinars</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/status"><span className="group-hover:translate-x-1 transition-transform duration-300">System Status</span></a></li>
-                </ul>
-              </div>
-              
-              <div className="">
-                <h3 className="text-lg font-semibold mb-6">Company</h3>
-                <ul className="space-y-4">
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/about"><span className="group-hover:translate-x-1 transition-transform duration-300">About Us</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/careers"><span className="group-hover:translate-x-1 transition-transform duration-300">Careers</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/contact"><span className="group-hover:translate-x-1 transition-transform duration-300">Contact Us</span></a></li>
-                  <li><a className="text-gray-600 hover:text-green-500 transition-all duration-300 group" href="/partners"><span className="group-hover:translate-x-1 transition-transform duration-300">Partners</span></a></li>
-                </ul>
-              </div> */}
-            </div>
-            
-            {/* WhatsApp Float Button */}
-            <div className="fixed bottom-4 right-4 lg:bottom-8 lg:right-8 z-50 scale-75 lg:scale-100 origin-bottom-right">
-              <a target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 lg:space-x-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 lg:px-6 py-2 lg:py-3 rounded-full hover:shadow-lg transition-all duration-300 group text-sm lg:text-base" href="https://alvo.chat/6l4J">
-                <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden bg-white flex items-center justify-center">
-                  <SiWhatsapp color='green' className="w-6 h-6 lg:w-8 lg:h-8" />
+              <p className="text-gray-600 leading-relaxed mb-6">"{testimonials[activeTestimonial].text}"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'linear-gradient(135deg, #075E54, #25D366)' }}>
+                  {testimonials[activeTestimonial].avatar}
                 </div>
                 <div>
-                  <div className="font-medium">Support Team</div>
-                  <div className="text-xs lg:text-sm opacity-90 flex items-center">
-                    <span className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-300 rounded-full mr-1.5 lg:mr-2 animate-pulse"></span>
-                    Online
-                  </div>
+                  <div className="font-semibold text-gray-900 text-sm">{testimonials[activeTestimonial].name}</div>
+                  <div className="text-xs text-gray-500">{testimonials[activeTestimonial].role}</div>
                 </div>
-                <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity rounded-full"></span>
+              </div>
+            </div>
+            <div className="flex justify-center gap-2 mt-4">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveTestimonial(i)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${i === activeTestimonial ? 'bg-[#075E54] w-6' : 'bg-gray-300'}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────── INTEGRATIONS / PARTNERS ──────────────── */}
+      <section id="integrations" data-animate className={`py-16 bg-gray-50/70 border-y border-gray-100 ${sectionClass('integrations')}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-semibold tracking-widest uppercase text-[#128C7E] mb-3">Integrations</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Connect with your favorite tools</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-6 max-w-3xl mx-auto">
+            {partners.map((p, i) => (
+              <div key={i} className="flex items-center justify-center p-5 bg-white rounded-xl border border-gray-200 hover:border-[#25D366]/30 hover:shadow-md transition-all duration-300">
+                <img src={p.logo} alt={p.name} className="h-10 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────── PRICING ──────────────── */}
+      <section id="pricing" className="py-20 lg:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="inline-block text-xs font-semibold tracking-widest uppercase text-[#128C7E] mb-3">Pricing</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Simple, transparent pricing</h2>
+            <p className="mt-4 text-lg text-gray-500">Start free, scale as you grow. No hidden fees.</p>
+          </div> */}
+          <Subscriptions />
+        </div>
+      </section>
+
+      {/* ──────────────── AFFILIATE PROGRAM ──────────────── */}
+      <section id="affiliates" data-animate className={`py-20 lg:py-28 relative overflow-hidden ${sectionClass('affiliates')}`}>
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#075E54] to-[#128C7E]" />
+        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 text-white/90 text-xs font-semibold tracking-wide uppercase mb-4">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Partner Program
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              Earn recurring income as an affiliate
+            </h2>
+            <p className="mt-4 text-lg text-white/70">
+              Refer businesses to Whatsappgptx and earn up to 35% commission on every payment — month after month.
+            </p>
+          </div>
+
+          {/* Perks grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+            {affiliatePerks.map((perk, i) => (
+              <div key={i} className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-6 hover:bg-white/15 transition-colors duration-300">
+                <div className="text-[#25D366] mb-4">{perk.icon}</div>
+                <h3 className="text-lg font-semibold text-white mb-2">{perk.title}</h3>
+                <p className="text-white/65 text-sm leading-relaxed">{perk.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Commission tiers table */}
+          <div className="max-w-2xl mx-auto">
+            {/* <h3 className="text-xl font-bold text-white text-center mb-6">Commission Tiers</h3> */}
+            {/* <div className="rounded-2xl overflow-hidden border border-white/15">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-white/10">
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wider">Referrals</th>
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wider">Commission</th>
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wider">Bonus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {commissionTiers.map((tier, i) => (
+                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-white text-sm font-medium">{tier.referrals}</td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-2.5 py-1 rounded-full bg-[#25D366]/20 text-[#25D366] text-sm font-bold">
+                          {tier.rate}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-white/70 text-sm">{tier.bonus}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div> */}
+            <div className="text-center mt-8">
+              <a
+                href="/register"
+                className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-[#075E54] bg-white rounded-xl hover:bg-gray-50 shadow-lg transition-all duration-200"
+              >
+                Join Affiliate Program
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </a>
             </div>
-            
-            <div className="border-t border-gray-200/50 pt-8 mt-8 w-full">
-              <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 w-full max-w-6xl">
-                <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Numlockitsolutions. All rights reserved.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────── CTA SECTION ──────────────── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-4">
+            Ready to transform your WhatsApp marketing?
+          </h2>
+          <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
+            Join 100+ businesses already growing their revenue with Whatsappgptx. Start your free trial today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white rounded-xl shadow-lg shadow-[#075E54]/20 hover:shadow-xl transition-all duration-200"
+              style={{ background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)' }}
+            >
+              Get Started Free
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </a>
+            <a
+              href="https://alvo.chat/6l4J"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-[#075E54] border-2 border-[#075E54]/15 rounded-xl hover:border-[#075E54]/30 transition-all duration-200"
+            >
+              Talk to Sales
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────── FOOTER ──────────────── */}
+      <footer className="bg-gray-50 border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {/* Brand */}
+            <div className="lg:col-span-1 space-y-5">
+              <img src={assest.logo} alt="Whatsappgptx" className="h-7 w-auto" />
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Official WhatsApp Business API Solution Provider. Powering automated messaging for 100+ businesses worldwide.
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { href: "https://www.facebook.com/share/1C4Q7heRr8/", icon: <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z" />, vb: "0 0 320 512" },
+                  { href: "https://www.instagram.com/marketingbhaix", icon: <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />, vb: "0 0 448 512" },
+                  { href: "https://youtube.com/@marketingbhaix", icon: <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z" />, vb: "0 0 576 512" },
+                ].map((social, i) => (
+                  <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg bg-gray-200/60 flex items-center justify-center text-gray-500 hover:bg-[#25D366]/10 hover:text-[#25D366] transition-all duration-200">
+                    <svg fill="currentColor" viewBox={social.vb} className="w-4 h-4">{social.icon}</svg>
+                  </a>
+                ))}
               </div>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Product</h4>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Features', href: '#features' },
+                  { label: 'Pricing', href: '#pricing' },
+                  { label: 'Integrations', href: '#integrations' },
+                  { label: 'Affiliate Program', href: '#affiliates' },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <a href={item.href} className="text-sm text-gray-500 hover:text-[#075E54] transition-colors">{item.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Privacy Policy', to: '/privacy' },
+                  { label: 'Terms & Conditions', to: '/terms-policy' },
+                  { label: 'Shipping & Delivery', to: '/shipping-policy' },
+                  { label: 'Cancellation & Refund', to: '/refund-policy' },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <Link to={item.to} className="text-sm text-gray-500 hover:text-[#075E54] transition-colors">{item.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Support</h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/contact-us" className="text-sm text-gray-500 hover:text-[#075E54] transition-colors">Contact Us</Link>
+                </li>
+                <li>
+                  <a href="https://alvo.chat/6l4J" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-[#075E54] transition-colors">WhatsApp Support</a>
+                </li>
+                <li>
+                  <a href="https://alvo.chat/6l4J" className="text-sm text-gray-500 hover:text-[#075E54] transition-colors">Book a Demo</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-400">&copy; {new Date().getFullYear()} Whatsappgptx. All rights reserved.</p>
+            <div className="flex items-center gap-1.5 text-sm text-gray-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]" />
+              WhatsApp Business API Partner
             </div>
           </div>
         </div>
       </footer>
+
+      {/* ──────────────── FLOATING WHATSAPP ──────────────── */}
+      <div className="fixed bottom-5 right-5 lg:bottom-8 lg:right-8 z-50">
+        <a
+          href="https://alvo.chat/6l4J"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 bg-[#25D366] text-white pl-4 pr-5 py-2.5 rounded-full shadow-lg shadow-[#25D366]/30 hover:shadow-xl hover:shadow-[#25D366]/40 transition-all duration-300 group"
+        >
+          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
+            <SiWhatsapp className="w-5 h-5 text-[#25D366]" />
+          </div>
+          <div className="hidden sm:block">
+            <div className="text-sm font-semibold leading-tight">Chat with us</div>
+            <div className="text-[11px] text-white/75 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-white/80 rounded-full animate-pulse" />
+              Typically replies instantly
+            </div>
+          </div>
+        </a>
+      </div>
     </div>
   );
 }
