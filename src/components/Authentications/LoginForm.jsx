@@ -36,7 +36,6 @@ const LoginForm = ({ isActive }) => {
       const response = await axios.post(`${API_BASE_URL}/login/`, formData);
       const token = response.data.Token;
       localStorage.setItem('authToken', token);
-      console.log(response)
       // Fetch user profile to get role
       const profileResponse = await axios.get(`${API_BASE_URL}/user/profile/`, {
         headers: { Authorization: `Token ${token}` },
@@ -62,7 +61,11 @@ const LoginForm = ({ isActive }) => {
       } else {
         toast.error('An unexpected error occurred.');
       }
-      setFormData({ username: '', password: '' });
+      setFormData(prev => ({
+        ...prev,
+        password: ''
+      }));
+
     }
   };
 

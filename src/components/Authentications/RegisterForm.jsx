@@ -23,8 +23,27 @@ const RegisterForm = ({ isActive }) => {
     }))
   }
 
+  const validatePassword = (password) => {
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    return strongPasswordRegex.test(password);
+  };
+
+  
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+     // Strong password check
+    if (!validatePassword(formData.password)) {
+      toast.error(
+        "Password must be 8+ characters with uppercase, lowercase, number and special character."
+      );
+      return;
+    }
+
     try{
       const response = await axios.post(`${API_BASE_URL}/register/`,formData)
       toast.success(response.data.Message)
