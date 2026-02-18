@@ -9,6 +9,10 @@ const ContextProvider = ({ children }) => {
   const [userInfo,setUserInfo]=useState({username:"",email:"",api_provider:"",role:""})
   const [loadingUser, setLoadingUser] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [metaBlocked, setMetaBlocked] = useState(false);
+  const [metaBlockReason, setMetaBlockReason] = useState("");
+
+
   
   const token = localStorage.getItem("authToken");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -42,9 +46,12 @@ const ContextProvider = ({ children }) => {
         ...userRes.data,    // username, email, contacts, templates, etc.
         role: staff.data.role,  // admin or staff
       };
-
+      console.log(statusRes,"statusRes")
       setUserInfo(mergedUserInfo);
       setIsConnected(statusRes.data.is_connected);
+      setMetaBlocked(statusRes.data.meta_blocked);
+      setMetaBlockReason(statusRes.data.meta_block_reason);
+
 
       localStorage.setItem(
         "userInfo",
@@ -120,6 +127,8 @@ useEffect(() => {
 
 
   const value = {
+    metaBlockReason,
+    metaBlocked,
     setSubscriptionStatus,
     subscriptionStatus,
     isConnected,

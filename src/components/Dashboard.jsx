@@ -9,11 +9,10 @@ import { useRef } from "react";
 
 const Dashboard = () => { 
   const navigate = useNavigate();
-  const { userInfo, isConnected, loadingUser,fetchDashboard,} = useContext(Context);
+  const { userInfo, isConnected, loadingUser,fetchDashboard, metaBlocked,  metaBlockReason} = useContext(Context);
   const token = localStorage.getItem("authToken");
   const user_email = userInfo.email || '';
   const user_name = userInfo.username || '';
-
 
   // Wallet states
   const [balance, setBalance] = useState(0);
@@ -392,12 +391,26 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row justify-between mt-3 md:mt-0">
               <div>
                 <h2 className="md:block hidden text-xl mb-1">Dashboard</h2>
-                <p className="mb-6 flex items-center leading-6">
+
+                <p className="mb-2 flex items-center leading-6">
                   <span className="mt-1 font-semibold md:font-normal text-xl">
-                    {userInfo.username ? `Welcome back ${userInfo.username}👋` : "Welcome "}
+                    {userInfo.username
+                      ? `Welcome back ${userInfo.username}👋`
+                      : "Welcome "}
                   </span>
                 </p>
+
+                {metaBlocked && (
+                  <div className="mb-4 p-3 rounded-md bg-red-100 border border-red-300 text-red-700 text-sm">
+                    <strong>⚠ WhatsApp Business Account Locked</strong>
+                    <div className="mt-1">
+                      {metaBlockReason ||
+                        "Your WhatsApp Business account has been temporarily blocked by Meta."}
+                    </div>
+                  </div>
+                )}
               </div>
+
             </div>
             <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-8 text-xs md:text-sm">
               <a
