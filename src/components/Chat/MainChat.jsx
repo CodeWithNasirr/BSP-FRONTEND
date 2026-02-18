@@ -8,17 +8,6 @@ import { assest } from '../../assets/assets';
 import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- * FIXED MAINCHAT - Proper handling of visibility and navigation
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- * KEY FIXES:
- * ✅ Notify ChatList when user navigates back (trigger refresh)
- * ✅ Proper handling of mark-as-read
- * ✅ Maintain cache when switching between views
- */
-
 const MainChat = () => {
   const token = localStorage.getItem('authToken');
   const navigate = useNavigate();
@@ -29,22 +18,16 @@ const MainChat = () => {
 
   const [recipient, setRecipient] = useState(recipientFromUrl || null);
   const [isChatOpen, setIsChatOpen] = useState(!!recipientFromUrl);
-  
-  // ✅ NEW: Track when user returns to chatlist
   const [chatListKey, setChatListKey] = useState(0);
 
-  // Sync recipient with URL changes
   useEffect(() => {
     setRecipient(recipientFromUrl);
     setIsChatOpen(!!recipientFromUrl);
-    
-    // ✅ FIX: Increment key when returning to chatlist to trigger refresh check
     if (!recipientFromUrl) {
       setChatListKey(prev => prev + 1);
     }
   }, [recipientFromUrl]);
 
-  // Mark messages as read when opening a chat
   useEffect(() => {
     if (recipient && token) {
       axios
@@ -73,33 +56,27 @@ const MainChat = () => {
     setRecipient(null);
     setIsChatOpen(false);
     navigate('/chats');
-    
-    // ✅ FIX: Increment key to signal ChatList to check for updates
     setChatListKey(prev => prev + 1);
   };
 
   return (
     <RequireSubscription>
       <div className="flex flex-col h-screen bg-gray-100">
-        {/* Mobile back button */}
-        {/* {isChatOpen && (
-          <div className="p-2 md:hidden bg-white border-b border-gray-200 sticky top-0 z-10 flex items-center">
-            <button
-              onClick={handleBack}
-              className="mr-2 p-1 md:p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
-            >
-              <ArrowLeftIcon className="h-4 md:h-5 w-4 md:w-5 text-gray-600" />
-            </button>
-            <span className="text-sm md:text-base font-semibold truncate">{recipient}</span>
-          </div>
-        )} */}
-
         <div className="flex flex-1 overflow-hidden">
-          {/* ChatList - ✅ Key prop forces refresh check on navigation */}
+          {/* 
+            ChatList panel:
+            - Mobile: full width when no chat open, hidden when chat open
+            - md (768px+): fixed 320px width, always visible
+            - lg (1024px+): fixed 360px width
+            - xl (1280px+): fixed 400px width
+          */}
           <div
-            className={`w-full md:w-1/2 bg-white border-r border-gray-200 flex flex-col ${
-              isChatOpen ? 'hidden sm:hidden md:block' : 'block'
-            }`}
+            className={`bg-white border-r border-gray-200 flex flex-col overflow-hidden
+              ${isChatOpen 
+                ? 'hidden md:flex md:w-[320px] lg:w-[360px] xl:w-[400px]' 
+                : 'w-full md:w-[320px] lg:w-[360px] xl:w-[400px]'
+              }
+              flex-shrink-0`}
           >
             <ChatList 
               key={chatListKey} 
@@ -107,11 +84,17 @@ const MainChat = () => {
             />
           </div>
 
-          {/* ChatWindow */}
+          {/* 
+            ChatWindow panel:
+            - Mobile: full width when chat open, hidden when no chat
+            - md+: takes remaining space with min-w-0 to prevent overflow
+          */}
           <div
-            className={`flex-1 flex flex-col bg-cover bg-center ${
-              isChatOpen ? 'w-full block' : 'hidden md:block md:w-1/2'
-            }`}
+            className={`flex flex-col min-w-0 bg-cover bg-center
+              ${isChatOpen 
+                ? 'w-full flex-1' 
+                : 'hidden md:flex flex-1'
+              }`}
             style={{ backgroundImage: `url(${assest.whatsapp_bg})` }}
           >
             {recipient ? (
