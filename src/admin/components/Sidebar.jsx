@@ -1,4 +1,4 @@
-// src/components/Sidebar.jsx (v2 — Subscription Workflow)
+// src/admin/components/Sidebar.jsx
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -13,24 +13,25 @@ import {
   ChevronRight,
   Shield,
   History,
+  Radio,          // ← Webhook Analytics icon
 } from "lucide-react";
 
 const superAdminLinks = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/subadmins", icon: UserCog, label: "SubAdmins" },
-  { to: "/admin/clients", icon: Users, label: "Clients" },
-  { to: "/admin/history", icon: History, label: "Sub. History" },
-  { to: "/admin/revenue", icon: BarChart3, label: "Revenue" },
-  { to: "/admin/logs", icon: ScrollText, label: "Revenue Logs" },
+  { to: "/admin/dashboard",           icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/admin/subadmins",           icon: UserCog,          label: "SubAdmins" },
+  { to: "/admin/clients",             icon: Users,            label: "Clients" },
+  { to: "/admin/history",             icon: History,          label: "Sub. History" },
+  { to: "/admin/revenue",             icon: BarChart3,        label: "Revenue" },
+  { to: "/admin/logs",                icon: ScrollText,       label: "Revenue Logs" },
+  { to: "/admin/webhook-analytics",   icon: Radio,            label: "Webhooks", badge: true },
 ];
 
 const subAdminLinks = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/clients", icon: Users, label: "My Clients" },
-  { to: "/admin/history", icon: History, label: "Sub. History" },
-  { to: "/admin/revenue", icon: BarChart3, label: "My Revenue" },
+  { to: "/admin/clients",   icon: Users,            label: "My Clients" },
+  { to: "/admin/history",   icon: History,          label: "Sub. History" },
+  { to: "/admin/revenue",   icon: BarChart3,        label: "My Revenue" },
 ];
-
 
 export default function Sidebar() {
   const { user, logout, isSuperAdmin } = useAdminAuth();
@@ -69,20 +70,32 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {links.map(({ to, icon: Icon, label }) => (
+        {links.map(({ to, icon: Icon, label, badge }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
                 isActive
                   ? "bg-amber-400/10 text-amber-400"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`
             }
           >
-            <Icon size={18} className="flex-shrink-0" />
-            {!collapsed && <span className="truncate">{label}</span>}
+            {({ isActive }) => (
+              <>
+                <Icon size={18} className="flex-shrink-0" />
+                {!collapsed && (
+                  <span className="truncate flex-1">{label}</span>
+                )}
+                {/* Webhook special badge dot */}
+                {badge && !collapsed && (
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                    isActive ? "bg-amber-400" : "bg-amber-400/40"
+                  }`} />
+                )}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

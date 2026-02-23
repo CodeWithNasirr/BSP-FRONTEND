@@ -12,6 +12,7 @@ import RevenuePage from "./pages/RevenuePage";
 import RevenueLogsPage from "./pages/RevenueLogsPage";
 import SubscriptionHistoryPage from "./pages/SubscriptionHistoryPage";
 import SubAdminActivityPage from "./pages/SubAdminActivityPage"; // NEW
+import WebhookDashboardPage from "./pages/WebhookDashboardPage"; // ← NEW
 
 function DashboardRouter() {
   const { isSuperAdmin } = useAdminAuth();
@@ -89,6 +90,16 @@ export default function AdminApp() {
           <Route
             path="history"
             element={isAuthenticated ? <SubscriptionHistoryPage /> : <Navigate to="../login" replace />}
+          />
+
+           {/* WEBHOOK ANALYTICS — SuperAdmin only */}
+          <Route
+            path="webhook-analytics"
+            element={
+              isAuthenticated
+                ? <ProtectedRoute requiredRole="SUPER_ADMIN"><WebhookDashboardPage /></ProtectedRoute>
+                : <Navigate to="../login" replace />
+            }
           />
 
           {/* DEFAULT ROUTE */}
