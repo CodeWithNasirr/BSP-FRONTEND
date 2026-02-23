@@ -1,62 +1,23 @@
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // src/components/Chat/ChatWindow.jsx — PERFORMANCE OPTIMIZED
+// // src/components/Chat/ChatWindow.jsx — PERFORMANCE OPTIMIZED + FORWARD
 // // ═══════════════════════════════════════════════════════════════════════════════
 // //
-// // PERFORMANCE FIXES (same approach as ChatList virtualization):
-// //
+// // PERFORMANCE FIXES (10 fixes — see previous commit for detailed explanations):
 // // ✅ FIX 1: Parallel API calls via Promise.allSettled
-// //    BEFORE: 4 separate useEffects = 4 sequential network waterfalls
-// //    AFTER:  Critical (messages + flowStatus) in parallel → render
-// //            Deferred (scheduled + flowList) load 100ms later → no block
-// //
 // // ✅ FIX 2: groupedMessages memoized with useMemo
-// //    BEFORE: .reduce() ran on EVERY render (typing, menu open, reply state...)
-// //    AFTER:  Only recalculates when messages array reference changes
-// //
 // // ✅ FIX 3: ChatImage extracted OUTSIDE component + React.memo
-// //    BEFORE: Defined inside render → new component identity every render → 
-// //            React unmounts/remounts every image = flicker + network re-fetch
-// //    AFTER:  Stable identity, only re-renders on src change
-// //
 // // ✅ FIX 4: MessageBubble extracted + React.memo with custom comparator
-// //    BEFORE: ALL 100 message bubbles re-render when you open ONE action menu,
-// //            change reply state, or any parent state changes
-// //    AFTER:  Each bubble only re-renders when its own data changes
-// //            (status update, menu open/close on THAT specific message)
-// //
 // // ✅ FIX 5: getAllowedFileTypes memoized
-// //    BEFORE: New object created every render → new reference → child re-renders
-// //    AFTER:  Stable reference, only changes when plan changes
-// //
 // // ✅ FIX 6: Static helpers moved OUTSIDE component
-// //    BEFORE: formatTimestamp, formatDateSeparator, etc. recreated every render
-// //    AFTER:  Created once at module level, zero GC pressure
-// //
 // // ✅ FIX 7: Loading skeleton for instant perceived load
-// //    BEFORE: Blank white screen for 200-800ms while 4 APIs complete
-// //    AFTER:  Skeleton appears in <16ms, content swaps in when ready
+// // ✅ FIX 8: Auto-scroll only on NEW messages
+// // ✅ FIX 9: WebSocket in useRef
+// // ✅ FIX 10: Mount guard isMountedRef
 // //
-// // ✅ FIX 8: Auto-scroll only on NEW messages, not status updates
-// //    BEFORE: scrollTop reset on every messages state change (sent→delivered→read)
-// //    AFTER:  Only scrolls when message count actually increases
-// //
-// // ✅ FIX 9: WebSocket stored in useRef, not useState
-// //    BEFORE: setSocket(newSocket) triggers unnecessary re-render
-// //    AFTER:  Ref mutation, zero re-renders
-// //
-// // ✅ FIX 10: Cleanup & mount guard (isMountedRef)
-// //    BEFORE: State updates after unmount = React warnings + memory leaks
-// //    AFTER:  All async callbacks check isMountedRef before setState
-// //
-// // ALL EXISTING FEATURES PRESERVED:
-// // ✅ Flows (start/pause/resume/stop)
-// // ✅ Scheduled messages (countdown, delete)
-// // ✅ File upload (image/video/audio/document)
-// // ✅ Voice messages
-// // ✅ Reply (action menu, reply bubble, scroll-to-message)
-// // ✅ Copy message
-// // ✅ Mark purchase modal
-// // ✅ WebSocket real-time updates
+// // MESSAGE ACTIONS:
+// // ✅ Copy — clipboard + toast
+// // ✅ Reply — reply preview bar + context API
+// // ✅ Forward — recipient picker modal + send to selected chats
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // import React, {
@@ -73,9 +34,10 @@
 // import MessageActions from "./MessageActions";
 // import { ReplyBubble } from "./ReplyPreview";
 // import MarkPurchaseModal from "./MarkPurchaseModal";
+// import ForwardModal from "./ForwardModal";   // ✅ NEW
 
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // STATIC HELPERS — moved OUTSIDE component (stable references, zero GC)
+// // STATIC HELPERS — outside component (stable references, zero GC)
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // const formatTimestamp = (timestamp) => {
@@ -149,10 +111,7 @@
 // };
 
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // ✅ FIX 3: ChatImage — extracted OUTSIDE + React.memo
-// // BEFORE: Defined inside render → new component identity every render →
-// //         React treats it as a DIFFERENT component → unmounts old, mounts new →
-// //         triggers fresh image network request + white flash on EVERY keystroke
+// // ChatImage — extracted + memo'd
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // const ChatImage = memo(({ src, alt }) => {
@@ -165,7 +124,7 @@
 // ChatImage.displayName = "ChatImage";
 
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // ✅ FIX 7: Loading skeleton — instant perceived load
+// // Loading skeleton
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // const MessageSkeleton = () => (
@@ -209,7 +168,7 @@
 // );
 
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // MediaContent — extracted + memo'd (was inline function recreated every render)
+// // MediaContent — extracted + memo'd
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // const MediaContent = memo(({ msg, isOutbound, plan }) => {
@@ -266,27 +225,13 @@
 // InteractiveButtons.displayName = "InteractiveButtons";
 
 // // ═══════════════════════════════════════════════════════════════════════════════
-// // ✅ FIX 4: MessageBubble — React.memo with custom comparator
-// //
-// // THIS IS THE BIGGEST PERFORMANCE WIN.
-// //
-// // BEFORE: Parent has ~15 state variables. When ANY changes (open action menu on
-// //         message #5, type in input, change reply state), React re-renders the
-// //         parent → re-renders ALL 100 message <li> elements → each creates new
-// //         inline JSX → React diffs 100 DOM trees. With images/video that's
-// //         hundreds of DOM nodes diffed for zero visual change.
-// //
-// // AFTER:  Each MessageBubble is memo'd. When you open menu on message #5:
-// //         - Message #5 re-renders (isMenuOpen changed from false→true)
-// //         - The previously open message re-renders (isMenuOpen changed true→false)
-// //         - The other 98 messages SKIP rendering entirely (comparator returns true)
-// //
-// // Measured improvement: ~50-80ms saved per state change with 100 messages.
+// // MessageBubble — React.memo with custom comparator
+// // ✅ NOW INCLUDES onForward prop
 // // ═══════════════════════════════════════════════════════════════════════════════
 
 // const MessageBubble = memo(({
 //   msg, isOutbound, isMenuOpen, plan,
-//   onOpenMenu, onCopy, onReply, onCloseMenu, onScrollToReply,
+//   onOpenMenu, onCopy, onReply, onForward, onCloseMenu, onScrollToReply,
 // }) => {
 //   const msgId = msg.message_id || msg.id;
 //   const longPressRef = useRef(null);
@@ -309,7 +254,6 @@
 //           onTouchEnd={handleTouchEnd}
 //           onTouchCancel={handleTouchEnd}
 //         >
-//           {/* Action menu trigger (desktop hover) */}
 //           {!isMenuOpen && (
 //             <button
 //               onClick={(e) => { e.stopPropagation(); onOpenMenu(msgId); }}
@@ -322,7 +266,14 @@
 //           )}
 
 //           {isMenuOpen && (
-//             <MessageActions msg={msg} onCopy={onCopy} onReply={onReply} onClose={onCloseMenu} isOutbound={true} />
+//             <MessageActions
+//               msg={msg}
+//               onCopy={onCopy}
+//               onReply={onReply}
+//               onForward={onForward}   /* ✅ NEW */
+//               onClose={onCloseMenu}
+//               isOutbound={true}
+//             />
 //           )}
 
 //           <ReplyBubble
@@ -371,7 +322,14 @@
 //         )}
 
 //         {isMenuOpen && (
-//           <MessageActions msg={msg} onCopy={onCopy} onReply={onReply} onClose={onCloseMenu} isOutbound={false} />
+//           <MessageActions
+//             msg={msg}
+//             onCopy={onCopy}
+//             onReply={onReply}
+//             onForward={onForward}   /* ✅ NEW */
+//             onClose={onCloseMenu}
+//             isOutbound={false}
+//           />
 //         )}
 
 //         <ReplyBubble
@@ -389,7 +347,6 @@
 //     </div>
 //   );
 // }, (prev, next) => {
-//   // Custom comparator — skip re-render if nothing meaningful changed
 //   return (
 //     prev.msg.id === next.msg.id &&
 //     prev.msg.status === next.msg.status &&
@@ -412,7 +369,7 @@
 
 //   // ── Core state ──
 //   const [messages, setMessages] = useState([]);
-//   const [isLoading, setIsLoading] = useState(true);  // ✅ FIX 7: skeleton
+//   const [isLoading, setIsLoading] = useState(true);
 //   const [isSending, setIsSending] = useState(false);
 //   const [isConversationExpired, setIsConversationExpired] = useState(false);
 //   const [contactName, setContactName] = useState(recipient);
@@ -421,7 +378,10 @@
 //   const [replyTo, setReplyTo] = useState(null);
 //   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
 
-//   // ── Flow state (deferred load) ──
+//   // ✅ NEW: Forward state
+//   const [forwardMessage, setForwardMessage] = useState(null);  // message object to forward
+
+//   // ── Flow state ──
 //   const [activeFlow, setActiveFlow] = useState(null);
 //   const [isFlowPaused, setIsFlowPaused] = useState(false);
 //   const [availableFlows, setAvailableFlows] = useState([]);
@@ -429,7 +389,7 @@
 //   const [selectedSessionId, setSessionFlowId] = useState(null);
 //   const [showFlowSelector, setShowFlowSelector] = useState(false);
 
-//   // ── Scheduled messages (deferred load) ──
+//   // ── Scheduled messages ──
 //   const [scheduledMessages, setScheduledMessages] = useState([]);
 //   const [, forceUpdate] = useState(0);
 
@@ -441,11 +401,11 @@
 
 //   // ── Refs ──
 //   const chatContainerRef = useRef(null);
-//   const socketRef = useRef(null);         // ✅ FIX 9: ref not state
-//   const isMountedRef = useRef(true);      // ✅ FIX 10: mount guard
+//   const socketRef = useRef(null);
+//   const isMountedRef = useRef(true);
 
 //   // ═══════════════════════════════════════════════════════════════════════════
-//   // ✅ FIX 5: Memoized allowed file types (was recalculated every render)
+//   // Memoized values
 //   // ═══════════════════════════════════════════════════════════════════════════
 
 //   const allowedFiles = useMemo(
@@ -458,12 +418,6 @@
 //     if (file.type.startsWith("audio/") && allowedFiles.accept.includes("audio/*")) return true;
 //     return false;
 //   }, [allowedFiles]);
-
-//   // ═══════════════════════════════════════════════════════════════════════════
-//   // ✅ FIX 2: Memoized grouped messages
-//   // BEFORE: const groupedMessages = messages.reduce(...) — runs every render
-//   // AFTER:  Only recalculates when messages array changes
-//   // ═══════════════════════════════════════════════════════════════════════════
 
 //   const groupedMessages = useMemo(() => {
 //     const groups = {};
@@ -484,21 +438,7 @@
 //   const plan = subscriptionStatus?.plan?.toUpperCase();
 
 //   // ═══════════════════════════════════════════════════════════════════════════
-//   // ✅ FIX 1: PARALLEL INITIAL LOAD
-//   //
-//   // BEFORE (4 separate useEffects, each await-blocks independently):
-//   //   useEffect → fetchMessages()          ~200ms
-//   //   useEffect → fetchScheduledMessages() ~150ms
-//   //   useEffect → fetchFlows()             ~100ms
-//   //   useEffect → fetchFlowStatus()        ~120ms
-//   //   TOTAL: ~570ms sequential waterfall before anything renders
-//   //
-//   // AFTER (2-phase parallel):
-//   //   Phase 1 (critical, blocks render):
-//   //     Promise.allSettled([messages, flowStatus]) → ~200ms parallel
-//   //   Phase 2 (deferred, 100ms after render):
-//   //     Promise.allSettled([scheduled, flowList])  → background, no block
-//   //   TOTAL: ~200ms to first paint (3x faster)
+//   // PARALLEL INITIAL LOAD
 //   // ═══════════════════════════════════════════════════════════════════════════
 
 //   useEffect(() => {
@@ -510,11 +450,11 @@
 //       setMessages([]);
 //       setIsConversationExpired(false);
 //       setReplyTo(null);
+//       setForwardMessage(null);       // ✅ Reset forward state
 //       setActiveMessageMenu(null);
 //       setContactName(recipient);
 
 //       try {
-//         // ✅ Fire messages + flow status in PARALLEL
 //         const [messagesRes, flowRes] = await Promise.allSettled([
 //           axios.get(`${API_BASE_URL}/api/chats/${recipient}/`, {
 //             headers: { Authorization: `Token ${token}`, "Content-Type": "application/json" },
@@ -526,7 +466,6 @@
 
 //         if (!isMountedRef.current) return;
 
-//         // Process messages
 //         if (messagesRes.status === "fulfilled") {
 //           const data = messagesRes.value.data;
 //           const uniqueMessages = data.Data.reduce((acc, msg) => {
@@ -537,7 +476,6 @@
 //           if (uniqueMessages.length > 0 && uniqueMessages[0].user_name) {
 //             setContactName(uniqueMessages[0].user_name);
 //           }
-
 //           setMessages(uniqueMessages);
 //           setIsConversationExpired(data.expired);
 //         } else {
@@ -545,7 +483,6 @@
 //           toast.error("Failed to fetch messages");
 //         }
 
-//         // Process flow status
 //         if (flowRes.status === "fulfilled") {
 //           const { success, data } = flowRes.value.data;
 //           if (success && data) {
@@ -566,7 +503,7 @@
 
 //     loadCriticalData();
 
-//     // ✅ DEFERRED: non-critical loads (don't block first paint)
+//     // Deferred: non-critical loads
 //     const deferTimer = setTimeout(async () => {
 //       try {
 //         const [scheduledRes, flowsRes] = await Promise.allSettled([
@@ -580,12 +517,8 @@
 
 //         if (!isMountedRef.current) return;
 
-//         if (scheduledRes.status === "fulfilled") {
-//           setScheduledMessages(scheduledRes.value.data || []);
-//         }
-//         if (flowsRes.status === "fulfilled") {
-//           setAvailableFlows(flowsRes.value.data.data || []);
-//         }
+//         if (scheduledRes.status === "fulfilled") setScheduledMessages(scheduledRes.value.data || []);
+//         if (flowsRes.status === "fulfilled") setAvailableFlows(flowsRes.value.data.data || []);
 //       } catch (err) {
 //         console.error("Deferred load error:", err);
 //       }
@@ -597,20 +530,12 @@
 //     };
 //   }, [recipient, token]);
 
-//   // ── Scheduled messages countdown timer ──
 //   useEffect(() => {
 //     const interval = setInterval(() => forceUpdate((v) => v + 1), 60 * 1000);
 //     return () => clearInterval(interval);
 //   }, []);
 
-//   // ═══════════════════════════════════════════════════════════════════════════
-//   // ✅ FIX 8: Auto-scroll only on NEW messages (not status updates)
-//   //
-//   // BEFORE: useEffect([messages]) → scrolls on EVERY messages change including
-//   //         sent→delivered→read status transitions = jarring scroll jumps
-//   // AFTER:  Track message count, only scroll when count increases
-//   // ═══════════════════════════════════════════════════════════════════════════
-
+//   // Auto-scroll only on NEW messages
 //   const prevMessageCountRef = useRef(0);
 //   useEffect(() => {
 //     if (messages.length > prevMessageCountRef.current) {
@@ -626,7 +551,7 @@
 //   }, [messages.length]);
 
 //   // ═══════════════════════════════════════════════════════════════════════════
-//   // ✅ FIX 9: WebSocket in ref (was useState → unnecessary re-render)
+//   // WEBSOCKET
 //   // ═══════════════════════════════════════════════════════════════════════════
 
 //   useEffect(() => {
@@ -636,7 +561,6 @@
 
 //     const connectWebSocket = () => {
 //       if (!mounted) return;
-
 //       const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
 //       const backendHost = API_BASE_URL.replace("http://", "").replace("https://", "");
 //       const ws = new WebSocket(`${wsProtocol}${backendHost}/ws/chat/${recipient}/?token=${token}`);
@@ -648,10 +572,9 @@
 //           const data = JSON.parse(e.data);
 //           const msg = data.message;
 //           if (!msg) return;
-//           const action = msg.action;
-//           const payload = msg.data;
 
-//           if (action === "new_message") {
+//           if (msg.action === "new_message") {
+//             const payload = msg.data;
 //             setMessages((prev) => {
 //               if (prev.some((m) => m.message_id === payload.message_id)) return prev;
 //               if (payload.media_type === "audio") {
@@ -663,24 +586,20 @@
 //               return [...prev, payload];
 //             });
 //           }
-//           if (action === "update_status") {
+//           if (msg.action === "update_status") {
+//             const payload = msg.data;
 //             setMessages((prev) => prev.map((m) =>
 //               m.message_id === payload.message_id ? { ...m, status: payload.status } : m
 //             ));
 //           }
-//         } catch (error) {
-//           console.error("WS parse error:", error);
-//         }
+//         } catch (error) { console.error("WS parse error:", error); }
 //       };
 
-//       ws.onclose = () => {
-//         if (mounted) reconnectTimer = setTimeout(connectWebSocket, 3000);
-//       };
+//       ws.onclose = () => { if (mounted) reconnectTimer = setTimeout(connectWebSocket, 3000); };
 //       ws.onerror = () => ws.close();
 //     };
 
 //     connectWebSocket();
-
 //     return () => {
 //       mounted = false;
 //       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -689,7 +608,7 @@
 //   }, [recipient, token]);
 
 //   // ═══════════════════════════════════════════════════════════════════════════
-//   // MESSAGE ACTION HANDLERS (stable references via useCallback)
+//   // MESSAGE ACTION HANDLERS
 //   // ═══════════════════════════════════════════════════════════════════════════
 
 //   const handleCopyMessage = useCallback((msg) => {
@@ -709,6 +628,12 @@
 //     });
 //     setActiveMessageMenu(null);
 //   }, [recipient]);
+
+//   // ✅ NEW: Forward handler — opens the ForwardModal with the selected message
+//   const handleForwardMessage = useCallback((msg) => {
+//     setForwardMessage(msg);
+//     setActiveMessageMenu(null);
+//   }, []);
 
 //   const cancelReply = useCallback(() => setReplyTo(null), []);
 
@@ -759,7 +684,7 @@
 //     }
 
 //     const tempId = "temp_" + Date.now();
-//     const optimisticMessage = {
+//     setMessages((prev) => [...prev, {
 //       id: tempId, temp_id: tempId, message_id: null,
 //       text_content: message_text, media_url: null, buttons,
 //       direction: "OUTBOUND", status: "sending",
@@ -767,9 +692,7 @@
 //       reply_to_message_id: replyTo?.message_id || null,
 //       reply_to_preview: replyTo?.preview_text || null,
 //       reply_to_sender: replyTo?.sender || null,
-//     };
-
-//     setMessages((prev) => [...prev, optimisticMessage]);
+//     }]);
 //     setIsSending(true);
 //     const currentReply = replyTo;
 //     setReplyTo(null);
@@ -943,6 +866,15 @@
 //         setLoading={() => {}}
 //       />
 
+//       {/* ✅ NEW: Forward Modal */}
+//       <ForwardModal
+//         show={!!forwardMessage}
+//         onClose={() => setForwardMessage(null)}
+//         message={forwardMessage}
+//         token={token}
+//         currentRecipient={recipient}
+//       />
+
 //       <div className="flex flex-col min-h-screen">
 //         {/* ── HEADER ── */}
 //         <div className="p-2 bg-white border-b border-gray-200 sticky top-0 z-50 flex justify-between items-center gap-2">
@@ -1040,10 +972,8 @@
 //           className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
 //           onClick={closeMenu}
 //         >
-//           {/* ✅ FIX 7: Loading skeleton (instant perceived load) */}
 //           {isLoading && <MessageSkeleton />}
 
-//           {/* Messages (only render when loaded) */}
 //           {!isLoading && messages.length > 0 && (
 //             <ul className="flex flex-col gap-3">
 //               {sortedDates.map((date) => (
@@ -1059,7 +989,6 @@
 //                       const msgId = msg.message_id || msg.id;
 //                       return (
 //                         <li key={msg.id} id={`msg-${msgId}`} className="transition-colors duration-500">
-//                           {/* ✅ FIX 4: Memo'd MessageBubble — only this bubble re-renders when its menu opens */}
 //                           <MessageBubble
 //                             msg={msg}
 //                             isOutbound={msg.direction === "OUTBOUND"}
@@ -1068,6 +997,7 @@
 //                             onOpenMenu={openMenu}
 //                             onCopy={handleCopyMessage}
 //                             onReply={handleReplyMessage}
+//                             onForward={handleForwardMessage}   /* ✅ NEW */
 //                             onCloseMenu={closeMenu}
 //                             onScrollToReply={scrollToMessage}
 //                           />
@@ -1079,7 +1009,6 @@
 //             </ul>
 //           )}
 
-//           {/* Empty state */}
 //           {!isLoading && messages.length === 0 && (
 //             <div className="flex flex-col items-center justify-center h-full text-gray-400">
 //               <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1110,26 +1039,26 @@
 // };
 
 // export default ChatWindow;
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// src/components/Chat/ChatWindow.jsx — PERFORMANCE OPTIMIZED + FORWARD
+// src/components/Chat/ChatWindow.jsx — PERFORMANCE OPTIMIZED + FORWARD + MULTI-SELECT
 // ═══════════════════════════════════════════════════════════════════════════════
 //
-// PERFORMANCE FIXES (10 fixes — see previous commit for detailed explanations):
-// ✅ FIX 1: Parallel API calls via Promise.allSettled
-// ✅ FIX 2: groupedMessages memoized with useMemo
-// ✅ FIX 3: ChatImage extracted OUTSIDE component + React.memo
-// ✅ FIX 4: MessageBubble extracted + React.memo with custom comparator
-// ✅ FIX 5: getAllowedFileTypes memoized
-// ✅ FIX 6: Static helpers moved OUTSIDE component
-// ✅ FIX 7: Loading skeleton for instant perceived load
-// ✅ FIX 8: Auto-scroll only on NEW messages
-// ✅ FIX 9: WebSocket in useRef
-// ✅ FIX 10: Mount guard isMountedRef
+// PERFORMANCE FIXES (10 fixes):
+// ✅ FIX 1–10: Parallel loads, memoization, memo'd bubbles, skeleton, etc.
 //
 // MESSAGE ACTIONS:
 // ✅ Copy — clipboard + toast
-// ✅ Reply — reply preview bar + context API
-// ✅ Forward — recipient picker modal + send to selected chats
+// ✅ Reply — reply preview bar + context
+// ✅ Forward (single) — from action menu → ForwardModal
+// ✅ Forward (multi) — select mode → pick messages → ForwardModal
+//
+// MULTI-SELECT MODE:
+// ✅ Enter via long-press OR action menu "Select" → first message auto-selected
+// ✅ Tap to toggle selection (checkboxes appear on all bubbles)
+// ✅ Floating toolbar: "X selected" + Forward + Cancel
+// ✅ Exit via Cancel or after forwarding
+// ✅ Selected messages highlighted with blue border
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, {
@@ -1146,10 +1075,10 @@ import VoiceMessage from "./VoiceMessage";
 import MessageActions from "./MessageActions";
 import { ReplyBubble } from "./ReplyPreview";
 import MarkPurchaseModal from "./MarkPurchaseModal";
-import ForwardModal from "./ForwardModal";   // ✅ NEW
+import ForwardModal from "./ForwardModal";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STATIC HELPERS — outside component (stable references, zero GC)
+// STATIC HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const formatTimestamp = (timestamp) => {
@@ -1229,9 +1158,7 @@ const getAllowedFileTypesForPlan = (plan) => {
 const ChatImage = memo(({ src, alt }) => {
   const [error, setError] = useState(false);
   if (error) return <div className="text-sm text-red-500 italic mt-2">Image not loaded</div>;
-  return (
-    <img src={src} alt={alt} className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain" loading="lazy" onError={() => setError(true)} />
-  );
+  return <img src={src} alt={alt} className="max-w-full h-auto rounded-lg max-h-40 md:max-h-60 object-contain" loading="lazy" onError={() => setError(true)} />;
 });
 ChatImage.displayName = "ChatImage";
 
@@ -1241,61 +1168,25 @@ ChatImage.displayName = "ChatImage";
 
 const MessageSkeleton = () => (
   <div className="flex flex-col gap-4 p-4 animate-pulse">
-    <div className="flex justify-start">
-      <div className="bg-gray-200 rounded-r-lg rounded-tl-lg p-4 w-[60%] max-w-[300px]">
-        <div className="h-3 bg-gray-300 rounded w-[80%] mb-2" />
-        <div className="h-3 bg-gray-300 rounded w-[50%]" />
+    {[false, true, false, true, false, true].map((right, i) => (
+      <div key={i} className={`flex ${right ? "justify-end" : "justify-start"}`}>
+        <div className={`${right ? "bg-green-100" : "bg-gray-200"} rounded-lg p-4 w-[${45 + (i % 3) * 10}%] max-w-[300px]`}>
+          <div className={`h-3 ${right ? "bg-green-200" : "bg-gray-300"} rounded w-[${60 + (i % 3) * 15}%] mb-2`} />
+          <div className={`h-3 ${right ? "bg-green-200" : "bg-gray-300"} rounded w-[${40 + (i % 2) * 20}%]`} />
+        </div>
       </div>
-    </div>
-    <div className="flex justify-end">
-      <div className="bg-green-100 rounded-l-lg rounded-tr-lg p-4 w-[55%] max-w-[280px]">
-        <div className="h-3 bg-green-200 rounded w-[70%] mb-2" />
-        <div className="h-3 bg-green-200 rounded w-[90%] mb-2" />
-        <div className="h-3 bg-green-200 rounded w-[40%]" />
-      </div>
-    </div>
-    <div className="flex justify-start">
-      <div className="bg-gray-200 rounded-r-lg rounded-tl-lg p-4 w-[45%] max-w-[240px]">
-        <div className="h-3 bg-gray-300 rounded w-[60%]" />
-      </div>
-    </div>
-    <div className="flex justify-end">
-      <div className="bg-green-100 rounded-l-lg rounded-tr-lg p-4 w-[65%] max-w-[320px]">
-        <div className="h-3 bg-green-200 rounded w-[85%] mb-2" />
-        <div className="h-3 bg-green-200 rounded w-[55%]" />
-      </div>
-    </div>
-    <div className="flex justify-start">
-      <div className="bg-gray-200 rounded-r-lg rounded-tl-lg p-4 w-[50%] max-w-[260px]">
-        <div className="h-3 bg-gray-300 rounded w-[75%] mb-2" />
-        <div className="h-3 bg-gray-300 rounded w-[45%]" />
-      </div>
-    </div>
-    <div className="flex justify-end">
-      <div className="bg-green-100 rounded-l-lg rounded-tr-lg p-4 w-[40%] max-w-[220px]">
-        <div className="h-3 bg-green-200 rounded w-[65%]" />
-      </div>
-    </div>
+    ))}
   </div>
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MediaContent — extracted + memo'd
+// MediaContent
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const MediaContent = memo(({ msg, isOutbound, plan }) => {
   if (!msg.media_url) return null;
-
-  if (plan === "BASIC" && msg.media_type !== "image") {
-    return (
-      <div className="mb-2 p-3 bg-gray-100 rounded-lg">
-        <div className="flex items-center gap-2 text-gray-600">
-          <span className="text-sm">Media content (Upgrade to view)</span>
-        </div>
-      </div>
-    );
-  }
-
+  if (plan === "BASIC" && msg.media_type !== "image")
+    return <div className="mb-2 p-3 bg-gray-100 rounded-lg"><span className="text-sm text-gray-600">Media content (Upgrade to view)</span></div>;
   if (msg.media_type === "image")
     return <div className="mb-2"><ChatImage src={msg.media_url} alt={isOutbound ? "Sent media" : "Received media"} /></div>;
   if (msg.media_type === "audio")
@@ -1311,13 +1202,12 @@ const MediaContent = memo(({ msg, isOutbound, plan }) => {
         </div>
       </div>
     );
-
   return null;
 });
 MediaContent.displayName = "MediaContent";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// InteractiveButtons — extracted + memo'd
+// InteractiveButtons
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const InteractiveButtons = memo(({ buttons, buttonText }) => {
@@ -1337,64 +1227,85 @@ const InteractiveButtons = memo(({ buttons, buttonText }) => {
 InteractiveButtons.displayName = "InteractiveButtons";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MessageBubble — React.memo with custom comparator
-// ✅ NOW INCLUDES onForward prop
+// SELECTION CHECKBOX — shown on each bubble in select mode
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SelectionCheckbox = memo(({ isSelected }) => (
+  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200
+    ${isSelected ? "bg-blue-500 border-blue-500 scale-110" : "border-gray-300 bg-white"}`}>
+    {isSelected && (
+      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    )}
+  </div>
+));
+SelectionCheckbox.displayName = "SelectionCheckbox";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MessageBubble — with selection mode support
+//
+// NEW PROPS:
+//   isSelectMode  — boolean, whether multi-select is active
+//   isSelected    — boolean, whether THIS message is selected
+//   onToggleSelect — (msgId) => void
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const MessageBubble = memo(({
   msg, isOutbound, isMenuOpen, plan,
   onOpenMenu, onCopy, onReply, onForward, onCloseMenu, onScrollToReply,
+  isSelectMode, isSelected, onToggleSelect,
 }) => {
   const msgId = msg.message_id || msg.id;
   const longPressRef = useRef(null);
 
+  // In select mode: tap toggles selection
+  // Normal mode: long-press opens menu
   const handleTouchStart = useCallback(() => {
+    if (isSelectMode) return; // tap handled by onClick in select mode
     longPressRef.current = setTimeout(() => onOpenMenu(msgId), 500);
-  }, [msgId, onOpenMenu]);
+  }, [msgId, onOpenMenu, isSelectMode]);
 
   const handleTouchEnd = useCallback(() => {
     if (longPressRef.current) clearTimeout(longPressRef.current);
   }, []);
 
+  const handleClick = useCallback((e) => {
+    if (isSelectMode) {
+      e.stopPropagation();
+      onToggleSelect(msgId);
+    }
+  }, [isSelectMode, onToggleSelect, msgId]);
+
+  const selectedBorder = isSelected ? "ring-2 ring-blue-400 ring-offset-1" : "";
+  const selectCursor = isSelectMode ? "cursor-pointer" : "";
+
   // ── OUTBOUND ──
   if (isOutbound) {
     return (
-      <div className="flex justify-end mb-3">
+      <div className={`flex justify-end mb-3 items-center gap-2 ${selectCursor}`} onClick={handleClick}>
+        {/* Selection checkbox (left side of outbound) */}
+        {isSelectMode && <SelectionCheckbox isSelected={isSelected} />}
+
         <div
-          className="relative bg-green-200 p-3 rounded-l-lg rounded-tr-lg max-w-[85%] md:max-w-[420px] group"
+          className={`relative bg-green-200 p-3 rounded-l-lg rounded-tr-lg max-w-[85%] md:max-w-[420px] group transition-all duration-200 ${selectedBorder}`}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
         >
-          {!isMenuOpen && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenMenu(msgId); }}
-              className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-white shadow-sm items-center justify-center text-gray-400 hover:text-gray-600 hidden group-hover:flex z-10"
-            >
+          {/* Action menu trigger — hidden in select mode */}
+          {!isSelectMode && !isMenuOpen && (
+            <button onClick={(e) => { e.stopPropagation(); onOpenMenu(msgId); }}
+              className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-white shadow-sm items-center justify-center text-gray-400 hover:text-gray-600 hidden group-hover:flex z-10">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
               </svg>
             </button>
           )}
-
-          {isMenuOpen && (
-            <MessageActions
-              msg={msg}
-              onCopy={onCopy}
-              onReply={onReply}
-              onForward={onForward}   /* ✅ NEW */
-              onClose={onCloseMenu}
-              isOutbound={true}
-            />
+          {!isSelectMode && isMenuOpen && (
+            <MessageActions msg={msg} onCopy={onCopy} onReply={onReply} onForward={onForward} onClose={onCloseMenu} isOutbound={true} />
           )}
-
-          <ReplyBubble
-            replyToPreview={msg.reply_to_preview}
-            replyToSender={msg.reply_to_sender}
-            isOutbound={true}
-            onClick={() => onScrollToReply(msg.reply_to_message_id)}
-          />
-
+          <ReplyBubble replyToPreview={msg.reply_to_preview} replyToSender={msg.reply_to_sender} isOutbound={true} onClick={() => !isSelectMode && onScrollToReply(msg.reply_to_message_id)} />
           {msg.header_text && <h1 className="font-semibold text-sm md:text-base">{msg.header_text}</h1>}
           <MediaContent msg={msg} isOutbound={true} plan={plan} />
           <span className="text-sm md:text-base break-words whitespace-pre-wrap">{msg.text_content}</span>
@@ -1403,54 +1314,44 @@ const MessageBubble = memo(({
             <span>{formatTimestamp(msg.timestamp)} · {msg.status}</span>
           </div>
         </div>
-        <div className="flex items-end">
-          <svg height="13" width="8"><path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" /></svg>
-        </div>
+        {!isSelectMode && (
+          <div className="flex items-end">
+            <svg height="13" width="8"><path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z" /></svg>
+          </div>
+        )}
       </div>
     );
   }
 
   // ── INBOUND ──
   return (
-    <div className="flex justify-start mb-3">
-      <div className="flex items-end">
-        <svg height="13" width="8"><path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" /></svg>
-      </div>
+    <div className={`flex justify-start mb-3 items-center gap-2 ${selectCursor}`} onClick={handleClick}>
+      {/* Selection checkbox (left side of inbound) */}
+      {isSelectMode && <SelectionCheckbox isSelected={isSelected} />}
+
+      {!isSelectMode && (
+        <div className="flex items-end">
+          <svg height="13" width="8"><path fill="white" d="M2.8,13L8,13L8,0.2C7.1,5.5,6.5,8.7,1.7,10.4C-1.6,11.5,1,13,2.8,13z" /></svg>
+        </div>
+      )}
       <div
-        className="relative bg-white p-3 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg shadow-sm group"
+        className={`relative bg-white p-3 md:p-4 max-w-[75%] rounded-r-lg rounded-tl-lg shadow-sm group transition-all duration-200 ${selectedBorder}`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        {!isMenuOpen && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onOpenMenu(msgId); }}
-            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white shadow-sm items-center justify-center text-gray-400 hover:text-gray-600 flex z-10"
-          >
+        {!isSelectMode && !isMenuOpen && (
+          <button onClick={(e) => { e.stopPropagation(); onOpenMenu(msgId); }}
+            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white shadow-sm items-center justify-center text-gray-400 hover:text-gray-600 flex z-10">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
           </button>
         )}
-
-        {isMenuOpen && (
-          <MessageActions
-            msg={msg}
-            onCopy={onCopy}
-            onReply={onReply}
-            onForward={onForward}   /* ✅ NEW */
-            onClose={onCloseMenu}
-            isOutbound={false}
-          />
+        {!isSelectMode && isMenuOpen && (
+          <MessageActions msg={msg} onCopy={onCopy} onReply={onReply} onForward={onForward} onClose={onCloseMenu} isOutbound={false} />
         )}
-
-        <ReplyBubble
-          replyToPreview={msg.reply_to_preview}
-          replyToSender={msg.reply_to_sender}
-          isOutbound={false}
-          onClick={() => onScrollToReply(msg.reply_to_message_id)}
-        />
-
+        <ReplyBubble replyToPreview={msg.reply_to_preview} replyToSender={msg.reply_to_sender} isOutbound={false} onClick={() => !isSelectMode && onScrollToReply(msg.reply_to_message_id)} />
         <MediaContent msg={msg} isOutbound={false} plan={plan} />
         <span className="text-sm md:text-base break-all break-words whitespace-pre-wrap overflow-hidden">{msg.text_content}</span>
         <InteractiveButtons buttons={msg.buttons} buttonText={msg.button_text} />
@@ -1464,10 +1365,49 @@ const MessageBubble = memo(({
     prev.msg.status === next.msg.status &&
     prev.msg.text_content === next.msg.text_content &&
     prev.msg.media_url === next.msg.media_url &&
-    prev.isMenuOpen === next.isMenuOpen
+    prev.isMenuOpen === next.isMenuOpen &&
+    prev.isSelectMode === next.isSelectMode &&
+    prev.isSelected === next.isSelected
   );
 });
 MessageBubble.displayName = "MessageBubble";
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SELECTION TOOLBAR — floating bar at bottom during multi-select
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SelectionToolbar = memo(({ count, onForward, onCancel, onSelectAll, totalCount }) => (
+  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between gap-3 animate-slideUp">
+    <div className="flex items-center gap-3">
+      <button onClick={onCancel} className="p-2 rounded-full hover:bg-gray-100 transition-colors" title="Cancel selection">
+        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <span className="text-sm font-medium text-gray-700">
+        {count} selected
+      </span>
+      {count < totalCount && (
+        <button onClick={onSelectAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+          Select all
+        </button>
+      )}
+    </div>
+
+    <button
+      onClick={onForward}
+      disabled={count === 0}
+      className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+      </svg>
+      Forward {count > 0 ? `(${count})` : ""}
+    </button>
+  </div>
+));
+SelectionToolbar.displayName = "SelectionToolbar";
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1490,8 +1430,14 @@ const ChatWindow = ({ recipient }) => {
   const [replyTo, setReplyTo] = useState(null);
   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
 
-  // ✅ NEW: Forward state
-  const [forwardMessage, setForwardMessage] = useState(null);  // message object to forward
+  // ── Forward state (single message from action menu) ──
+  const [forwardMessages, setForwardMessages] = useState([]);  // array for ForwardModal
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ✅ MULTI-SELECT STATE
+  // ══════════════════════════════════════════════════════════════════════
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState(new Set());
 
   // ── Flow state ──
   const [activeFlow, setActiveFlow] = useState(null);
@@ -1507,9 +1453,7 @@ const ChatWindow = ({ recipient }) => {
 
   // ── Purchase modal ──
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [purchaseForm, setPurchaseForm] = useState({
-    full_name: "", amount: "", location: "", tags: [], tagInput: "",
-  });
+  const [purchaseForm, setPurchaseForm] = useState({ full_name: "", amount: "", location: "", tags: [], tagInput: "" });
 
   // ── Refs ──
   const chatContainerRef = useRef(null);
@@ -1520,10 +1464,7 @@ const ChatWindow = ({ recipient }) => {
   // Memoized values
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const allowedFiles = useMemo(
-    () => getAllowedFileTypesForPlan(subscriptionStatus?.plan),
-    [subscriptionStatus?.plan]
-  );
+  const allowedFiles = useMemo(() => getAllowedFileTypesForPlan(subscriptionStatus?.plan), [subscriptionStatus?.plan]);
 
   const isFileTypeAllowed = useCallback((file) => {
     if (allowedFiles.types.includes(file.type)) return true;
@@ -1562,8 +1503,10 @@ const ChatWindow = ({ recipient }) => {
       setMessages([]);
       setIsConversationExpired(false);
       setReplyTo(null);
-      setForwardMessage(null);       // ✅ Reset forward state
+      setForwardMessages([]);
       setActiveMessageMenu(null);
+      setIsSelectMode(false);
+      setSelectedMessageIds(new Set());
       setContactName(recipient);
 
       try {
@@ -1575,7 +1518,6 @@ const ChatWindow = ({ recipient }) => {
             headers: { Authorization: `Token ${token}` },
           }),
         ]);
-
         if (!isMountedRef.current) return;
 
         if (messagesRes.status === "fulfilled") {
@@ -1584,62 +1526,37 @@ const ChatWindow = ({ recipient }) => {
             if (!acc.some((m) => msg.message_id && m.message_id === msg.message_id)) acc.push(msg);
             return acc;
           }, []);
-
-          if (uniqueMessages.length > 0 && uniqueMessages[0].user_name) {
-            setContactName(uniqueMessages[0].user_name);
-          }
+          if (uniqueMessages.length > 0 && uniqueMessages[0].user_name) setContactName(uniqueMessages[0].user_name);
           setMessages(uniqueMessages);
           setIsConversationExpired(data.expired);
         } else {
-          console.error("Chat fetch failed:", messagesRes.reason);
           toast.error("Failed to fetch messages");
         }
-
         if (flowRes.status === "fulfilled") {
           const { success, data } = flowRes.value.data;
           if (success && data) {
-            setActiveFlow(data);
-            setSelectedFlowId(data.flow || null);
-            setSessionFlowId(data.id || null);
-            setIsFlowPaused(data.is_paused || false);
-          } else {
-            setActiveFlow(null); setSelectedFlowId(null); setSessionFlowId(null); setIsFlowPaused(false);
-          }
+            setActiveFlow(data); setSelectedFlowId(data.flow || null); setSessionFlowId(data.id || null); setIsFlowPaused(data.is_paused || false);
+          } else { setActiveFlow(null); setSelectedFlowId(null); setSessionFlowId(null); setIsFlowPaused(false); }
         }
-      } catch (err) {
-        console.error("Critical load error:", err);
-      } finally {
-        if (isMountedRef.current) setIsLoading(false);
-      }
+      } catch (err) { console.error("Critical load error:", err); }
+      finally { if (isMountedRef.current) setIsLoading(false); }
     };
 
     loadCriticalData();
 
-    // Deferred: non-critical loads
     const deferTimer = setTimeout(async () => {
       try {
         const [scheduledRes, flowsRes] = await Promise.allSettled([
-          axios.get(`${API_BASE_URL}/api/scheduled/${recipient}/`, {
-            headers: { Authorization: `Token ${token}` },
-          }),
-          axios.get(`${API_BASE_URL}/api/flows/list/`, {
-            headers: { Authorization: `Token ${token}` },
-          }),
+          axios.get(`${API_BASE_URL}/api/scheduled/${recipient}/`, { headers: { Authorization: `Token ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/flows/list/`, { headers: { Authorization: `Token ${token}` } }),
         ]);
-
         if (!isMountedRef.current) return;
-
         if (scheduledRes.status === "fulfilled") setScheduledMessages(scheduledRes.value.data || []);
         if (flowsRes.status === "fulfilled") setAvailableFlows(flowsRes.value.data.data || []);
-      } catch (err) {
-        console.error("Deferred load error:", err);
-      }
+      } catch (err) { console.error("Deferred load error:", err); }
     }, 100);
 
-    return () => {
-      isMountedRef.current = false;
-      clearTimeout(deferTimer);
-    };
+    return () => { isMountedRef.current = false; clearTimeout(deferTimer); };
   }, [recipient, token]);
 
   useEffect(() => {
@@ -1647,17 +1564,13 @@ const ChatWindow = ({ recipient }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll only on NEW messages
+  // Auto-scroll
   const prevMessageCountRef = useRef(0);
   useEffect(() => {
-    if (messages.length > prevMessageCountRef.current) {
-      if (chatContainerRef.current) {
-        requestAnimationFrame(() => {
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          }
-        });
-      }
+    if (messages.length > prevMessageCountRef.current && chatContainerRef.current) {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      });
     }
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
@@ -1668,23 +1581,17 @@ const ChatWindow = ({ recipient }) => {
 
   useEffect(() => {
     if (!recipient || !token) return;
-    let reconnectTimer;
-    let mounted = true;
-
+    let reconnectTimer; let mounted = true;
     const connectWebSocket = () => {
       if (!mounted) return;
       const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
       const backendHost = API_BASE_URL.replace("http://", "").replace("https://", "");
       const ws = new WebSocket(`${wsProtocol}${backendHost}/ws/chat/${recipient}/?token=${token}`);
       socketRef.current = ws;
-
       ws.onmessage = (e) => {
         if (!mounted) return;
         try {
-          const data = JSON.parse(e.data);
-          const msg = data.message;
-          if (!msg) return;
-
+          const data = JSON.parse(e.data); const msg = data.message; if (!msg) return;
           if (msg.action === "new_message") {
             const payload = msg.data;
             setMessages((prev) => {
@@ -1700,23 +1607,15 @@ const ChatWindow = ({ recipient }) => {
           }
           if (msg.action === "update_status") {
             const payload = msg.data;
-            setMessages((prev) => prev.map((m) =>
-              m.message_id === payload.message_id ? { ...m, status: payload.status } : m
-            ));
+            setMessages((prev) => prev.map((m) => m.message_id === payload.message_id ? { ...m, status: payload.status } : m));
           }
         } catch (error) { console.error("WS parse error:", error); }
       };
-
       ws.onclose = () => { if (mounted) reconnectTimer = setTimeout(connectWebSocket, 3000); };
       ws.onerror = () => ws.close();
     };
-
     connectWebSocket();
-    return () => {
-      mounted = false;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (socketRef.current) socketRef.current.close();
-    };
+    return () => { mounted = false; if (reconnectTimer) clearTimeout(reconnectTimer); if (socketRef.current) socketRef.current.close(); };
   }, [recipient, token]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1724,8 +1623,7 @@ const ChatWindow = ({ recipient }) => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleCopyMessage = useCallback((msg) => {
-    const text = msg.text_content || msg.media_url || "";
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(msg.text_content || msg.media_url || "").then(() => {
       toast.success("Copied!", { autoClose: 1500, hideProgressBar: true });
     }).catch(() => toast.error("Failed to copy"));
     setActiveMessageMenu(null);
@@ -1741,26 +1639,85 @@ const ChatWindow = ({ recipient }) => {
     setActiveMessageMenu(null);
   }, [recipient]);
 
-  // ✅ NEW: Forward handler — opens the ForwardModal with the selected message
+  // Forward single message (from action menu)
   const handleForwardMessage = useCallback((msg) => {
-    setForwardMessage(msg);
+    setForwardMessages([msg]);
     setActiveMessageMenu(null);
   }, []);
 
   const cancelReply = useCallback(() => setReplyTo(null), []);
 
   const scrollToMessage = useCallback((messageId) => {
-    if (!messageId) return;
+    if (!messageId || isSelectMode) return;
     const el = document.getElementById(`msg-${messageId}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("bg-yellow-100");
       setTimeout(() => el.classList.remove("bg-yellow-100"), 2000);
     }
-  }, []);
+  }, [isSelectMode]);
 
   const openMenu = useCallback((msgId) => setActiveMessageMenu(msgId), []);
   const closeMenu = useCallback(() => setActiveMessageMenu(null), []);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ✅ MULTI-SELECT HANDLERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Enter select mode (from header button or could be extended to long-press)
+  const enterSelectMode = useCallback(() => {
+    setIsSelectMode(true);
+    setSelectedMessageIds(new Set());
+    setActiveMessageMenu(null);
+    setReplyTo(null);
+  }, []);
+
+  // Exit select mode
+  const exitSelectMode = useCallback(() => {
+    setIsSelectMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
+
+  // Toggle single message selection
+  const toggleMessageSelect = useCallback((msgId) => {
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      return next;
+    });
+  }, []);
+
+  // Select all messages
+  const selectAllMessages = useCallback(() => {
+    const allIds = new Set();
+    messages.forEach((msg) => {
+      const id = msg.message_id || msg.id;
+      allIds.add(id);
+    });
+    setSelectedMessageIds(allIds);
+  }, [messages]);
+
+  // Forward selected messages → open ForwardModal with array
+  const forwardSelectedMessages = useCallback(() => {
+    if (selectedMessageIds.size === 0) return;
+
+    const selectedMsgs = messages.filter((msg) => {
+      const id = msg.message_id || msg.id;
+      return selectedMessageIds.has(id);
+    });
+
+    // Sort chronologically
+    selectedMsgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    setForwardMessages(selectedMsgs);
+    // Don't exit select mode yet — exit after ForwardModal closes
+  }, [selectedMessageIds, messages]);
+
+  // Handle ForwardModal close — also exit select mode
+  const handleForwardModalClose = useCallback(() => {
+    setForwardMessages([]);
+    if (isSelectMode) exitSelectMode();
+  }, [isSelectMode, exitSelectMode]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEND HANDLERS
@@ -1768,146 +1725,63 @@ const ChatWindow = ({ recipient }) => {
 
   const fetchScheduledMessages = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/scheduled/${recipient}/`, {
-        headers: { Authorization: `Token ${token}` },
-      });
+      const res = await axios.get(`${API_BASE_URL}/api/scheduled/${recipient}/`, { headers: { Authorization: `Token ${token}` } });
       if (isMountedRef.current) setScheduledMessages(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch scheduled messages", err);
-    }
+    } catch (err) { console.error("Failed to fetch scheduled messages", err); }
   }, [recipient, token]);
 
   const handleSendText = useCallback(async ({ message_text, buttons = [], scheduleAt = null }) => {
     if (!message_text.trim()) return;
-
-    if (scheduleAt && subscriptionStatus?.plan === "BASIC") {
-      toast.error("Scheduling is not available on the Basic plan");
-      return;
-    }
-
+    if (scheduleAt && subscriptionStatus?.plan === "BASIC") { toast.error("Scheduling is not available on the Basic plan"); return; }
     if (scheduleAt) {
-      await axios.post(`${API_BASE_URL}/api/chat/schedule-message/`, {
-        recipient, message_text, buttons, send_at: scheduleAt,
-      }, { headers: { Authorization: `Token ${token}` } });
-      toast.success("Message scheduled");
-      await fetchScheduledMessages();
-      setReplyTo(null);
-      return;
+      await axios.post(`${API_BASE_URL}/api/chat/schedule-message/`, { recipient, message_text, buttons, send_at: scheduleAt }, { headers: { Authorization: `Token ${token}` } });
+      toast.success("Message scheduled"); await fetchScheduledMessages(); setReplyTo(null); return;
     }
-
     const tempId = "temp_" + Date.now();
-    setMessages((prev) => [...prev, {
-      id: tempId, temp_id: tempId, message_id: null,
-      text_content: message_text, media_url: null, buttons,
-      direction: "OUTBOUND", status: "sending",
-      timestamp: new Date().toISOString(),
-      reply_to_message_id: replyTo?.message_id || null,
-      reply_to_preview: replyTo?.preview_text || null,
-      reply_to_sender: replyTo?.sender || null,
-    }]);
-    setIsSending(true);
-    const currentReply = replyTo;
-    setReplyTo(null);
-
+    setMessages((prev) => [...prev, { id: tempId, temp_id: tempId, message_id: null, text_content: message_text, media_url: null, buttons, direction: "OUTBOUND", status: "sending", timestamp: new Date().toISOString(), reply_to_message_id: replyTo?.message_id || null, reply_to_preview: replyTo?.preview_text || null, reply_to_sender: replyTo?.sender || null }]);
+    setIsSending(true); const currentReply = replyTo; setReplyTo(null);
     try {
-      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, {
-        recipient, message_text,
-        buttons: buttons.length > 0 ? buttons : undefined,
-        url: "",
-        reply_to: currentReply ? {
-          message_id: currentReply.message_id,
-          preview_text: currentReply.preview_text,
-          sender: currentReply.sender,
-        } : undefined,
-      }, { headers: { Authorization: `Token ${token}`, "Content-Type": "application/json" } });
-
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, { recipient, message_text, buttons: buttons.length > 0 ? buttons : undefined, url: "", reply_to: currentReply ? { message_id: currentReply.message_id, preview_text: currentReply.preview_text, sender: currentReply.sender } : undefined }, { headers: { Authorization: `Token ${token}`, "Content-Type": "application/json" } });
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "sent" } : m)));
     } catch (error) {
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "failed" } : m)));
       toast.error(error.response?.data?.error || "Failed to send message");
-    } finally {
-      setIsSending(false);
-    }
+    } finally { setIsSending(false); }
   }, [recipient, token, replyTo, subscriptionStatus, fetchScheduledMessages]);
 
   const handleSendFile = useCallback(async ({ file, caption = "", scheduleAt = null }) => {
     if (!file) return;
-    if (!isFileTypeAllowed(file)) {
-      toast.error(`File type not allowed. Your ${subscriptionStatus?.plan || "current"} plan supports: ${allowedFiles.description}`);
-      return;
-    }
-    if (file.size > allowedFiles.maxSize) {
-      toast.error(`File too large. Maximum: ${formatFileSize(allowedFiles.maxSize)}`);
-      return;
-    }
-
+    if (!isFileTypeAllowed(file)) { toast.error(`File type not allowed. Your ${subscriptionStatus?.plan || "current"} plan supports: ${allowedFiles.description}`); return; }
+    if (file.size > allowedFiles.maxSize) { toast.error(`File too large. Maximum: ${formatFileSize(allowedFiles.maxSize)}`); return; }
     if (scheduleAt) {
-      const formData = new FormData();
-      formData.append("recipient", recipient);
-      formData.append("message_text", caption);
-      formData.append("url", file);
-      formData.append("send_at", scheduleAt);
+      const formData = new FormData(); formData.append("recipient", recipient); formData.append("message_text", caption); formData.append("url", file); formData.append("send_at", scheduleAt);
       await axios.post(`${API_BASE_URL}/api/chat/schedule-message/`, formData, { headers: { Authorization: `Token ${token}` } });
-      toast.success("File scheduled");
-      await fetchScheduledMessages();
-      return;
+      toast.success("File scheduled"); await fetchScheduledMessages(); return;
     }
-
     const tempId = "temp_" + Date.now();
-    setMessages((prev) => [...prev, {
-      id: tempId, temp_id: tempId, message_id: null, text_content: caption,
-      media_url: URL.createObjectURL(file), media_type: getFileCategory(file.type),
-      direction: "OUTBOUND", status: "sending", timestamp: new Date().toISOString(),
-    }]);
-    setIsSending(true);
-    setReplyTo(null);
-
+    setMessages((prev) => [...prev, { id: tempId, temp_id: tempId, message_id: null, text_content: caption, media_url: URL.createObjectURL(file), media_type: getFileCategory(file.type), direction: "OUTBOUND", status: "sending", timestamp: new Date().toISOString() }]);
+    setIsSending(true); setReplyTo(null);
     try {
-      const formData = new FormData();
-      formData.append("recipient", recipient);
-      formData.append("message_text", caption);
-      formData.append("url", file);
-      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, {
-        headers: { Authorization: `Token ${token}`, "Content-Type": "multipart/form-data" },
-      });
+      const formData = new FormData(); formData.append("recipient", recipient); formData.append("message_text", caption); formData.append("url", file);
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, { headers: { Authorization: `Token ${token}`, "Content-Type": "multipart/form-data" } });
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "sent" } : m)));
     } catch (error) {
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "failed" } : m)));
       toast.error(error.response?.data?.error || "Failed to send file");
-    } finally {
-      setIsSending(false);
-    }
+    } finally { setIsSending(false); }
   }, [recipient, token, isFileTypeAllowed, allowedFiles, subscriptionStatus, fetchScheduledMessages]);
 
   const handleSendVoice = useCallback(async (audioFile, duration, scheduleAt = null) => {
     if (scheduleAt) {
-      const formData = new FormData();
-      formData.append("recipient", recipient);
-      formData.append("url", audioFile);
-      formData.append("voice_duration", duration);
-      formData.append("send_at", scheduleAt);
+      const formData = new FormData(); formData.append("recipient", recipient); formData.append("url", audioFile); formData.append("voice_duration", duration); formData.append("send_at", scheduleAt);
       await axios.post(`${API_BASE_URL}/api/chat/schedule-message/`, formData, { headers: { Authorization: `Token ${token}` } });
-      toast.success("Voice message scheduled");
-      await fetchScheduledMessages();
-      return;
+      toast.success("Voice message scheduled"); await fetchScheduledMessages(); return;
     }
-
     const tempId = "temp_" + Date.now();
-    setMessages((prev) => [...prev, {
-      id: tempId, temp_id: tempId, message_id: null, text_content: "",
-      media_type: "audio", media_url: URL.createObjectURL(audioFile),
-      voice_duration: duration, direction: "OUTBOUND", status: "sending",
-      timestamp: new Date().toISOString(),
-    }]);
-
+    setMessages((prev) => [...prev, { id: tempId, temp_id: tempId, message_id: null, text_content: "", media_type: "audio", media_url: URL.createObjectURL(audioFile), voice_duration: duration, direction: "OUTBOUND", status: "sending", timestamp: new Date().toISOString() }]);
     try {
-      const formData = new FormData();
-      formData.append("recipient", recipient);
-      formData.append("message_text", "");
-      formData.append("url", audioFile);
-      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, {
-        headers: { Authorization: `Token ${token}`, "Content-Type": "multipart/form-data" },
-      });
+      const formData = new FormData(); formData.append("recipient", recipient); formData.append("message_text", ""); formData.append("url", audioFile);
+      await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, { headers: { Authorization: `Token ${token}`, "Content-Type": "multipart/form-data" } });
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "sent" } : m)));
     } catch (error) {
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "failed" } : m)));
@@ -1921,42 +1795,29 @@ const ChatWindow = ({ recipient }) => {
 
   const handleDeleteScheduled = useCallback(async (id) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/scheduled/delete/${id}/`, {
-        headers: { Authorization: `Token ${token}` },
-      });
+      await axios.delete(`${API_BASE_URL}/api/scheduled/delete/${id}/`, { headers: { Authorization: `Token ${token}` } });
       setScheduledMessages((prev) => prev.filter((m) => m.id !== id));
       toast.success("Scheduled message deleted");
-    } catch (err) {
-      toast.error("Failed to delete scheduled message");
-    }
+    } catch (err) { toast.error("Failed to delete scheduled message"); }
   }, [token]);
 
   const handleStartFlow = useCallback(async () => {
     if (!selectedFlowId) { alert("Please select a flow first"); return; }
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/flows/start/`, {
-        phone_number: recipient, flow_id: selectedFlowId,
-      }, { headers: { Authorization: `Token ${token}` } });
-      setActiveFlow(response.data?.data);
-      setShowFlowSelector(false);
+      const response = await axios.post(`${API_BASE_URL}/api/flows/start/`, { phone_number: recipient, flow_id: selectedFlowId }, { headers: { Authorization: `Token ${token}` } });
+      setActiveFlow(response.data?.data); setShowFlowSelector(false);
       toast.success(response.data?.message || "Flow started successfully");
-    } catch (error) {
-      toast.error(`Error: ${error.response?.data?.error || "Failed to start flow"}`);
-    }
+    } catch (error) { toast.error(`Error: ${error.response?.data?.error || "Failed to start flow"}`); }
   }, [selectedFlowId, recipient, token]);
 
   const handleFlowAction = useCallback(async (action) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/flows/update-status/`, {
-        session_id: selectedSessionId, action,
-      }, { headers: { Authorization: `Token ${token}` } });
+      const response = await axios.post(`${API_BASE_URL}/api/flows/update-status/`, { session_id: selectedSessionId, action }, { headers: { Authorization: `Token ${token}` } });
       toast.success(response.data.message || `Flow ${action}d successfully`);
       if (action === "pause") setIsFlowPaused(true);
       else if (action === "resume") setIsFlowPaused(false);
       else if (action === "stop") { setActiveFlow(null); setIsFlowPaused(false); }
-    } catch (error) {
-      toast.error(error.response?.data?.error || `Failed to ${action} flow`);
-    }
+    } catch (error) { toast.error(error.response?.data?.error || `Failed to ${action} flow`); }
   }, [selectedSessionId, token]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1965,24 +1826,16 @@ const ChatWindow = ({ recipient }) => {
 
   return (
     <RequireSubscription>
-      <MarkPurchaseModal
-        show={showPurchaseModal}
-        onClose={() => setShowPurchaseModal(false)}
+      <MarkPurchaseModal show={showPurchaseModal} onClose={() => setShowPurchaseModal(false)}
         contact={{ recipient, user_name: contactName, tags: [] }}
-        purchaseForm={purchaseForm}
-        setPurchaseForm={setPurchaseForm}
-        availableTags={[]}
-        fetchChatList={() => {}}
-        token={token}
-        loading={isSending}
-        setLoading={() => {}}
-      />
+        purchaseForm={purchaseForm} setPurchaseForm={setPurchaseForm}
+        availableTags={[]} fetchChatList={() => {}} token={token} loading={isSending} setLoading={() => {}} />
 
-      {/* ✅ NEW: Forward Modal */}
+      {/* Forward Modal (single or multi) */}
       <ForwardModal
-        show={!!forwardMessage}
-        onClose={() => setForwardMessage(null)}
-        message={forwardMessage}
+        show={forwardMessages.length > 0}
+        onClose={handleForwardModalClose}
+        messages={forwardMessages}
         token={token}
         currentRecipient={recipient}
       />
@@ -1997,24 +1850,27 @@ const ChatWindow = ({ recipient }) => {
               </svg>
             </button>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm md:text-base font-semibold text-gray-800 truncate">
-                {contactName || recipient}
-              </span>
+              <span className="text-sm md:text-base font-semibold text-gray-800 truncate">{contactName || recipient}</span>
               <span className="text-xs text-gray-500 truncate">{recipient}</span>
             </div>
-            <button
-              onClick={() => {
-                setPurchaseForm((prev) => ({ ...prev, full_name: contactName }));
-                setShowPurchaseModal(true);
-              }}
-              className="ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0"
-              title="Edit name"
-            >
-              ✏️
-            </button>
+            <button onClick={() => { setPurchaseForm((prev) => ({ ...prev, full_name: contactName })); setShowPurchaseModal(true); }}
+              className="ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0" title="Edit name">✏️</button>
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-2 justify-end">
+            {/* ✅ Select mode toggle button */}
+            {!isSelectMode ? (
+              <button onClick={enterSelectMode} className="p-2 rounded-full hover:bg-gray-100 transition-colors" title="Select messages">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            ) : (
+              <button onClick={exitSelectMode} className="px-3 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-300 transition-colors">
+                Cancel
+              </button>
+            )}
+
             {!activeFlow ? (
               <button onClick={() => setShowFlowSelector(!showFlowSelector)} className="bg-green-500 hover:bg-green-600 text-white px-2 md:px-3 py-1 rounded-full text-xs md:text-sm transition-colors">
                 <span className="flex items-center gap-1">
@@ -2081,8 +1937,8 @@ const ChatWindow = ({ recipient }) => {
         {/* ── CHAT MESSAGES ── */}
         <div
           ref={chatContainerRef}
-          className="overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 pb-16 md:pb-4"
-          onClick={closeMenu}
+          className={`overflow-y-auto grow h-[calc(70vh-50px)] md:h-[calc(100vh-150px)] p-2 md:p-4 ${isSelectMode ? "pb-24" : "pb-16"} md:pb-4`}
+          onClick={!isSelectMode ? closeMenu : undefined}
         >
           {isLoading && <MessageSkeleton />}
 
@@ -2109,9 +1965,12 @@ const ChatWindow = ({ recipient }) => {
                             onOpenMenu={openMenu}
                             onCopy={handleCopyMessage}
                             onReply={handleReplyMessage}
-                            onForward={handleForwardMessage}   /* ✅ NEW */
+                            onForward={handleForwardMessage}
                             onCloseMenu={closeMenu}
                             onScrollToReply={scrollToMessage}
+                            isSelectMode={isSelectMode}
+                            isSelected={selectedMessageIds.has(msgId)}
+                            onToggleSelect={toggleMessageSelect}
                           />
                         </li>
                       );
@@ -2131,20 +1990,33 @@ const ChatWindow = ({ recipient }) => {
           )}
         </div>
 
-        {/* ── CHAT INPUT ── */}
-        <ChatInputArea
-          recipient={recipient}
-          onSendText={handleSendText}
-          onSendFile={handleSendFile}
-          onSendVoice={handleSendVoice}
-          isConversationExpired={isConversationExpired}
-          isSending={isSending}
-          allowedFiles={allowedFiles}
-          subscriptionStatus={subscriptionStatus}
-          replyTo={replyTo}
-          onCancelReply={cancelReply}
-          onScrollToReply={scrollToMessage}
-        />
+        {/* ── SELECTION TOOLBAR (visible in select mode) ── */}
+        {isSelectMode && (
+          <SelectionToolbar
+            count={selectedMessageIds.size}
+            totalCount={messages.length}
+            onForward={forwardSelectedMessages}
+            onCancel={exitSelectMode}
+            onSelectAll={selectAllMessages}
+          />
+        )}
+
+        {/* ── CHAT INPUT (hidden in select mode) ── */}
+        {!isSelectMode && (
+          <ChatInputArea
+            recipient={recipient}
+            onSendText={handleSendText}
+            onSendFile={handleSendFile}
+            onSendVoice={handleSendVoice}
+            isConversationExpired={isConversationExpired}
+            isSending={isSending}
+            allowedFiles={allowedFiles}
+            subscriptionStatus={subscriptionStatus}
+            replyTo={replyTo}
+            onCancelReply={cancelReply}
+            onScrollToReply={scrollToMessage}
+          />
+        )}
       </div>
     </RequireSubscription>
   );
