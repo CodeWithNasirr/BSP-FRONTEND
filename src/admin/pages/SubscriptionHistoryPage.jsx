@@ -18,6 +18,7 @@ export default function SubscriptionHistoryPage() {
       if (dateFrom) params.from = dateFrom;
       if (dateTo) params.to = dateTo;
       const res = await adminApi.get("/workflow/history/", { params });
+
       setHistory(res.data);
     } catch {
       setError("Failed to load subscription history.");
@@ -29,6 +30,15 @@ export default function SubscriptionHistoryPage() {
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const columns = [
     {
@@ -69,11 +79,29 @@ export default function SubscriptionHistoryPage() {
       render: (r) => <StatusBadge status={r.new_status} />,
     },
     {
-      key: "old_plan",
+      key: "plan_change",
       label: "Plan Change",
       render: (r) => (
         <span className="text-xs text-slate-400">
           {r.old_plan || "—"} → {r.new_plan || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "start_date",
+      label: "Plan Start",
+      render: (r) => (
+        <span className="text-xs text-emerald-400">
+          {formatDate(r.start_date)}
+        </span>
+      ),
+    },
+    {
+      key: "end_date",
+      label: "Plan End",
+      render: (r) => (
+        <span className={`text-xs ${r.end_date ? "text-rose-400" : "text-slate-600"}`}>
+          {formatDate(r.end_date)}
         </span>
       ),
     },
@@ -93,22 +121,50 @@ export default function SubscriptionHistoryPage() {
       ),
     },
     {
-      key: "note",
-      label: "Note",
-      render: (r) => {
-        if (!r.note) return <span className="text-xs text-slate-600">—</span>;
-        const isAutoDeact = r.note.toLowerCase().includes("auto deactivated");
-        return (
-          <span
-            className={`text-xs ${
-              isAutoDeact ? "text-red-400" : "text-slate-400"
-            }`}
-          >
-            {r.note.length > 60 ? r.note.slice(0, 60) + "..." : r.note}
-          </span>
-        );
-      },
-    },
+  key: "note",
+  label: "Note",
+  render: (r) => {
+    if (!r.note)
+      return <span className="text-xs text-slate-600">—</span>;
+
+    const isAutoDeact = r.note
+      .toLowerCase()
+      .includes("auto deactivated");
+
+    const shortText =
+      r.note.length > 60 ? r.note.slice(0, 60) + "..." : r.note;
+
+    return (
+      <div className="relative group inline-block">
+        {/* Short text */}
+        <span
+          className={`text-xs cursor-pointer ${
+            isAutoDeact ? "text-red-400" : "text-slate-400"
+          }`}
+        >
+          {shortText}
+        </span>
+
+        {/* Hover tooltip */}
+        <div
+          className="
+            absolute left-0 top-full mt-2 w-72
+            rounded-md bg-slate-800 text-white text-xs
+            p-2 shadow-lg
+            opacity-0 translate-y-1
+            pointer-events-none
+            transition-all duration-200 ease-out
+            group-hover:opacity-100
+            group-hover:translate-y-0
+            z-50
+          "
+        >
+          {r.note}
+        </div>
+      </div>
+    );
+  },
+},
   ];
 
   return (

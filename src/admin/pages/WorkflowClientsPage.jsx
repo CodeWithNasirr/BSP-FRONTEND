@@ -22,6 +22,7 @@ export default function WorkflowClientsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [subadminFilter, setSubadminFilter] = useState("");
 
   // Modal state
   const [activateClient, setActivateClient] = useState(null);
@@ -35,6 +36,7 @@ export default function WorkflowClientsPage() {
       if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
       if (paymentFilter) params.payment_status = paymentFilter;
+      if (subadminFilter) params.subadmin = subadminFilter; // ⭐ NEW
       const res = await adminApi.get("/workflow/clients/", { params });
       setClients(res.data);
     } catch (err) {
@@ -248,6 +250,22 @@ export default function WorkflowClientsPage() {
           <option value="PAID">Paid</option>
           <option value="UNPAID">Unpaid</option>
         </select>
+
+        {/* SubAdmin Filter — SUPER ADMIN only */}
+        {isSuperAdmin && (
+          <select
+            value={subadminFilter}
+            onChange={(e) => setSubadminFilter(e.target.value)}
+            className="bg-slate-900/50 border border-slate-800/50 text-slate-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500/50"
+          >
+            <option value="">All SubAdmins</option>
+            {subadmins.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.username}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Stats bar */}

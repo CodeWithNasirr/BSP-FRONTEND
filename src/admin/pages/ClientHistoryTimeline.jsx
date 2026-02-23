@@ -322,7 +322,17 @@ function MonthlyView({ monthly, expanded, toggle, formatCurrency }) {
 }
 
 // Timeline View Component
+// Timeline View Component - Updated with date details
 function TimelineView({ events, formatCurrency }) {
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
   return (
     <div className="relative">
       {/* Timeline line */}
@@ -362,19 +372,58 @@ function TimelineView({ events, formatCurrency }) {
                    event.type === "payment" ? "PAYMENT" : "COMMISSION"}
                 </span>
                 <span className="text-xs text-slate-500">{event.day_date}</span>
-                {event.is_auto_logged && (
-                  <span className="text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">auto</span>
-                )}
               </div>
 
               {/* Title */}
               <h4 className="text-sm font-medium text-white mb-1">{event.title}</h4>
               
               {/* Description */}
-              <p className="text-xs text-slate-400 mb-2">{event.description}</p>
+              <p className="text-xs text-slate-400 mb-3">{event.description}</p>
 
-              {/* Details */}
-              <div className="flex flex-wrap gap-3 text-xs">
+              {/* SUBSCRIPTION DATE DETAILS */}
+              {event.type === "subscription_change" && (
+                <div className="mb-3 p-2.5 rounded-lg bg-slate-900/50 border border-slate-700/30">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Start Date */}
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">Start Date</span>
+                      <span className="text-emerald-400 font-medium">
+                        {event.start_date ? formatDate(event.start_date) : "—"}
+                      </span>
+                    </div>
+                    
+                    {/* End Date */}
+                    <div>
+                      <span className="text-slate-500 block mb-0.5">End Date</span>
+                      <span className={event.end_date ? "text-rose-400 font-medium" : "text-slate-600"}>
+                        {event.end_date ? formatDate(event.end_date) : (event.new_status === "ACTIVE" ? "Ongoing" : "—")}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Duration */}
+                  {(event.duration_days !== null || event.new_status === "ACTIVE") && (
+                    <div className="mt-2 pt-2 border-t border-slate-800 flex items-center gap-2">
+                      <Clock size={12} className="text-slate-500" />
+                      <span className="text-xs text-slate-400">
+                        Duration: {" "}
+                        <span className="text-amber-400 font-medium">
+                          {event.new_status === "ACTIVE" && !event.end_date
+                            ? "Active now"
+                            : event.duration_text || "—"
+                          }
+                        </span>
+                        {event.duration_days !== null && event.duration_days > 0 && (
+                          <span className="text-slate-600 ml-1">({event.duration_days} days)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Details Row */}
+              <div className="flex flex-wrap gap-2 text-xs">
                 {/* Status change */}
                 {event.old_status && event.new_status && (
                   <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/50">
@@ -401,14 +450,6 @@ function TimelineView({ events, formatCurrency }) {
                   <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/50 text-slate-300">
                     <DollarSign size={12} className="text-amber-400" />
                     {formatCurrency(event.amount)}
-                  </div>
-                )}
-
-                {/* Commission */}
-                {event.commission_percent !== undefined && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 text-amber-400">
-                    <Users size={12} />
-                    {event.commission_percent}% commission
                   </div>
                 )}
 
