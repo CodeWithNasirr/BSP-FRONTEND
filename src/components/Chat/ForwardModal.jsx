@@ -278,20 +278,46 @@ const ForwardModal = ({ show, onClose, messages = [], token, currentRecipient })
   // FETCH MEDIA BLOB
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // const fetchMediaAsFile = useCallback(async (mediaUrl, mediaType) => {
+  //   try {
+  //     const response = await fetch(mediaUrl);
+  //     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  //     const blob = await response.blob();
+  //     const contentType = blob.type || getMediaMimeType(mediaType, mediaUrl);
+  //     const extension = getFileExtension(mediaType, contentType);
+  //     const fileName = `forwarded_${mediaType}_${Date.now()}.${extension}`;
+  //     return new File([blob], fileName, { type: contentType });
+  //   } catch (err) {
+  //     console.error("Failed to fetch media:", err);
+  //     return null;
+  //   }
+  // }, []);
+
   const fetchMediaAsFile = useCallback(async (mediaUrl, mediaType) => {
     try {
-      const response = await fetch(mediaUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blob = await response.blob();
-      const contentType = blob.type || getMediaMimeType(mediaType, mediaUrl);
+      // 🔥 FORCE HTTPS (VERY IMPORTANT)
+      const safeUrl = mediaUrl.replace(/^http:\/\//i, "https://");
+
+      const response = await axios.get(safeUrl, {
+        responseType: "blob",
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      const blob = response.data;
+      const contentType = blob.type || getMediaMimeType(mediaType, safeUrl);
       const extension = getFileExtension(mediaType, contentType);
+
       const fileName = `forwarded_${mediaType}_${Date.now()}.${extension}`;
+
       return new File([blob], fileName, { type: contentType });
+
     } catch (err) {
       console.error("Failed to fetch media:", err);
       return null;
     }
-  }, []);
+  }, [token]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEND A SINGLE MESSAGE TO A SINGLE RECIPIENT
