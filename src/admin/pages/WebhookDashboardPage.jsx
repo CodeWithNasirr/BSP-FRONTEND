@@ -64,6 +64,311 @@ function MetricCard({ label, value, sub, warning, accent = "amber", icon: Icon }
       <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</p>
       <p className={`text-2xl font-extrabold font-mono leading-none ${warning ? "text-red-400" : "text-white"}`}>{value}</p>
       {sub && <p className="text-xs text-slate-600 mt-1.5">{sub}</p>}
+      {/* ══════════════════════ HOURLY FILTER TAB ══════════════════════ */}
+      {view === "hourly" && (
+        <div className="space-y-6">
+
+          {/* Header */}
+          <div>
+            <h2 className="text-base font-semibold text-white flex items-center gap-2">
+              <Clock size={16} className="text-amber-400" />
+              Time Range Filter
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Query message volume for any time window within a single day.
+              Powered by hourly Redis buckets — data available from deploy date onwards.
+            </p>
+          </div>
+
+          {/* Filter Controls */}
+          <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-5">
+            <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mb-4">Filter</p>
+            <div className="flex flex-wrap gap-4 items-end">
+
+              {/* Date */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Date</label>
+                <input
+                  type="date"
+                  value={hourlyDate}
+                  max={new Date().toISOString().slice(0,10)}
+                  onChange={e => setHourlyDate(e.target.value)}
+                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+                />
+              </div>
+
+              {/* From hour */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">From</label>
+                <select
+                  value={hourlyFrom}
+                  onChange={e => {
+                    const v = Number(e.target.value);
+                    setHourlyFrom(v);
+                    if (v > hourlyTo) setHourlyTo(v);
+                  }}
+                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+                >
+                  {Array.from({length: 24}, (_, i) => (
+                    <option key={i} value={i}>{String(i).padStart(2,"0")}:00</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* To hour */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">To</label>
+                <select
+                  value={hourlyTo}
+                  onChange={e => setHourlyTo(Number(e.target.value))}
+                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+                >
+                  {Array.from({length: 24}, (_, i) => i).filter(i => i >= hourlyFrom).map(i => (
+                    <option key={i} value={i}>{String(i).padStart(2,"0")}:59</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Client filter */}
+              <div className="flex flex-col gap-1.5 min-w-[160px]">
+                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Client</label>
+                <select
+                  value={hourlyClient}
+                  onChange={e => setHourlyClient(e.target.value)}
+                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+                >
+                  <option value="">All clients (global)</option>
+                  {clients.map(c => (
+                    <option key={c.client_id} value={c.client_id}>{c.username}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Apply button */}
+              <button
+                onClick={fetchHourly}
+                disabled={hourlyLoading}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-50 transition-all"
+              >
+                {hourlyLoading
+                  ? <><RefreshCw size={14} className="animate-spin" /> Loading…</>
+                  : <><Zap size={14} /> Apply</>
+                }
+              </button>
+            </div>
+          </div>
+
+          {/* Results */}
+          {hourlyLoading && (
+            <div className="flex items-center justify-center py-16">
+              <LoadingSpinner />
+            </div>
+          )}
+
+          {!hourlyLoading && hourlyData && (
+            <div className="space-y-5">
+
+              {/* Window label */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-lg">
+                  <Clock size={12} />
+                  {hourlyData.date} · {hourlyData.window}
+                  {hourlyData.client_id && (
+                    <span className="text-amber-300/70 ml-1">
+                      · {clients.find(c => String(c.client_id) === String(hourlyData.client_id))?.username ?? `Client #${hourlyData.client_id}`}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary cards */}
+              <div className="flex gap-4 flex-wrap">
+                <MetricCard
+                  label="Messages Received"
+                  value={fmt(hourlyData.summary?.inbound_message_received)}
+                  sub="Inbound customer msgs"
+                  accent="amber"
+                  icon={Activity}
+                />
+                <MetricCard
+                  label="Enqueued"
+                  value={fmt(hourlyData.summary?.message_enqueued)}
+                  sub="Reached Celery"
+                  accent="emerald"
+                  icon={CheckCircle2}
+                />
+                <MetricCard
+                  label="Status Callbacks"
+                  value={fmt(hourlyData.summary?.status_enqueued)}
+                  sub="sent/delivered/read"
+                  accent="slate"
+                  icon={Activity}
+                />
+                <MetricCard
+                  label="Missed"
+                  value={fmt(hourlyData.summary?.missed)}
+                  sub={`${hourlyData.summary?.loss_pct ?? 0}% loss`}
+                  warning={(hourlyData.summary?.missed ?? 0) > 0}
+                  icon={TrendingDown}
+                />
+                {(hourlyData.summary?.ctwa_message_received ?? 0) > 0 && (
+                  <MetricCard
+                    label="CTWA Messages"
+                    value={fmt(hourlyData.summary?.ctwa_message_received)}
+                    sub="Ad-driven first msgs"
+                    accent="cyan"
+                    icon={MousePointerClick}
+                  />
+                )}
+              </div>
+
+              {/* Hourly bar chart */}
+              {hourlyData.per_hour?.length > 0 && (
+                <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+                  <h3 className="text-sm font-semibold text-white mb-4">
+                    Messages per Hour
+                    <span className="text-slate-500 font-normal ml-2 text-xs">
+                      {String(hourlyData.from_hour).padStart(2,"0")}:00 – {String(hourlyData.to_hour).padStart(2,"0")}:59
+                    </span>
+                  </h3>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={hourlyData.per_hour} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis
+                        dataKey="label"
+                        stroke="#475569"
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                      />
+                      <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Bar dataKey="inbound_message_received" name="Received" fill="#1d4ed8" radius={[4,4,0,0]} />
+                      <Bar dataKey="message_enqueued"         name="Enqueued" fill="#22c55e" radius={[4,4,0,0]} />
+                      <Bar dataKey="status_enqueued"          name="Statuses" fill="#334155" radius={[4,4,0,0]} />
+                      {hourlyData.per_hour.some(r => r.ctwa_message_received > 0) && (
+                        <Bar dataKey="ctwa_message_received" name="CTWA" fill="#06b6d4" radius={[4,4,0,0]} />
+                      )}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Per-hour table */}
+              <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-800/50">
+                  <h3 className="text-sm font-semibold text-white">Hourly Breakdown</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-800/50">
+                        {["Hour", "Received", "Enqueued", "Statuses", "CTWA", "Missed", "Loss %"].map(h => (
+                          <th key={h} className="px-4 py-2.5 text-left text-[10px] text-slate-500 font-semibold uppercase tracking-widest">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hourlyData.per_hour.map((row, i) => (
+                        <tr
+                          key={row.hour}
+                          className={`border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors ${
+                            row.missed > 0 ? "bg-red-500/5" : ""
+                          }`}
+                        >
+                          <td className="px-4 py-2.5 font-mono text-slate-300 font-semibold">{row.label}</td>
+                          <td className="px-4 py-2.5 font-mono text-white">{fmt(row.inbound_message_received)}</td>
+                          <td className="px-4 py-2.5 font-mono text-emerald-400">{fmt(row.message_enqueued)}</td>
+                          <td className="px-4 py-2.5 font-mono text-slate-500">{fmt(row.status_enqueued)}</td>
+                          <td className="px-4 py-2.5 font-mono text-cyan-400">
+                            {row.ctwa_message_received > 0 ? fmt(row.ctwa_message_received) : <span className="text-slate-700">—</span>}
+                          </td>
+                          <td className="px-4 py-2.5 font-mono">
+                            <span className={row.missed > 0 ? "text-red-400 font-bold" : "text-slate-600"}>
+                              {fmt(row.missed)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {row.inbound_message_received > 0 ? (
+                              <span
+                                className="text-xs font-bold font-mono px-2 py-0.5 rounded-md"
+                                style={{
+                                  color: lossColor(row.missed / row.inbound_message_received * 100),
+                                  background: lossBg(row.missed / row.inbound_message_received * 100).bg,
+                                }}
+                              >
+                                {(row.missed / row.inbound_message_received * 100).toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-slate-700 text-xs">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    {/* Totals row */}
+                    <tfoot>
+                      <tr className="border-t-2 border-slate-700/50 bg-slate-800/30">
+                        <td className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</td>
+                        <td className="px-4 py-3 font-mono font-bold text-white">{fmt(hourlyData.summary?.inbound_message_received)}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-emerald-400">{fmt(hourlyData.summary?.message_enqueued)}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-slate-400">{fmt(hourlyData.summary?.status_enqueued)}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-cyan-400">
+                          {(hourlyData.summary?.ctwa_message_received ?? 0) > 0
+                            ? fmt(hourlyData.summary.ctwa_message_received)
+                            : <span className="text-slate-700">—</span>}
+                        </td>
+                        <td className="px-4 py-3 font-mono font-bold">
+                          <span className={(hourlyData.summary?.missed ?? 0) > 0 ? "text-red-400" : "text-slate-600"}>
+                            {fmt(hourlyData.summary?.missed)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className="text-sm font-extrabold font-mono px-2 py-1 rounded-lg"
+                            style={{
+                              color: lossColor(hourlyData.summary?.loss_pct ?? 0),
+                              background: lossBg(hourlyData.summary?.loss_pct ?? 0).bg,
+                            }}
+                          >
+                            {hourlyData.summary?.loss_pct ?? 0}%
+                          </span>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Zero state within results */}
+              {hourlyData.summary?.inbound_message_received === 0 && (
+                <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 text-center">
+                  <Clock size={28} className="text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-400 font-semibold text-sm">No messages in this window</p>
+                  <p className="text-slate-600 text-xs mt-1">
+                    {hourlyData.date === new Date().toISOString().slice(0,10)
+                      ? "Hourly data only available from when this version was deployed."
+                      : "No customer messages arrived during this time range."}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Null state — before first fetch */}
+          {!hourlyLoading && !hourlyData && (
+            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
+              <Clock size={36} className="text-slate-700 mx-auto mb-3" />
+              <p className="text-slate-400 font-semibold">Set a time range and click Apply</p>
+              <p className="text-slate-600 text-xs mt-1 max-w-sm mx-auto">
+                Select a date, from/to hours, and optionally a specific client. Hourly buckets are stored
+                separately from daily counters — data starts from when this version was deployed.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
@@ -140,6 +445,14 @@ export default function WebhookDashboardPage() {
   const [replayLoading, setReplayLoading] = useState(false);
   const [clearLoading, setClearLoading]   = useState(null);
 
+  // ── Hourly filter state ──
+  const [hourlyDate,     setHourlyDate]     = useState(() => new Date().toISOString().slice(0,10));
+  const [hourlyFrom,     setHourlyFrom]     = useState(0);
+  const [hourlyTo,       setHourlyTo]       = useState(23);
+  const [hourlyClient,   setHourlyClient]   = useState("");   // "" = global
+  const [hourlyData,     setHourlyData]     = useState(null);
+  const [hourlyLoading,  setHourlyLoading]  = useState(false);
+
   // ── fetch ────────────────────────────────────────────────────────────────
 
   const fetchAll = useCallback(async () => {
@@ -179,10 +492,33 @@ export default function WebhookDashboardPage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  const fetchHourly = useCallback(async () => {
+    setHourlyLoading(true);
+    try {
+      const params = new URLSearchParams({
+        date: hourlyDate,
+        from_hour: hourlyFrom,
+        to_hour: hourlyTo,
+      });
+      if (hourlyClient) params.set("client_id", hourlyClient);
+      const res = await adminApi.get(`/webhook-analytics/hourly/?${params}`);
+      setHourlyData(res.data);
+    } catch (err) {
+      flash("error", "Failed to load hourly data.");
+    } finally {
+      setHourlyLoading(false);
+    }
+  }, [hourlyDate, hourlyFrom, hourlyTo, hourlyClient]);
+
   // Fetch CTWA data when user switches to that tab
   useEffect(() => {
     if (view === "ctwa") fetchCtwa();
   }, [view, fetchCtwa]);
+
+  // Fetch hourly when switching to hourly tab
+  useEffect(() => {
+    if (view === "hourly") fetchHourly();
+  }, [view]);  // intentionally only trigger on tab switch, not on param change
 
   // ── actions ──────────────────────────────────────────────────────────────
 
@@ -333,6 +669,7 @@ export default function WebhookDashboardPage() {
           { id: "clients",  label: "Client Health",     icon: Zap },
           { id: "ctwa",     label: "CTWA Ads",          icon: MousePointerClick },
           { id: "dlq",      label: "Dead Letter Queue", icon: Inbox },
+          { id: "hourly",   label: "Time Filter",        icon: Clock },
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
