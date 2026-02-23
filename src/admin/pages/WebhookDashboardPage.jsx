@@ -228,15 +228,16 @@ export default function WebhookDashboardPage() {
 
   const totals = timeline.reduce(
     (acc, r) => ({
-      received:  acc.received  + (r.received         ?? 0),
-      enqueued:  acc.enqueued  + (r.enqueued          ?? 0),
-      missed:    acc.missed    + (r.missed            ?? 0),
-      inactive:  acc.inactive  + (r.inactive_dropped  ?? 0),
-      failed:    acc.failed    + (r.failed            ?? 0),
-      dedup:     acc.dedup     + (r.dedup_dropped      ?? 0),
-      ctwa:      acc.ctwa      + (r.ctwa_received      ?? 0),
+      received:        acc.received        + (r.received         ?? 0),
+      enqueued:        acc.enqueued        + (r.enqueued          ?? 0),
+      missed:          acc.missed          + (r.missed            ?? 0),
+      inactive:        acc.inactive        + (r.inactive_dropped  ?? 0),
+      failed:          acc.failed          + (r.failed            ?? 0),
+      dedup:           acc.dedup           + (r.dedup_dropped      ?? 0),
+      ctwa:            acc.ctwa            + (r.ctwa_received      ?? 0),
+      status_enqueued: acc.status_enqueued + (r.status_enqueued    ?? 0),
     }),
-    { received: 0, enqueued: 0, missed: 0, inactive: 0, failed: 0, dedup: 0, ctwa: 0 }
+    { received: 0, enqueued: 0, missed: 0, inactive: 0, failed: 0, dedup: 0, ctwa: 0, status_enqueued: 0 }
   );
 
   const overallLoss = totals.received
@@ -370,21 +371,28 @@ export default function WebhookDashboardPage() {
           {/* Stat cards — now 6 including CTWA */}
           <div className="flex gap-4 flex-wrap">
             <MetricCard
-              label="Total Received"
+              label="Messages Received"
               value={fmt(totals.received)}
-              sub={`Last ${days} days`}
+              sub={`Inbound from customers · ${days}d`}
               accent="amber"
               icon={Activity}
             />
             <MetricCard
-              label="Successfully Enqueued"
+              label="Messages Enqueued"
               value={fmt(totals.enqueued)}
-              sub="Reached Celery"
+              sub="Inbound msgs → Celery"
               accent="emerald"
               icon={CheckCircle2}
             />
             <MetricCard
-              label="Missed Webhooks"
+              label="Status Callbacks"
+              value={fmt(totals.status_enqueued)}
+              sub="sent/delivered/read (not missed)"
+              accent="slate"
+              icon={Activity}
+            />
+            <MetricCard
+              label="Missed Messages"
               value={fmt(totals.missed)}
               sub={`${pct(overallLoss)} loss rate`}
               warning={overallLoss > 5}
@@ -482,8 +490,9 @@ export default function WebhookDashboardPage() {
                   <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
                   <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="received" name="Received" fill="#1d4ed8" radius={[3,3,0,0]} />
-                  <Bar dataKey="enqueued" name="Enqueued" fill="#22c55e" radius={[3,3,0,0]} />
+                  <Bar dataKey="received" name="Msg Received" fill="#1d4ed8" radius={[3,3,0,0]} />
+                  <Bar dataKey="enqueued" name="Msg Enqueued" fill="#22c55e" radius={[3,3,0,0]} />
+                  <Bar dataKey="status_enqueued" name="Statuses" fill="#475569" radius={[3,3,0,0]} />
                   <Bar dataKey="ctwa_received" name="CTWA" fill="#06b6d4" radius={[3,3,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -639,9 +648,9 @@ export default function WebhookDashboardPage() {
                       <div className="px-5 pb-5 pt-0 border-t border-slate-800/50">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                           {[
-                            ["Received", client.totals?.received, "text-white"],
-                            ["Enqueued", client.totals?.enqueued, "text-emerald-400"],
-                            ["Missed",   client.totals?.missed,   (client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"],
+                            ["Msg Received", client.totals?.received, "text-white"],
+                            ["Msg Enqueued", client.totals?.enqueued, "text-emerald-400"],
+                            ["Msg Missed",  client.totals?.missed,  (client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"],
                             ["CTWA",     client.totals?.ctwa,     "text-cyan-400"],
                           ].map(([k, v, cls]) => (
                             <div key={k} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/30">
