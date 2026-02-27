@@ -163,8 +163,8 @@ function AppContent() {
                   <SidebarItem icon={<Workflow size={20} />} text="Flows" to="/chat-flow" />
                 )}
                 <SidebarItem icon={<CreditCard size={20} />} text="Subscriptions" to="/subscriptions" />
-                <SidebarItem icon={<CircleDollarSign size={20} />} text="Credits" to="/Credits" />
-                <SidebarItem icon={<NotebookTabs size={20} />} text="My Usage" to="/my-usage-panel" />
+                {/* <SidebarItem icon={<CircleDollarSign size={20} />} text="Credits" to="/Credits" /> */}
+                {/* <SidebarItem icon={<NotebookTabs size={20} />} text="My Usage" to="/my-usage-panel" /> */}
                 <SidebarItem icon={<SiWhatsapp size={20} />} text="Whatsapp" to="/whatsapp-setting" />
                 {!isBasicPlan && (
                   <SidebarItem icon={<MdViewCarousel size={20} />} text="Advanced" to="/advanced" />
