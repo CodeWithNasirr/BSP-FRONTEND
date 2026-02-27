@@ -304,7 +304,7 @@ export default function LandingPage() {
                 </a>
               </div>
               <div className="flex flex-wrap items-center gap-6 justify-center lg:justify-start mt-8 text-sm text-gray-500">
-                {['Free 14-day trial', 'No credit card needed', 'Cancel anytime'].map((t) => (
+                {['Free 7-day trial', 'credit card needed only when You want the Bulk-Campaigns', 'Cancel anytime'].map((t) => (
                   <span key={t} className="flex items-center gap-1.5">
                     <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                     {t}
