@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Context } from './context/Context';
+import { Context } from '../context/Context';
 import { toast } from 'react-toastify';
 
 const FullProtectedRoute = ({ element: Component, featureName, requirePlanCheck = false }) => {

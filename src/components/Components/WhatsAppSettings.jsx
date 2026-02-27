@@ -1,9 +1,9 @@
 import React,{useEffect,useState,useContext} from "react";
 import axios from "axios";
-import API_BASE_URL from "../config";
+import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify'
 import { Link } from "react-router-dom";
-import { Context } from "./context/Context";
+import { Context } from "../context/Context";
 const WhatsAppSettings = () => {
   const token = localStorage.getItem("authToken");
 

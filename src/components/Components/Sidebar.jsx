@@ -4,7 +4,7 @@ import { useContext, createContext, useState, useEffect } from "react";
 import { useNavigate,Link } from "react-router-dom";
 import { toast } from 'react-toastify'
 const SidebarContext = createContext();
-import { Context } from "./context/Context";
+import { Context } from "../context/Context";
 export default function Sidebar({ children }) {
   const [expanded, setExpanded] = useState(false); 
 

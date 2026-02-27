@@ -1,9 +1,9 @@
 import axios from 'axios';
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-import { Context } from "./context/Context";
+import { Context } from "../context/Context";
 import { toast } from 'react-toastify';
-import API_BASE_URL from '../config'; // Adjust the path as needed
+import API_BASE_URL from '../../config'; // Adjust the path as needed
 import { useRef } from "react";
 
 

@@ -437,10 +437,11 @@ import AppContent from "./AppContent";
 import AdminApp from "./admin/AdminApp";
 
 import { AdminAuthProvider }  from "./admin/context/AdminAuthContext";
-
+import { ReferralProvider } from "./components/context/ReferralContext";
 export default function App() {
   return (
     <Router>
+      <ReferralProvider>
       <Routes>
 
         {/* ADMIN PANEL */}
@@ -457,6 +458,7 @@ export default function App() {
         <Route path="/*" element={<AppContent />} />
 
       </Routes>
+      </ReferralProvider>
     </Router>
   );
 }

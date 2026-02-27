@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { toast } from 'react-toastify'
-import API_BASE_URL from '../config';
+import API_BASE_URL from '../../config';
 export default function ConnectWhatsAppForm() {
     const token = localStorage.getItem("authToken")
   const [formData, setFormData] = useState({
