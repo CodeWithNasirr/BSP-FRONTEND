@@ -480,16 +480,12 @@ export default function LandingPage() {
       {/* ──────────────── PRICING ──────────────── */}
       <section id="pricing" className="py-20 lg:py-28 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          {/* <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="inline-block text-xs font-semibold tracking-widest uppercase text-[#128C7E] mb-3">Pricing</span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Simple, transparent pricing</h2>
             <p className="mt-4 text-lg text-gray-500">Start free, scale as you grow. No hidden fees.</p>
-          </div>
-          {/* <Subscriptions /> */}
-          <div className="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-2xl">
-            <p className="text-lg font-medium text-gray-400">Pricing plans loading...</p>
-            <p className="text-sm mt-2">Uncomment the Subscriptions component to display plans</p>
-          </div>
+          </div> */}
+          <Subscriptions />
         </div>
       </section>
 
@@ -513,7 +509,7 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="max-w-2xl mx-auto">
+            {/* <div className="max-w-2xl mx-auto">
               <h3 className="text-xl font-bold text-white text-center mb-6">Commission Tiers</h3>
               <div className="rounded-2xl overflow-hidden border border-white/15">
                 <table className="w-full">
@@ -539,7 +535,7 @@ export default function LandingPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14m-7-7l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </a>
               </div>
-            </div>
+            </div> */}
           </div>
         </section>
       )}
