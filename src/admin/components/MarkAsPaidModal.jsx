@@ -64,6 +64,16 @@ export default function MarkAsPaidModal({
   // FIXED: Properly determine SubAdmin from client data
   // Priority: activated_by -> assigned_subadmin -> null
   const getSubadminInfo = () => {
+
+     // Otherwise use assigned_subadmin
+    if (client.assigned_subadmin) {
+      return {
+        id: client.assigned_subadmin,
+        username: client.assigned_subadmin_name,
+        name: client.assigned_subadmin_name
+      };
+    }
+    
     // If activated_by exists, use it
     if (client.activated_by) {
       return {
@@ -72,14 +82,7 @@ export default function MarkAsPaidModal({
         name: client.activated_by_username
       };
     }
-    // Otherwise use assigned_subadmin
-    if (client.assigned_subadmin) {
-      return {
-        id: client.assigned_subadmin,
-        username: client.assigned_subadmin_name,
-        name: client.assigned_subadmin_name
-      };
-    }
+   
     return null;
   };
 
