@@ -1473,20 +1473,52 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
               )
             );
           }
+          else if (action === "batch_update" && payload?.batch) {
+            let shouldRefresh = false;
 
-          // ✅ NEW: Handle broadcast result
-          else if (action === "broadcast_result" && payload) {
-            toast.info(
-              `Broadcast: Sent to ${payload.sent} chats${
-                payload.failed > 0 ? `, ${payload.failed} failed` : ""
-              }`,
-              { autoClose: 5000 }
-            );
-            // Refresh to show updated last messages
-            listCache.lastFetchTime = 0;
-            setTimeout(() => {
+            payload.batch.forEach(update => {
+              const a = update.action;
+              const p = update.data;
+
+              if (a === "new_message") {
+                shouldRefresh = true;
+              }
+
+              if (a === "mark_read" && p) {
+                setConversations(prev =>
+                  prev.map(c =>
+                    c.recipient === p.recipient
+                      ? { ...c, unread_count: 0 }
+                      : c
+                  )
+                );
+              }
+
+              if (a === "contact_updated" && p) {
+                setConversations(prev =>
+                  prev.map(c =>
+                    c.recipient === p.recipient
+                      ? { ...c, user_name: p.user_name }
+                      : c
+                  )
+                );
+              }
+
+              if (a === "broadcast_result" && p) {
+                toast.info(
+                  `Broadcast: Sent to ${p.sent} chats${
+                    p.failed > 0 ? `, ${p.failed} failed` : ""
+                  }`
+                );
+                shouldRefresh = true;
+              }
+            });
+
+            // ONE refresh after batch (important)
+            if (shouldRefresh) {
+              listCache.lastFetchTime = 0;
               fetchChatListInternal(1, searchRef.current, tagsRef.current, false);
-            }, 1000);
+            }
           }
         } catch (err) {
           console.error("WS parse error:", err);

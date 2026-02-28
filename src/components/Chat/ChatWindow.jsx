@@ -1589,28 +1589,88 @@ const ChatWindow = ({ recipient }) => {
       const ws = new WebSocket(`${wsProtocol}${backendHost}/ws/chat/${recipient}/?token=${token}`);
       socketRef.current = ws;
       ws.onmessage = (e) => {
-        if (!mounted) return;
-        try {
-          const data = JSON.parse(e.data); const msg = data.message; if (!msg) return;
-          if (msg.action === "new_message") {
-            const payload = msg.data;
+      if (!mounted) return;
+
+      try {
+        const data = JSON.parse(e.data);
+        const msg = data.message;
+        if (!msg) return;
+
+        // ⭐ NEW — batch support
+        const updates = (msg.action === "batch_update" && msg.data?.batch)
+          ? msg.data.batch
+          : [{ action: msg.action, data: msg.data }];
+
+        updates.forEach(({ action, data: payload }) => {
+
+          if (action === "new_message") {
             setMessages((prev) => {
               if (prev.some((m) => m.message_id === payload.message_id)) return prev;
+
               if (payload.media_type === "audio") {
-                const index = prev.findIndex((m) => m.temp_id && m.media_type === "audio" && m.direction === "OUTBOUND");
-                if (index !== -1) { const updated = [...prev]; updated[index] = payload; return updated; }
+                const index = prev.findIndex(
+                  (m) =>
+                    m.temp_id &&
+                    m.media_type === "audio" &&
+                    m.direction === "OUTBOUND"
+                );
+                if (index !== -1) {
+                  const updated = [...prev];
+                  updated[index] = payload;
+                  return updated;
+                }
               }
+
               const tempIndex = prev.findIndex((m) => m.temp_id);
-              if (tempIndex !== -1) { const updated = [...prev]; updated[tempIndex] = payload; return updated; }
+              if (tempIndex !== -1) {
+                const updated = [...prev];
+                updated[tempIndex] = payload;
+                return updated;
+              }
+
               return [...prev, payload];
             });
           }
-          if (msg.action === "update_status") {
-            const payload = msg.data;
-            setMessages((prev) => prev.map((m) => m.message_id === payload.message_id ? { ...m, status: payload.status } : m));
+
+          if (action === "update_status") {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.message_id === payload.message_id
+                  ? { ...m, status: payload.status }
+                  : m
+              )
+            );
           }
-        } catch (error) { console.error("WS parse error:", error); }
-      };
+
+        });
+
+      } catch (error) {
+        console.error("WS parse error:", error);
+      }
+    };
+      // ws.onmessage = (e) => {
+      //   if (!mounted) return;
+      //   try {
+      //     const data = JSON.parse(e.data); const msg = data.message; if (!msg) return;
+      //     if (msg.action === "new_message") {
+      //       const payload = msg.data;
+      //       setMessages((prev) => {
+      //         if (prev.some((m) => m.message_id === payload.message_id)) return prev;
+      //         if (payload.media_type === "audio") {
+      //           const index = prev.findIndex((m) => m.temp_id && m.media_type === "audio" && m.direction === "OUTBOUND");
+      //           if (index !== -1) { const updated = [...prev]; updated[index] = payload; return updated; }
+      //         }
+      //         const tempIndex = prev.findIndex((m) => m.temp_id);
+      //         if (tempIndex !== -1) { const updated = [...prev]; updated[tempIndex] = payload; return updated; }
+      //         return [...prev, payload];
+      //       });
+      //     }
+      //     if (msg.action === "update_status") {
+      //       const payload = msg.data;
+      //       setMessages((prev) => prev.map((m) => m.message_id === payload.message_id ? { ...m, status: payload.status } : m));
+      //     }
+      //   } catch (error) { console.error("WS parse error:", error); }
+      // };
       ws.onclose = () => { if (mounted) reconnectTimer = setTimeout(connectWebSocket, 3000); };
       ws.onerror = () => ws.close();
     };
