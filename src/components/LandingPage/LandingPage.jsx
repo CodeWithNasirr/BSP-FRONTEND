@@ -195,7 +195,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16 lg:h-[72px]">
             {/* Logo — dynamic */}
             <a className="flex items-center shrink-0" href="/">
-              <img src={brandLogo} alt={brandName} className="h-6 sm:h-8 w-auto" />
+              <img src={brandLogo}  alt={brandName} className="h-24 sm:h-12 w-auto" />
               {isReferred && !client?.logo && (
                 <span className="ml-2 text-lg font-bold text-[#075E54]">{brandName}</span>
               )}
@@ -567,7 +567,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             <div className="lg:col-span-1 space-y-5">
-              <img src={brandLogo} alt={brandName} className="h-7 w-auto" />
+              <img src={brandLogo} alt={brandName} className="h-20 w-auto" />
               {isReferred && !client?.logo && (
                 <p className="text-base font-bold text-[#075E54]">{brandName}</p>
               )}
