@@ -3,10 +3,14 @@
 {
   "name": "Whatsapp GPTx",
   "short_name": "Gptx",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4F46E5",
+  "scope": "/",
+  "orientation": "portrait",
+  "description": "WhatsApp CRM and automation platform",
+  "display_override": ["window-controls-overlay", "standalone"],
   "icons": [
     {
       "src": "logo.png",
