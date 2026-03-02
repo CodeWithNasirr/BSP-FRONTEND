@@ -9,6 +9,7 @@ import ReactFlow, {
   addEdge,
   MiniMap,
 } from 'reactflow';
+import { nanoid } from 'nanoid';
 import 'reactflow/dist/style.css';
 import { Save, Trash2, Download, Upload, Play,Workflow } from 'lucide-react';
 import NodePanel from './NodePanel';
@@ -89,13 +90,14 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
       });
 
       const newNode = {
-        id: `${type}-${Date.now()}`,
+        id: `${type}-${nanoid(6)}`,
+        // id: `${type}-${Date.now()}`,
         type,
         position,
         data: { label: `${type} node`, ...getDefaultDataForType(type) },
       };
 
-      setNodes((nds) => nds.concat(newNode));
+      setNodes((nds) => [...nds, newNode]);
     },
     [reactFlowInstance, setNodes, nodes]
   );
@@ -165,23 +167,69 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         return;
       }
 
-      const flow = reactFlowInstance.toObject();
+      const rfFlow = reactFlowInstance.toObject();
+
+      const cleanFlow = {
+        nodes: rfFlow.nodes.map(n => ({
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: { ...(n.data || {}) },
+        })),
+        edges: rfFlow.edges.map(e => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle,
+          targetHandle: e.targetHandle,
+        })),
+      };
+
       try {
-        await saveFlow({
-          ...flow,
-          name: flowName,
-        });
-        alert('Flow saved successfully!');
-      } catch (error) {
-        alert(`Failed to save flow: ${error.message}`);
-      }
+      await saveFlow({
+        ...cleanFlow,
+        name: flowName,
+      });
+      alert("Flow saved successfully!");
+    } catch (err) {
+      alert("Save failed");
+    }
+
+
+      // const flow = reactFlowInstance.toObject();
+      // try {
+      //   await saveFlow({
+      //     ...flow,
+      //     name: flowName,
+      //   });
+        // alert('Flow saved successfully!');
+      
     }
   }, [reactFlowInstance, saveFlow, flowName, nodes]);
 
   const handleExportFlow = useCallback(() => {
     if (reactFlowInstance) {
-      const flow = reactFlowInstance.toObject();
-      exportFlow(flow);
+      // const flow = reactFlowInstance.toObject();
+      // exportFlow(flow);
+      const rfFlow = reactFlowInstance.toObject();
+      const cleanFlow = {
+        nodes: rfFlow.nodes.map(n => ({
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: { ...(n.data || {}) },
+        })),
+        edges: rfFlow.edges.map(e => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle,
+          targetHandle: e.targetHandle,
+        })),
+      };
+
+      exportFlow(cleanFlow);
+
     }
   }, [reactFlowInstance]);
 
@@ -195,13 +243,39 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         }
 
         try {
-          await saveFlow({
-            ...flow,
-            name: flow.name || 'Imported Flow',
-          });
-          setNodes(flow.nodes || []);
-          setEdges(flow.edges || []);
-          setCurrentFlow(flow);
+          const cleanFlow = {
+          nodes: (flow.nodes || []).map(n => ({
+            id: n.id,
+            type: n.type,
+            position: n.position,
+            data: { ...(n.data || {}) },
+          })),
+          edges: (flow.edges || []).map(e => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle,
+            targetHandle: e.targetHandle,
+          })),
+        };
+
+        await saveFlow({
+          ...cleanFlow,
+          name: flow.name || 'Imported Flow',
+        });
+
+        setNodes(cleanFlow.nodes);
+        setEdges(cleanFlow.edges);
+          // await saveFlow({
+          //   ...flow,
+          //   name: flow.name || 'Imported Flow',
+          // // });
+          // setNodes(flow.nodes || []);
+          // setEdges(flow.edges || []);
+          setCurrentFlow({
+              ...cleanFlow,
+              name: flow.name || 'Imported Flow',
+            });
           setFlowName(flow.name || 'Imported Flow');
           alert('Flow imported successfully!');
         } catch (error) {
