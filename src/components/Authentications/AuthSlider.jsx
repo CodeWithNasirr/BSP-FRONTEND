@@ -63,7 +63,7 @@ const AuthSlider = () => {
           <div className="w-full max-w-[400px] px-6 py-10 sm:px-10">
             {/* Mobile logo */}
             <div className="flex justify-center mb-6">
-              <img src={assest.logo} alt="Numlockitsolutions" className="h-7 w-auto" />
+              <img src={assest.logo} alt="Gptx" className="h-24 sm:h-12 w-auto" />
             </div>
 
             {/* Crossfade wrapper */}
@@ -132,8 +132,8 @@ const AuthSlider = () => {
             <div className="mb-8 bg-white/10 backdrop-blur-sm rounded-2xl p-4">
               <img
                 src={assest.logo}
-                alt="Numlockitsolutions"
-                className="h-8 w-auto brightness-0 invert"
+                alt="Gptx"
+                className="h-24  w-auto"
               />
             </div>
 
