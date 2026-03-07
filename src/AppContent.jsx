@@ -55,6 +55,7 @@ import Wallet from './components/Wallet/Wallet';
 import { useRoutes, matchRoutes } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import MainChat from './components/Chat/MainChat';
+import WhatsAppRedirect from './components/Components/WhatsAppRedirect';
 
 const validRoutes = [
   '/',
@@ -191,6 +192,7 @@ function AppContent() {
           <Route path="/forgot-password" element={<ForgotPasswordForm />} />
           <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
           <Route path="/dashboard" element={<FullProtectedRoute element={Dashboard} />} />
+          <Route path="/c/:slug" element={<WhatsAppRedirect />} />
 
           {/* ❌ COMMENTED OUT — Staff dashboard route
           <Route path="/staff-dashboard" element={<FullProtectedRoute element={StaffJobsPage} />} />
