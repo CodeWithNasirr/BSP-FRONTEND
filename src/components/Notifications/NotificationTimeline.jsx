@@ -26,6 +26,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
+
+import { adminApi } from "../../admin/utils/api";
 import API_BASE_URL from "../../config";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -77,7 +79,6 @@ const TYPE_ICONS = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const NotificationTimeline = () => {
-  const token = localStorage.getItem("authToken");
 
   // ── Data state ─────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState([]);
@@ -105,7 +106,7 @@ const NotificationTimeline = () => {
   const isMountedRef = useRef(true);
 
   // ── Auth headers ───────────────────────────────────────────────────
-  const headers = { Authorization: `Token ${token}` };
+ 
 
   // ═══════════════════════════════════════════════════════════════════
   // FETCH: Stats
@@ -113,12 +114,13 @@ const NotificationTimeline = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/notifications/stats/`, { headers });
+    
+      const res = await adminApi.get(`${API_BASE_URL}/api/notifications/stats/`);
       if (isMountedRef.current) setStats(res.data);
     } catch (err) {
       console.error("Failed to fetch notification stats:", err);
     }
-  }, [token]);
+  });
 
   // ═══════════════════════════════════════════════════════════════════
   // FETCH: Timeline (paginated)
@@ -138,10 +140,9 @@ const NotificationTimeline = () => {
         if (searchQuery.trim()) params.set("search", searchQuery.trim());
         if (dateFrom) params.set("date_from", dateFrom);
         if (dateTo) params.set("date_to", dateTo);
-
-        const res = await axios.get(
-          `${API_BASE_URL}/api/notifications/timeline/?${params.toString()}`,
-          { headers }
+    
+        const res = await adminApi.get(
+          `${API_BASE_URL}/api/notifications/timeline/?${params.toString()}`
         );
         if (!isMountedRef.current) return;
 
@@ -164,7 +165,7 @@ const NotificationTimeline = () => {
         }
       }
     },
-    [token, activeType, activeStatus, searchQuery, dateFrom, dateTo]
+    [ activeType, activeStatus, searchQuery, dateFrom, dateTo]
   );
 
   // ── Initial load + refetch on filter change ────────────────────────
