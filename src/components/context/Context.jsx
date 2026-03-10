@@ -46,7 +46,7 @@ const ContextProvider = ({ children }) => {
         ...userRes.data,    // username, email, contacts, templates, etc.
         role: staff.data.role,  // admin or staff
       };
-      console.log(statusRes,"statusRes")
+      // console.log(statusRes,"statusRes")
       setUserInfo(mergedUserInfo);
       setIsConnected(statusRes.data.is_connected);
       setMetaBlocked(statusRes.data.meta_blocked);

@@ -13,6 +13,7 @@ import RevenueLogsPage from "./pages/RevenueLogsPage";
 import SubscriptionHistoryPage from "./pages/SubscriptionHistoryPage";
 import SubAdminActivityPage from "./pages/SubAdminActivityPage"; // NEW
 import WebhookDashboardPage from "./pages/WebhookDashboardPage"; // ← NEW
+import NotificationTimeline from "../components/Notifications/NotificationTimeline";
 
 function DashboardRouter() {
   const { isSuperAdmin } = useAdminAuth();
@@ -77,6 +78,12 @@ export default function AdminApp() {
             path="revenue"
             element={isAuthenticated ? <RevenuePage /> : <Navigate to="../login" replace />}
           />
+          
+          <Route
+            path="notifications"
+            element={isAuthenticated ? <NotificationTimeline /> : <Navigate to="../login" replace />}
+          />
+
 
           <Route
             path="logs"

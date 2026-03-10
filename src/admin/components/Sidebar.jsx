@@ -18,6 +18,8 @@ import {
 
 const superAdminLinks = [
   { to: "/admin/dashboard",           icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/admin/notifications",           icon: LayoutDashboard, label: "Notifications" },
+
   { to: "/admin/subadmins",           icon: UserCog,          label: "SubAdmins" },
   { to: "/admin/clients",             icon: Users,            label: "Clients" },
   { to: "/admin/history",             icon: History,          label: "Sub. History" },

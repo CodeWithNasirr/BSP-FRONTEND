@@ -57,6 +57,7 @@ import { toast } from 'react-toastify';
 import MainChat from './components/Chat/MainChat';
 import WhatsAppRedirect from './components/Components/WhatsAppRedirect';
 
+
 const validRoutes = [
   '/',
   '/login',
@@ -193,7 +194,7 @@ function AppContent() {
           <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
           <Route path="/dashboard" element={<FullProtectedRoute element={Dashboard} />} />
           <Route path="/c/:slug" element={<WhatsAppRedirect />} />
-
+          {/* <Route path="/notifications" element={<NotificationTimeline />} /> */}
           {/* ❌ COMMENTED OUT — Staff dashboard route
           <Route path="/staff-dashboard" element={<FullProtectedRoute element={StaffJobsPage} />} />
           */}
