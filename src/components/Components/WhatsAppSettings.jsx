@@ -1,23 +1,27 @@
-import React,{useEffect,useState,useContext} from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import API_BASE_URL from "../../config";
-import { toast } from 'react-toastify'
+import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { Context } from "../context/Context";
-const WhatsAppSettings = () => {
-  const token = localStorage.getItem("authToken");
 
-  const {isConnected} = useContext(Context)
-  
-  const [wp_Details,setWp_Details]=useState([])
+const WhatsAppSettings = () => {
+
+  const token = localStorage.getItem("authToken");
+  const { isConnected, setIsConnected } = useContext(Context);
+
+  const [wp_Details, setWp_Details] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Fetch WhatsApp Details
   useEffect(() => {
-    if (!isConnected) return; // only fetch if connected
+    if (!isConnected) return;
 
     axios
       .get(`${API_BASE_URL}/api/whatsapp/details/`, {
         headers: {
           Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       })
       .then((response) => {
@@ -25,120 +29,181 @@ const WhatsAppSettings = () => {
       })
       .catch((error) => {
         toast.error("Failed to fetch WhatsApp details.");
-        console.error("WhatsApp details error:", error.response?.data || error.message);
+        console.error(error);
       });
-  }, [isConnected, token]);
-      
 
-      // const clientId = "1354428199237692";
-      // const REDIRECT_URI = "https://9fe2-2402-3a80-18ae-9ce9-9062-bd11-4b6c-ba.ngrok-free.app/facebook/callback/";
-      // const scope = "whatsapp_business_management,whatsapp_business_messaging,public_profile";
-  
-      // const handleFacebookLogin = () => {
-      //   const url = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&scope=${scope}&response_type=code&display=popup`;
-      //   window.open(url, 'fbPopup','width=500,height=600');
-      // };
+  }, [isConnected, token]);
+
+
+
+  // Disconnect WhatsApp
+  const handleDisconnect = async () => {
+
+    const confirm = window.confirm(
+      "Are you sure you want to disconnect your WhatsApp account?"
+    );
+
+    if (!confirm) return;
+
+    setLoading(true);
+
+    try {
+
+      await axios.post(
+        `${API_BASE_URL}/api/whatsapp/disconnect/`,
+        {},
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        }
+      );
+
+      toast.success("WhatsApp disconnected successfully");
+
+      setIsConnected(false);
+      setWp_Details({});
+
+    } catch (error) {
+
+      toast.error("Failed to disconnect WhatsApp");
+
+      console.error(error.response?.data || error.message);
+
+    }
+
+    setLoading(false);
+  };
+
+
 
   return (
-    <div className={`container ${!isConnected ? 'flex justify-center' : ''} p-4 sm:p-6 md:p-10 max-h-[100vh] overflow-auto bg-slate-100`}>
-      {!isConnected && (
-        <div className="w-full sm:w-[80%] md:w-[50%] p-4 sm:p-6 md:p-8 overflow-y-auto">
-          <div className="bg-slate-50 border border-primary shadow rounded-md p-4 sm:p-6 py-6 sm:py-8">
-            {/* Icon Container */}
-            <div className="flex justify-center mb-3 sm:mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="48"
-                height="48"
-                viewBox="0 0 48 48"
-                className="w-12 h-12 sm:w-16 sm:h-16 md:w-18 md:h-18"
-              >
-                <path
-                  fill="black"
-                  d="M43.634 4.366a1.25 1.25 0 0 1 0 1.768l-4.913 4.913a9.253 9.253 0 0 1-.744 12.244l-3.343 3.343a1.25 1.25 0 0 1-1.768 0l-11.5-11.5a1.25 1.25 0 0 1 0-1.768l3.343-3.343a9.25 9.25 0 0 1 12.244-.743l4.913-4.914a1.25 1.25 0 0 1 1.768 0m-7.611 7.425a6.75 6.75 0 0 0-9.546 0l-2.46 2.459l9.733 9.732l2.46-2.459a6.75 6.75 0 0 0 0-9.546zM9.28 36.953l-4.914 4.913a1.25 1.25 0 0 0 1.768 1.768l4.913-4.913a9.253 9.253 0 0 0 12.244-.744l3.343-3.343a1.25 1.25 0 0 0 0-1.768L25.268 31.5l3.366-3.366a1.25 1.25 0 0 0-1.768-1.768L23.5 29.732L18.268 24.5l3.366-3.366a1.25 1.25 0 0 0-1.768-1.768L16.5 22.732l-1.366-1.366a1.25 1.25 0 0 0-1.768 0l-3.343 3.343a9.25 9.25 0 0 0-.743 12.244m2.51-10.476l2.46-2.46l9.732 9.733l-2.459 2.46a6.75 6.75 0 0 1-9.546 0l-.186-.187a6.75 6.75 0 0 1 0-9.546"
-                />
-              </svg>
-            </div>
+    <div className="container p-6 max-h-[100vh] overflow-auto bg-slate-100">
 
-            {/* Heading */}
-            <h3 className="text-center text-base sm:text-lg font-medium mb-3 sm:mb-4">
+      {/* CONNECT UI */}
+      {!isConnected && (
+
+        <div className="flex justify-center">
+
+          <div className="w-[450px] bg-white border shadow rounded-md p-8">
+
+            <h3 className="text-lg font-semibold text-center mb-4">
               Connect your WhatsApp account
             </h3>
 
-            {/* Subheading */}
-            <h4 className="text-center text-sm sm:text-base mb-3 sm:mb-4">
-              You need to connect your WhatsApp account first before checking the details of your WhatsApp.
-            </h4>
+            <p className="text-center text-sm text-gray-600 mb-6">
+              Connect your WhatsApp Business account to start sending and receiving messages.
+            </p>
 
-            {/* Button Link */}
             <Link
-              to={isConnected ? "#" : "/connect-form"}
-              onClick={(e) => isConnected && e.preventDefault()}
-              className={`block rounded-md cursor-pointer ${
-                isConnected ? 'bg-green-500 hover:bg-green-400' : 'bg-indigo-600 hover:bg-indigo-500'
-              } px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm mx-auto text-center w-fit`}
-              disabled={isConnected}
+              to="/connect-form"
+              className="block bg-indigo-600 hover:bg-indigo-500 text-white text-center py-2 rounded-md"
             >
-              {isConnected ? 'Connected WhatsApp Successfully' : 'Connect WhatsApp Business'}
+              Connect WhatsApp Business
             </Link>
+
           </div>
+
         </div>
       )}
 
+
+
+      {/* CONNECTED UI */}
       {isConnected && (
-        <div className="flex justify-center items-center mb-6 sm:mb-8">
-          <div className="w-full sm:w-[90%] md:w-[60em] px-2 sm:px-0">
-            {/* WhatsApp Account Info */}
-            <div className="bg-white border border-slate-200 rounded-lg py-2 text-xs sm:text-sm mb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 items-start px-3 sm:px-4 gap-y-4 sm:gap-y-0 gap-x-4 py-2 border-b border-zinc-200 relative">
-                <div className="border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
-                  <div className="font-medium">Display name</div>
-                  <div>{wp_Details.display_name}</div>
-                </div>
-                <div className="border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
-                  <div className="font-medium">Connected number</div>
-                  <div>{wp_Details.connected_number}</div>
-                </div>
-                <div className="border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
-                  <div className="font-medium">Message limits</div>
-                  <div>{wp_Details.message_limits}</div>
-                </div>
+
+        <div className="flex justify-center">
+
+          <div className="w-[900px]">
+
+            {/* DETAILS CARD */}
+            <div className="bg-white border rounded-lg p-6 mb-4">
+
+              <h3 className="text-lg font-semibold mb-4">
+                WhatsApp Account Details
+              </h3>
+
+
+              <div className="grid grid-cols-2 gap-6 text-sm">
+
                 <div>
-                  <div className="font-medium">Account status</div>
-                  <div
-                    className={`py-1 px-2 rounded-md w-fit text-xs ${
-                      wp_Details.number_status === "verified" || wp_Details.number_status === "ACTIVE"
+                  <div className="font-medium">Display name</div>
+                  <div>{wp_Details.display_name || "-"}</div>
+                </div>
+
+                <div>
+                  <div className="font-medium">Connected number</div>
+                  <div>{wp_Details.connected_number || "-"}</div>
+                </div>
+
+                <div>
+                  <div className="font-medium">Message limits</div>
+                  <div>{wp_Details.message_limits || "-"}</div>
+                </div>
+
+                <div>
+                  <div className="font-medium">Quality rating</div>
+
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      wp_Details.quality_rating === "GREEN"
                         ? "bg-green-500 text-white"
                         : "bg-red-500 text-white"
                     }`}
                   >
-                    {wp_Details.number_status === "verified" || wp_Details.number_status === "ACTIVE" ? "VERIFIED" : "PENDING"}
-                  </div>
+                    {wp_Details.quality_rating || "UNKNOWN"}
+                  </span>
+
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 items-start px-3 sm:px-4 gap-y-4 sm:gap-y-0 gap-x-4 py-2">
-                <div className="border-b sm:border-b-0 sm:border-r pb-2 sm:pb-0">
-                  <div className="font-medium">WhatsApp business ac ID</div>
-                  <div>{wp_Details.whatsapp_business_account_id}</div>
-                </div>
+
                 <div>
-                  <div className="font-medium">Quality rating</div>
-                  <div
-                    className={`py-1 px-2 rounded-md w-fit text-xs ${
-                      wp_Details.quality_rating === "GREEN" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                  <div className="font-medium">
+                    WhatsApp Business Account ID
+                  </div>
+                  <div>{wp_Details.whatsapp_business_account_id || "-"}</div>
+                </div>
+
+                <div>
+                  <div className="font-medium">Account status</div>
+
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      wp_Details.number_status === "verified" ||
+                      wp_Details.number_status === "ACTIVE"
+                        ? "bg-green-500 text-white"
+                        : "bg-red-500 text-white"
                     }`}
                   >
-                    {wp_Details.quality_rating}
-                  </div>
+                    {wp_Details.number_status || "PENDING"}
+                  </span>
+
                 </div>
+
               </div>
+
             </div>
+
+
+            {/* DISCONNECT BUTTON */}
+            <div className="flex justify-end">
+
+              <button
+                onClick={handleDisconnect}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-md"
+              >
+                {loading ? "Disconnecting..." : "Disconnect WhatsApp"}
+              </button>
+
+            </div>
+
           </div>
+
         </div>
       )}
+
     </div>
   );
-  
 };
 
 export default WhatsAppSettings;

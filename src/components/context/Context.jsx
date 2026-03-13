@@ -136,6 +136,7 @@ useEffect(() => {
     setUserInfo,
     loadingUser,
     fetchDashboard,
+    setIsConnected   
   };
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
