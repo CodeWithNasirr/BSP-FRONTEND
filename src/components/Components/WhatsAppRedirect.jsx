@@ -105,27 +105,67 @@ function launchWhatsApp(linkData, env) {
     return { method: "universal_link" };
   }
 
-  if (env.isMetaInApp && env.isAndroid) {
-    // Android + Meta in-app: intent:// is the most reliable
+  // if (env.isMetaInApp && env.isAndroid) {
+  //   // Android + Meta in-app: intent:// is the most reliable
+  //   window.location.href = intent_link;
+  //   return { method: "android_intent" };
+  // }
+
+   // Android devices
+  if (env.isAndroid) {
+
+    // Instagram / Facebook in-app browser
+    if (env.isMetaInApp) {
+      window.location.href = intent_link;
+
+      // Fallback if intent fails
+      setTimeout(() => {
+        window.location.href = fallback_link;
+      }, 1200);
+
+      return { method: "android_meta_intent" };
+    }
+
+    // Regular Android browser
     window.location.href = intent_link;
+
+    setTimeout(() => {
+      window.location.href = fallback_link;
+    }, 1200);
+
     return { method: "android_intent" };
   }
 
-  if (env.isMetaInApp && env.isIOS) {
-    // iOS + Meta in-app: deep link scheme
+  // if (env.isMetaInApp && env.isIOS) {
+  //   // iOS + Meta in-app: deep link scheme
+  //   window.location.href = deep_link;
+  //   return { method: "ios_deep_link" };
+  // }
+
+  // if (env.isAndroid) {
+  //   // Regular Android browser: intent:// with fallback
+  //   window.location.href = intent_link;
+  //   return { method: "android_intent" };
+  // }
+
+  // // iOS regular browser or other: try deep link
+  // window.location.href = deep_link;
+  // return { method: "deep_link" };
+  // iOS devices
+  if (env.isIOS) {
+
     window.location.href = deep_link;
+
+    setTimeout(() => {
+      window.location.href = fallback_link;
+    }, 1200);
+
     return { method: "ios_deep_link" };
   }
 
-  if (env.isAndroid) {
-    // Regular Android browser: intent:// with fallback
-    window.location.href = intent_link;
-    return { method: "android_intent" };
-  }
-
-  // iOS regular browser or other: try deep link
-  window.location.href = deep_link;
-  return { method: "deep_link" };
+  // Final fallback
+  window.location.href = fallback_link;
+  return { method: "universal_link" };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -237,7 +277,8 @@ export default function WhatsAppRedirect() {
   const handleOpenExternal = useCallback(() => {
     if (!linkData) return;
     // This forces the system browser to open, escaping the WebView
-    window.open(linkData.fallback_link, "_system");
+    // window.open(linkData.fallback_link, "_system");
+      window.location.href = linkData.fallback_link;
   }, [linkData]);
 
   // ═══════════════════════════════════════════════════════════════════
