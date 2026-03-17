@@ -830,7 +830,10 @@ const ChatInputArea = ({
       } else if (item.file_url) {
         // For media items, we need to fetch the file and set it
         try {
-          const response = await fetch(item.file_url);
+          // ✅ FIX: force HTTPS
+          const safeUrl = item.file_url.replace("http://", "https://");
+
+          const response = await fetch(safeUrl);
           const blob = await response.blob();
 
           // Determine file extension from URL or type
@@ -843,7 +846,7 @@ const ChatInputArea = ({
 
           // Generate preview for images
           if (item.item_type === "image") {
-            setFilePreview(item.file_url);
+            setFilePreview(safeUrl);
           } else {
             setFilePreview(null);
           }
