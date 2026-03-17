@@ -38,7 +38,7 @@ const MainChat = () => {
           },
         })
         .then(() => {
-          console.log(`✅ Marked messages as read for ${recipient}`);
+          // console.log(`✅ Marked messages as read for ${recipient}`);
         })
         .catch((error) => {
           console.error('Error marking messages as read:', error);

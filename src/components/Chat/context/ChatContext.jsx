@@ -444,7 +444,7 @@ export const ChatProvider = ({ children }) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("📡 ChatContext WebSocket connected");
+        // console.log("📡 ChatContext WebSocket connected");
         pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "pong" }));
