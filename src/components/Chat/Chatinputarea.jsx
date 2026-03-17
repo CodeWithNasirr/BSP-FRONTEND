@@ -628,6 +628,7 @@ import {
 import { ClipboardDocumentListIcon as ClipboardOutlineIcon } from "@heroicons/react/24/outline";
 import { ReplyInputPreview } from "./ReplyPreview";
 import ClipboardModal from "./ClipboardModal";
+import { toast } from "react-toastify";
 
 const ChatInputArea = ({
   recipient,
@@ -803,68 +804,86 @@ const ChatInputArea = ({
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleClipboardSelect = useCallback(
-    async (item) => {
-      if (item.item_type === "text") {
-        // Insert text at cursor position or append
-        const textarea = textareaRef.current;
-        if (textarea) {
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const before = messageText.substring(0, start);
-          const after = messageText.substring(end);
-          const newText = before + item.content + after;
-          setMessageText(newText);
+  async (item) => {
+    if (item.item_type === "text") {
+      // Text: Insert into textarea
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const before = messageText.substring(0, start);
+        const after = messageText.substring(end);
+        const newText = before + item.content + after;
+        setMessageText(newText);
 
-          // Auto-resize after insert
-          setTimeout(() => {
-            textarea.style.height = "auto";
-            textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-            // Move cursor to end of inserted text
-            const newCursorPos = start + item.content.length;
-            textarea.setSelectionRange(newCursorPos, newCursorPos);
-            textarea.focus();
-          }, 0);
-        } else {
-          setMessageText((prev) => prev + item.content);
-        }
-      } else if (item.file_url) {
-        // For media items, we need to fetch the file and set it
-        try {
-          // ✅ FIX: force HTTPS
-          const safeUrl = item.file_url.replace("http://", "https://");
-
-          const response = await fetch(safeUrl);
-          const blob = await response.blob();
-
-          // Determine file extension from URL or type
-          const ext = item.original_filename?.split(".").pop() || "file";
-          const filename = item.original_filename || `clipboard_${item.item_type}.${ext}`;
-
-          const file = new File([blob], filename, { type: blob.type });
-
-          setSelectedFile(file);
-
-          // Generate preview for images
-          if (item.item_type === "image") {
-            setFilePreview(safeUrl);
-          } else {
-            setFilePreview(null);
-          }
-
-          // Set content as caption if exists
-          if (item.content) {
-            setMessageText(item.content);
-          }
-        } catch (error) {
-          console.error("Failed to load clipboard media:", error);
-          alert("Failed to load media from clipboard");
-        }
+        setTimeout(() => {
+          textarea.style.height = "auto";
+          textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+          const newCursorPos = start + item.content.length;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+          textarea.focus();
+        }, 0);
+      } else {
+        setMessageText((prev) => prev + item.content);
+      }
+    } else {
+      // ✅ FIX: Use file_url or media_url for media items
+      const mediaUrl = item.file_url || item.media_url;
+      
+      if (!mediaUrl) {
+        toast.error("No media URL found");
+        return;
       }
 
-      setShowClipboard(false);
-    },
-    [messageText]
-  );
+      try {
+        const response = await fetch(mediaUrl);
+        const blob = await response.blob();
+
+        // Map item_type to MIME type
+        const mimeTypeMap = {
+          image: "image/jpeg",
+          video: "video/mp4",
+          audio: "audio/mpeg",
+          document: "application/pdf",
+        };
+
+        let mimeType = blob.type;
+        if (!mimeType || mimeType === "application/octet-stream") {
+          mimeType = mimeTypeMap[item.item_type] || "application/octet-stream";
+        }
+
+        const extMap = { image: ".jpg", video: ".mp4", audio: ".mp3", document: ".pdf" };
+        const filename = item.original_filename || 
+          `clipboard_${item.item_type}${extMap[item.item_type] || ""}`;
+
+        const file = new File([blob], filename, { type: mimeType });
+        file._fromClipboard = true;  // Skip validation
+
+        setSelectedFile(file);
+
+        if (item.item_type === "image") {
+          setFilePreview(mediaUrl);
+        } else {
+          setFilePreview(null);
+        }
+
+        // ✅ FIX: Use content as caption (it's no longer the URL)
+        if (item.content) {
+          setMessageText(item.content);
+        }
+
+        toast.success(`${item.item_type} loaded from clipboard`);
+        
+      } catch (error) {
+        console.error("Failed to load clipboard media:", error);
+        toast.error("Failed to load media from clipboard");
+      }
+    }
+
+    setShowClipboard(false);
+  },
+  [messageText]
+);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // VOICE RECORDING

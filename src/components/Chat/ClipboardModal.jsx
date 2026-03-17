@@ -111,6 +111,9 @@ const ClipboardItem = memo(({ item, onSelect, onDelete, isDeleting }) => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // ✅ Use file_url or media_url for the image source
+    const mediaUrl = item.file_url || item.media_url;
+
   return (
     <div
       onClick={() => onSelect(item)}
@@ -137,16 +140,16 @@ const ClipboardItem = memo(({ item, onSelect, onDelete, isDeleting }) => {
           className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center
                       ${config.bgColor} border ${config.borderColor}`}
         >
-          {item.item_type === "image" && item.file_url ? (
-            <img
-              src={item.file_url}
-              alt=""
-              className="w-full h-full object-cover rounded-lg"
-              loading="lazy"
-            />
-          ) : (
-            <IconComponent className={`w-5 h-5 ${config.color}`} />
-          )}
+          {item.item_type === "image" && mediaUrl && (
+        <img
+            src={mediaUrl}
+            alt=""
+            className="w-12 h-12 object-cover rounded-lg"
+            onError={(e) => {
+            e.target.style.display = "none";
+            }}
+        />
+        )}
         </div>
 
         {/* Text Content */}
