@@ -23,23 +23,33 @@ import { ClipboardDocumentIcon, CheckIcon } from "@heroicons/react/24/outline";
  * @param {string} props.variant - Button variant: "icon" | "button" | "menu-item"
  * @param {string} props.className - Additional CSS classes
  */
+// ═══════════════════════════════════════════════════════════════════════════════
+// src/components/Chat/SaveToClipboardButton.jsx — FIXED for Media
+// ═══════════════════════════════════════════════════════════════════════════════
+
+
 const SaveToClipboardButton = ({
-  message,
+  message,  // Can be named 'msg' from parent - handle both
+  msg,      // Backward compatibility
   variant = "icon",
   className = "",
+  onSuccess,
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const token = localStorage.getItem("authToken");
 
+  // Support both 'message' and 'msg' prop names
+  const msgData = message || msg;
+
   const handleSave = useCallback(async (e) => {
     e?.stopPropagation();
     
-    if (isSaving || isSaved) return;
+    if (isSaving || isSaved || !msgData) return;
 
-    // Validate that there's content to save
-    const hasText = message.text_content?.trim();
-    const hasMedia = message.media_url;
+    // ✅ FIX: Check for EITHER text OR media content
+    const hasText = msgData.text_content?.trim();
+    const hasMedia = msgData.media_url || msgData.file_url;
 
     if (!hasText && !hasMedia) {
       toast.warning("No content to save");
@@ -49,11 +59,28 @@ const SaveToClipboardButton = ({
     setIsSaving(true);
 
     try {
+      // ✅ FIX: Determine media type from message
+      let mediaType = "text";
+      if (msgData.media_type) {
+        mediaType = msgData.media_type; // Already set (image, video, audio, document)
+      } else if (msgData.message_type) {
+        // Map WhatsApp message types
+        const typeMap = {
+          'IMAGE': 'image',
+          'VIDEO': 'video',
+          'AUDIO': 'audio',
+          'DOCUMENT': 'document',
+          'VOICE': 'audio',
+          'STICKER': 'image',
+        };
+        mediaType = typeMap[msgData.message_type] || 'text';
+      }
+
       const payload = {
-        text_content: message.text_content || "",
-        media_url: message.media_url || "",
-        media_type: message.media_type || "text",
-        message_id: message.id || message.message_id,
+        text_content: msgData.text_content || msgData.caption || "",
+        media_url: msgData.media_url || msgData.file_url || "",
+        media_type: hasMedia ? mediaType : "text",
+        message_id: msgData.id || msgData.message_id,
       };
 
       const response = await axios.post(
@@ -67,8 +94,7 @@ const SaveToClipboardButton = ({
       if (response.data.success) {
         setIsSaved(true);
         toast.success("Saved to clipboard");
-
-        // Reset after 3 seconds
+        onSuccess?.();
         setTimeout(() => setIsSaved(false), 3000);
       }
     } catch (error) {
@@ -77,13 +103,15 @@ const SaveToClipboardButton = ({
     } finally {
       setIsSaving(false);
     }
-  }, [message, token, isSaving, isSaved]);
+  }, [msgData, token, isSaving, isSaved, onSuccess]);
+
+  // Don't render if no message data
+  if (!msgData) return null;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER VARIANTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Icon-only variant (for inline use)
   if (variant === "icon") {
     return (
       <button
@@ -109,7 +137,6 @@ const SaveToClipboardButton = ({
     );
   }
 
-  // Button variant (for action bars)
   if (variant === "button") {
     return (
       <button
@@ -135,14 +162,13 @@ const SaveToClipboardButton = ({
     );
   }
 
-  // Menu item variant (for dropdown menus)
   if (variant === "menu-item") {
     return (
       <button
         onClick={handleSave}
         disabled={isSaving || isSaved}
-        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left
-                   transition-colors hover:bg-gray-100
+        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left
+                   transition-colors hover:bg-gray-50 active:bg-gray-100
                    ${isSaved ? "text-emerald-600" : "text-gray-700"}
                    disabled:opacity-50 ${className}`}
       >
@@ -151,9 +177,9 @@ const SaveToClipboardButton = ({
         ) : isSaved ? (
           <CheckIcon className="w-4 h-4" />
         ) : (
-          <ClipboardDocumentIcon className="w-4 h-4" />
+          <ClipboardDocumentIcon className="w-4 h-4 text-gray-500" />
         )}
-        {isSaved ? "Saved to Clipboard" : "Save to Clipboard"}
+        {isSaved ? "Saved!" : "Save to Clipboard"}
       </button>
     );
   }
