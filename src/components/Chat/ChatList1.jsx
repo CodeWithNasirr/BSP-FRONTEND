@@ -1,6 +1,18 @@
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// ═══════════════════════════════════════════════════════════════════════════════
+// src/components/Chat/ChatList.jsx — UPGRADED
+// ═══════════════════════════════════════════════════════════════════════════════
 
-import React,{
+// CHANGES FROM ORIGINAL:
+// ✅ Filter bar: All / Unread / Expired (client-side on loaded data)
+// ✅ Selection mode: long-press or checkbox for broadcast
+// ✅ Selection header: "X selected" + Cancel + Send buttons
+// ✅ Expired chat styling: faded + clock icon
+// ✅ VirtualChatItem: selection checkbox, expired indicator
+// ✅ BroadcastComposer integration
+// ✅ All existing functionality preserved (search, tags, virtualization, cache)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import React, {
   useEffect,
   useState,
   useRef,
@@ -22,7 +34,7 @@ import {
 } from "@heroicons/react/24/solid";
 import MarkPurchaseModal from "./MarkPurchaseModal";
 import BroadcastComposer from "./BroadcastComposer";
-import usePinChat from "./hooks/usePinChat";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,107 +69,7 @@ const FILTERS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PIN ICON COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PinIcon = memo(({ className = "w-4 h-4" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M16 4a1 1 0 0 1 1 1v3.586l1.707 1.707a1 1 0 0 1 .293.707v2a1 1 0 0 1-1 1h-4v5l-1 2-1-2v-5H7a1 1 0 0 1-1-1v-2a1 1 0 0 1 .293-.707L8 8.586V5a1 1 0 0 1 1-1h7z" />
-  </svg>
-));
-
-PinIcon.displayName = "PinIcon";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CONTEXT MENU COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-
-const ChatContextMenu = memo(({
-  isOpen,
-  position,
-  conv,
-  onClose,
-  onPin,
-  onSelect,
-  isPinning,
-}) => {
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen || !conv) return null;
-
-  return (
-    <div
-      ref={menuRef}
-      className="fixed z-50 min-w-[160px] py-1.5 bg-white rounded-xl shadow-xl
-                 border border-gray-200 animate-scaleIn"
-      style={{
-        top: position.y,
-        left: position.x,
-        transform: "translateX(-50%)",
-      }}
-    >
-      {/* Pin/Unpin */}
-      <button
-        onClick={() => {
-          onPin(conv.recipient, conv.is_pinned);
-          onClose();
-        }}
-        disabled={isPinning}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700
-                   hover:bg-gray-100 transition-colors disabled:opacity-50"
-      >
-        <PinIcon className="w-4 h-4" />
-        {conv.is_pinned ? "Unpin chat" : "Pin chat"}
-      </button>
-
-      {/* Open chat */}
-      <button
-        onClick={() => {
-          onSelect(conv.recipient);
-          onClose();
-        }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700
-                   hover:bg-gray-100 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        Open chat
-      </button>
-
-      <style jsx>{`\n//         @keyframes scaleIn {\n//           from { opacity: 0; transform: translateX(-50%) scale(0.95); }\n//           to { opacity: 1; transform: translateX(-50%) scale(1); }\n//         }\n//         .animate-scaleIn { animation: scaleIn 0.15s ease-out; }\n//       `}</style>
-    </div>
-  );
-});
-
-ChatContextMenu.displayName = "ChatContextMenu";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// VIRTUALIZED CHAT ITEM (WITH PIN SUPPORT)
+// VIRTUALIZED CHAT ITEM (UPGRADED)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const VirtualChatItem = memo(
@@ -171,7 +83,6 @@ const VirtualChatItem = memo(
     isSelected,
     onToggleSelect,
     onLongPress,
-    onContextMenu,
   }) => {
     const longPressTimer = useRef(null);
     const wasLongPress = useRef(false);
@@ -181,10 +92,8 @@ const VirtualChatItem = memo(
       longPressTimer.current = setTimeout(() => {
         wasLongPress.current = true;
         onLongPress?.(conv.recipient);
-        // Also trigger context menu on long press
-        onContextMenu?.(conv);
       }, LONG_PRESS_DURATION);
-    }, [conv.recipient, onLongPress, onContextMenu]);
+    }, [conv.recipient, onLongPress]);
 
     const handleTouchEnd = useCallback(() => {
       if (longPressTimer.current) {
@@ -206,7 +115,6 @@ const VirtualChatItem = memo(
     }, [isSelectionMode, conv.recipient, onSelect, onToggleSelect]);
 
     const isExpired = conv.is_expired;
-    const isPinned = conv.is_pinned;
 
     return (
       <div
@@ -214,7 +122,6 @@ const VirtualChatItem = memo(
         className={`absolute left-0 right-0 flex items-start gap-3 px-4 py-3
                    cursor-pointer border-b border-gray-50 transition-colors
                    ${isExpired ? "opacity-60" : ""}
-                   ${isPinned ? "bg-amber-50/30" : ""}
                    ${isSelected ? "bg-emerald-50" : "hover:bg-gray-50 active:bg-gray-100"}`}
         onClick={handleClick}
         onTouchStart={handleTouchStart}
@@ -222,7 +129,7 @@ const VirtualChatItem = memo(
         onTouchCancel={handleTouchEnd}
         onContextMenu={(e) => {
           e.preventDefault();
-          onContextMenu?.(conv, e);
+          onLongPress?.(conv.recipient);
         }}
       >
         {/* Selection Checkbox */}
@@ -248,28 +155,18 @@ const VirtualChatItem = memo(
           >
             {(conv.user_name || "U")[0].toUpperCase()}
           </div>
-          
-          {/* PIN INDICATOR on avatar */}
-          {isPinned && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full
-                            flex items-center justify-center shadow-sm">
-              <PinIcon className="w-3 h-3 text-white" />
-            </div>
-          )}
+          {/* Future: online indicator */}
+          {/* {!isExpired && conv.is_online && (
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+          )} */}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0 py-0.5">
           <div className="flex items-baseline justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <h4 className="font-semibold text-gray-900 truncate text-[15px]">
-                {conv.user_name || conv.recipient || "Unknown"}
-              </h4>
-              {/* Inline pin icon */}
-              {isPinned && (
-                <PinIcon className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              )}
-            </div>
+            <h4 className="font-semibold text-gray-900 truncate text-[15px]">
+              {conv.user_name || conv.recipient || "Unknown"}
+            </h4>
             <div className="flex items-center gap-1 flex-shrink-0">
               {isExpired && (
                 <ClockIcon className="w-3.5 h-3.5 text-amber-500" />
@@ -344,7 +241,6 @@ const VirtualChatItem = memo(
     prev.conv.last_message_at === next.conv.last_message_at &&
     prev.conv.unread_count === next.conv.unread_count &&
     prev.conv.is_expired === next.conv.is_expired &&
-    prev.conv.is_pinned === next.conv.is_pinned &&
     prev.style.top === next.style.top &&
     prev.isSelected === next.isSelected &&
     prev.isSelectionMode === next.isSelectionMode
@@ -375,24 +271,17 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   const [containerHeight, setContainerHeight] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
-  // Filter state
+  // ✅ NEW: Filter state
   const [activeFilter, setActiveFilter] = useState("all");
 
-  // Selection mode
+  // ✅ NEW: Selection mode
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const selectedRecipientsRef = useRef(new Set());
   const [selectedCount, setSelectedCount] = useState(0);
 
-  // Broadcast composer
+  // ✅ NEW: Broadcast composer
   const [showBroadcastComposer, setShowBroadcastComposer] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
-
-  // Context menu state - NEW
-  const [contextMenu, setContextMenu] = useState({
-    isOpen: false,
-    position: { x: 0, y: 0 },
-    conv: null,
-  });
 
   // Purchase modal
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -422,79 +311,18 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PIN LOGIC - NEW
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  const handlePinChange = useCallback((recipient, isPinned) => {
-    setConversations((prev) => {
-      const updated = prev.map((c) =>
-        c.recipient === recipient ? { ...c, is_pinned: isPinned } : c
-      );
-
-      // ✅ IMPORTANT: reorder list (pinned first)
-      return [...updated].sort((a, b) => {
-        if (a.is_pinned && !b.is_pinned) return -1;
-        if (!a.is_pinned && b.is_pinned) return 1;
-
-        const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-        const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-
-        return bTime - aTime;
-      });
-    });
-  }, []);
-
-  const { togglePin, isPinning } = usePinChat(handlePinChange);
-
-  const handleContextMenu = useCallback((conv, e) => {
-    if (e) {
-      e.preventDefault();
-      const clientX = e.touches?.[0]?.clientX || e.clientX;
-      const clientY = e.touches?.[0]?.clientY || e.clientY;
-      
-      setContextMenu({
-        isOpen: true,
-        position: {
-          x: clientX,
-          y: Math.min(clientY, window.innerHeight - 120),
-        },
-        conv,
-      });
-    } else {
-      // Called from long press without event
-      setContextMenu({
-        isOpen: true,
-        position: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-        conv,
-      });
-    }
-  }, []);
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, conv: null });
-  }, []);
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CLIENT-SIDE FILTERED LIST (ORIGINAL LOGIC + PIN FILTER)
+  // ✅ NEW: CLIENT-SIDE FILTERED LIST
   // ═══════════════════════════════════════════════════════════════════════════
 
   const filteredConversations = useMemo(() => {
-    let filtered = conversations;
-    
-    if (activeFilter === "unread") {
-      filtered = conversations.filter((c) => c.unread_count > 0);
-    } else if (activeFilter === "expired") {
-      filtered = conversations.filter((c) => c.is_expired);
-    } else if (activeFilter === "pinned") {
-      filtered = conversations.filter((c) => c.is_pinned);
-    }
-    // "all" returns everything (no filter)
-    
-    return filtered;
+    if (activeFilter === "all") return conversations;
+    if (activeFilter === "unread") return conversations.filter((c) => c.unread_count > 0);
+    if (activeFilter === "expired") return conversations.filter((c) => c.is_expired);
+    return conversations;
   }, [conversations, activeFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SELECTION HANDLERS (ORIGINAL)
+  // ✅ NEW: SELECTION HANDLERS
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleLongPress = useCallback(
@@ -502,6 +330,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       if (!isSelectionMode) {
         setIsSelectionMode(true);
       }
+      // Auto-select the long-pressed item (if not expired)
       const conv = conversationsRef.current.find((c) => c.recipient === recipient);
       if (conv && !conv.is_expired) {
         selectedRecipientsRef.current.add(recipient);
@@ -523,6 +352,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     }
     setSelectedCount(set.size);
 
+    // Exit selection mode if nothing selected
     if (set.size === 0) {
       setIsSelectionMode(false);
     }
@@ -535,7 +365,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // BROADCAST SEND (ORIGINAL)
+  // ✅ NEW: BROADCAST SEND
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleBroadcastSend = useCallback(
@@ -567,7 +397,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // VISIBILITY & CACHE (ORIGINAL)
+  // VISIBILITY & CACHE (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
@@ -607,7 +437,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // VIRTUALIZATION (ORIGINAL - uses filteredConversations)
+  // VIRTUALIZATION (existing, uses filteredConversations)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const totalHeight = filteredConversations.length * ITEM_HEIGHT;
@@ -641,7 +471,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, [visibleRange, filteredConversations]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SCROLL HANDLER (ORIGINAL)
+  // SCROLL HANDLER (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
@@ -701,7 +531,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CORE FETCH (ORIGINAL - NO SORTING HERE)
+  // CORE FETCH (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const fetchChatListInternal = useCallback(
@@ -766,7 +596,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SEARCH (ORIGINAL)
+  // SEARCH (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const debouncedSetSearch = useMemo(
@@ -784,7 +614,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
   useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
-  // Initial load (original)
+  // Initial load (existing)
   useEffect(() => {
     if (!token) return;
 
@@ -816,7 +646,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, [token, debouncedSearch, selectedTags, fetchChatListInternal]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CHAT SELECTION (ORIGINAL)
+  // CHAT SELECTION (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleSelect = useCallback(
@@ -831,7 +661,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // WEBSOCKET (ORIGINAL + PIN HANDLER)
+  // WEBSOCKET (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
@@ -894,16 +724,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
               )
             );
           }
-          // NEW: Handle pin_changed from WebSocket
-          else if (action === "pin_changed" && payload) {
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.recipient === payload.recipient
-                  ? { ...c, is_pinned: payload.is_pinned }
-                  : c
-              )
-            );
-          }
           else if (action === "batch_update" && payload?.batch) {
             let shouldRefresh = false;
 
@@ -935,17 +755,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
                 );
               }
 
-              // NEW: Handle pin_changed in batch
-              if (a === "pin_changed" && p) {
-                setConversations((prev) =>
-                  prev.map((c) =>
-                    c.recipient === p.recipient
-                      ? { ...c, is_pinned: p.is_pinned }
-                      : c
-                  )
-                );
-              }
-
               if (a === "broadcast_result" && p) {
                 toast.info(
                   `Broadcast: Sent to ${p.sent} chats${
@@ -956,6 +765,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
               }
             });
 
+            // ONE refresh after batch (important)
             if (shouldRefresh) {
               listCache.lastFetchTime = 0;
               fetchChatListInternal(1, searchRef.current, tagsRef.current, false);
@@ -989,7 +799,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   }, [token, fetchChatListInternal]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAG HANDLERS (ORIGINAL)
+  // TAG HANDLERS (existing)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleTagChange = useCallback((tag) => {
@@ -1010,7 +820,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       .catch(() => {});
   }, [token]);
 
-  // Modal handlers (original)
+  // Modal handlers (existing)
   const handleOpenModal = useCallback((contact) => {
     setSelectedContact(contact);
     setPurchaseForm({
@@ -1029,7 +839,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     setSelectedContact(null);
   }, []);
 
-  // Utils (original)
+  // Utils (existing)
   const formatTimestamp = useCallback((ts) => {
     if (!ts) return "";
     const d = new Date(ts);
@@ -1058,14 +868,13 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   const isScrolledDown = scrollTop > 200;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FILTER COUNTS (with pinned)
+  // FILTER COUNTS (for badges)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const filterCounts = useMemo(() => ({
     all: conversations.length,
     unread: conversations.filter((c) => c.unread_count > 0).length,
     expired: conversations.filter((c) => c.is_expired).length,
-    pinned: conversations.filter((c) => c.is_pinned).length,
   }), [conversations]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1133,9 +942,9 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
               </button>
             </div>
 
-            {/* Filter Bar - with Pinned */}
+            {/* ✅ NEW: Filter Bar */}
             <div className="flex items-center gap-2 mt-3">
-              {FILTERS.concat([{ key: "pinned", label: "📌 Pinned" }]).map((f) => {
+              {FILTERS.map((f) => {
                 const count = filterCounts[f.key];
                 const isActive = activeFilter === f.key;
                 return (
@@ -1242,33 +1051,22 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         {!isInitialLoad && filteredConversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              {activeFilter === "pinned" ? (
-                <PinIcon className="w-8 h-8 text-gray-400" />
-              ) : (
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              )}
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-800">
               {activeFilter === "unread"
                 ? "No unread conversations"
                 : activeFilter === "expired"
                 ? "No expired conversations"
-                : activeFilter === "pinned"
-                ? "No pinned chats"
                 : "No conversations"}
             </h3>
-            {activeFilter === "pinned" && (
-              <p className="text-sm text-gray-500 mt-2">
-                Long-press a chat to pin it
-              </p>
-            )}
             {(debouncedSearch || selectedTags.length > 0 || activeFilter !== "all") && (
               <button onClick={clearFilters} className="mt-4 px-4 py-2 text-sm text-emerald-600 bg-emerald-50 rounded-lg">
                 Clear filters
@@ -1291,7 +1089,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
                 isSelected={selectedRecipientsRef.current.has(conv.recipient)}
                 onToggleSelect={handleToggleSelect}
                 onLongPress={handleLongPress}
-                onContextMenu={handleContextMenu}
               />
             ))}
           </div>
@@ -1321,17 +1118,6 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           <ChevronUpIcon className="w-5 h-5" />
         </button>
       )}
-
-      {/* Context Menu - NEW */}
-      <ChatContextMenu
-        isOpen={contextMenu.isOpen}
-        position={contextMenu.position}
-        conv={contextMenu.conv}
-        onClose={closeContextMenu}
-        onPin={togglePin}
-        onSelect={handleSelect}
-        isPinning={isPinning}
-      />
 
       {/* Broadcast Composer Modal */}
       {showBroadcastComposer && (
@@ -1364,4 +1150,3 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 };
 
 export default ChatListVirtualized;
-
