@@ -379,16 +379,32 @@ const Subscription = () => {
                   </div>
                 )}
                 {isActivePlan && userInfo.api_provider === 'meta' && (
-                  <p className="text-sm text-white">Wallet Balance: ₹{subscriptionStatus?.wallet_balance || 0}</p>
-                )}
-                {isActivePlan && subscriptionStatus?.subscription_start && (
                   <p className="text-sm text-white">
-                    Activated: {new Date(subscriptionStatus.subscription_start).toLocaleDateString()}
+                    Wallet Balance: ₹{subscriptionStatus?.wallet_balance || 0}
                   </p>
                 )}
+
+                {isActivePlan && subscriptionStatus?.subscription_start && (
+                  <p className="text-sm text-white">
+                    Activated: {new Date(subscriptionStatus.subscription_start).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                )}
+
                 {isActivePlan && subscriptionStatus?.subscription_expiry && (
                   <p className="text-sm text-white">
-                    Expires: {new Date(subscriptionStatus.subscription_expiry).toLocaleDateString()}
+                    Expires: {new Date(subscriptionStatus.subscription_expiry).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </p>
                 )}
                 </button>
