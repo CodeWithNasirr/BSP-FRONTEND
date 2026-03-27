@@ -295,17 +295,14 @@ const ForwardModal = ({ show, onClose, messages = [], token, currentRecipient })
 
   const fetchMediaAsFile = useCallback(async (mediaUrl, mediaType) => {
     try {
-      // 🔥 FORCE HTTPS (VERY IMPORTANT)
       const safeUrl = mediaUrl.replace(/^http:\/\//i, "https://");
 
-      const response = await axios.get(safeUrl, {
-        responseType: "blob",
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
+      // ✅ Try fetch first (better for CORS)
+      const res = await fetch(safeUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const blob = response.data;
+      const blob = await res.blob();
+
       const contentType = blob.type || getMediaMimeType(mediaType, safeUrl);
       const extension = getFileExtension(mediaType, contentType);
 
@@ -317,7 +314,7 @@ const ForwardModal = ({ show, onClose, messages = [], token, currentRecipient })
       console.error("Failed to fetch media:", err);
       return null;
     }
-  }, [token]);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEND A SINGLE MESSAGE TO A SINGLE RECIPIENT
