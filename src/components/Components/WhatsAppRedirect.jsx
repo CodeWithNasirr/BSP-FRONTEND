@@ -189,222 +189,221 @@ export default function WhatsAppRedirect() {
 
   // ── Fetch link data from JSON API ──────────────────────────────────
   useEffect(() => {
-    if (!slug) {
-      setStatus("error");
-      return;
-    }
-
+    if (!slug) { setStatus("error"); return; }
+ 
     let cancelled = false;
-
+ 
     const fetchData = async () => {
       try {
         const msgParam = customMsg ? `?msg=${encodeURIComponent(customMsg)}` : "";
         const res = await fetch(`${API_BASE_URL}/w/${slug}/${msgParam}`);
-
+ 
         if (cancelled) return;
-
-        if (!res.ok) {
-          setStatus("error");
-          return;
-        }
-
+        if (!res.ok) { setStatus("error"); return; }
+ 
         const data = await res.json();
-
-        if (data.error) {
-          setStatus("error");
-          return;
-        }
-
+        if (data.error) { setStatus("error"); return; }
+ 
         setLinkData(data);
         setBusinessName(data.business_name || "");
-        setStatus("connecting");
+ 
+        // ── GROUP: redirect immediately (single hop, no deep link needed) ──
+        if (data.type === "group" && data.redirect_url) {
+          setStatus("connecting");
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+            setTimeout(() => setStatus("fallback"), 2000);
+          }, 400);
+        } else {
+          // ── CHAT: proceed to deep link launch ──
+          setStatus("connecting");
+        }
       } catch {
         if (!cancelled) setStatus("error");
       }
     };
-
+ 
     fetchData();
     return () => { cancelled = true; };
   }, [slug, customMsg]);
 
-  // ── Auto-launch deep link once data is ready ───────────────────────
+
+  // ── Auto-launch deep link (CHAT only) ──────────────────────────────
   useEffect(() => {
     if (status !== "connecting" || !linkData || launchAttempted.current) return;
-
-    // Small delay for UI to render (Meta crawler needs to see content)
+    // Group redirects handled in fetch effect — skip deep link logic
+    if (linkData.type === "group") return;
+ 
     const launchDelay = setTimeout(() => {
       if (launchAttempted.current) return;
       launchAttempted.current = true;
-
+ 
       launchWhatsApp(linkData, env);
       setStatus("launched");
-
-      // If we're still on this page after 2.5s, show fallback button
-      // (means WhatsApp didn't open — not installed, or blocked)
+ 
       fallbackTimer.current = setTimeout(() => {
         setStatus("fallback");
       }, 2500);
-    }, 300); // 300ms — enough for Meta's crawler to parse content
-
+    }, 300);
+ 
     return () => {
       clearTimeout(launchDelay);
       if (fallbackTimer.current) clearTimeout(fallbackTimer.current);
     };
   }, [status, linkData, env]);
-
-  // ── Cleanup on unmount (navigating away = success) ─────────────────
+ 
   useEffect(() => {
-    return () => {
-      if (fallbackTimer.current) clearTimeout(fallbackTimer.current);
-    };
+    return () => { if (fallbackTimer.current) clearTimeout(fallbackTimer.current); };
   }, []);
+
 
   // ── Manual button click ────────────────────────────────────────────
   const handleManualOpen = useCallback(() => {
     if (!linkData) return;
-
-    // On manual tap, try deep link first, then immediate fallback
-    const result = launchWhatsApp(linkData, env);
-
-    // Also set a faster fallback for manual clicks
-    setTimeout(() => {
-      // If still here, try the universal link
-      window.location.href = linkData.fallback_link;
-    }, 1500);
+ 
+    // Group: single redirect, no deep link dance
+    if (linkData.type === "group" && linkData.redirect_url) {
+      window.location.href = linkData.redirect_url;
+      return;
+    }
+ 
+    // Chat: existing deep link logic
+    launchWhatsApp(linkData, env);
+    setTimeout(() => { window.location.href = linkData.fallback_link; }, 1500);
   }, [linkData, env]);
-
-  // ── Open in external browser (escapes in-app browser) ──────────────
+ 
+  // ── Open in external browser ───────────────────────────────────────
   const handleOpenExternal = useCallback(() => {
     if (!linkData) return;
-    // This forces the system browser to open, escaping the WebView
-    // window.open(linkData.fallback_link, "_system");
-      window.location.href = linkData.fallback_link;
+    const url = linkData.type === "group" ? linkData.redirect_url : linkData.fallback_link;
+    window.location.href = url;
   }, [linkData]);
+ 
+  // ── Derived UI values ──────────────────────────────────────────────
+  const isGroup = linkData?.type === "group";
 
-  // ═══════════════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════════════
-
-  return (
-    <>
-      <link rel="preconnect" href={API_BASE_URL} />
-      <style>{styles}</style>
-
-      <div className="wr-page">
-        <div className="wr-bg" aria-hidden="true" />
-
-        <div className="wr-card">
-          {/* ── WhatsApp Icon ── */}
-          <div className={`wr-icon ${status === "fallback" || status === "error" ? "" : "wr-icon-pulse"}`}>
-            {status === "error" ? (
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E74C3C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
-            ) : (
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="#25D366">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
+    // ═══════════════════════════════════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════════════════════════════════
+  
+    return (
+      <>
+        <link rel="preconnect" href={API_BASE_URL} />
+        <style>{styles}</style>
+  
+        <div className="wr-page">
+          <div className="wr-bg" aria-hidden="true" />
+  
+          <div className="wr-card">
+            {/* ── Icon ── */}
+            <div className={`wr-icon ${status === "fallback" || status === "error" ? "" : "wr-icon-pulse"}`}>
+              {status === "error" ? (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#E74C3C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              ) : (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#25D366">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+              )}
+            </div>
+  
+            {/* ── Business name badge ── */}
+            {businessName && status !== "error" && (
+              <div className="wr-badge">{businessName}</div>
             )}
+  
+            {/* ── Status text ── */}
+            {status === "loading" && (
+              <div className="wr-content wr-fade">
+                <h1 className="wr-title">Loading…</h1>
+                <p className="wr-sub">Preparing your WhatsApp {isGroup ? "group" : "chat"}</p>
+                <Spinner />
+              </div>
+            )}
+  
+            {status === "connecting" && (
+              <div className="wr-content wr-fade">
+                <h1 className="wr-title">{isGroup ? "Joining WhatsApp Group" : "Connecting to WhatsApp"}</h1>
+                <p className="wr-sub">
+                  {isGroup
+                    ? `Opening group${businessName ? ` — ${businessName}` : ""}…`
+                    : `Opening chat${businessName ? ` with ${businessName}` : ""}…`
+                  }
+                </p>
+                <Spinner />
+              </div>
+            )}
+  
+            {status === "launched" && (
+              <div className="wr-content wr-fade">
+                <h1 className="wr-title">Opening WhatsApp</h1>
+                <p className="wr-sub">If nothing happens, tap the button below</p>
+                <Spinner />
+              </div>
+            )}
+  
+            {status === "fallback" && (
+              <div className="wr-content wr-fade">
+                <h1 className="wr-title">Almost there!</h1>
+                <p className="wr-sub">Tap the button below to {isGroup ? "join the group" : "start chatting"}</p>
+              </div>
+            )}
+  
+            {status === "error" && (
+              <div className="wr-content wr-fade">
+                <h1 className="wr-title">Link Unavailable</h1>
+                <p className="wr-sub">This {isGroup ? "group" : "chat"} link is currently inactive</p>
+              </div>
+            )}
+  
+            {/* ── Primary CTA ── */}
+            {linkData && status !== "error" && (
+              <button className="wr-btn wr-btn-primary" onClick={handleManualOpen}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                {isGroup ? "Join WhatsApp Group" : "Open WhatsApp"}
+              </button>
+            )}
+  
+            {/* ── Secondary: open in external browser ── */}
+            {linkData && env.isInAppBrowser && (status === "fallback" || status === "launched") && (
+              <button className="wr-btn wr-btn-secondary" onClick={handleOpenExternal}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                Open in browser instead
+              </button>
+            )}
+  
+            {/* ── Trust signal ── */}
+            <div className="wr-trust">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+              Secure · End-to-end encrypted
+            </div>
           </div>
-
-          {/* ── Business name badge ── */}
-          {businessName && status !== "error" && (
-            <div className="wr-badge">{businessName}</div>
-          )}
-
-          {/* ── Status content ── */}
-          {status === "loading" && (
-            <div className="wr-content wr-fade">
-              <h1 className="wr-title">Loading…</h1>
-              <p className="wr-sub">Preparing your WhatsApp chat</p>
-              <Spinner />
-            </div>
-          )}
-
-          {status === "connecting" && (
-            <div className="wr-content wr-fade">
-              <h1 className="wr-title">Connecting to WhatsApp</h1>
-              <p className="wr-sub">Opening chat{businessName ? ` with ${businessName}` : ""}…</p>
-              <Spinner />
-            </div>
-          )}
-
-          {status === "launched" && (
-            <div className="wr-content wr-fade">
-              <h1 className="wr-title">Opening WhatsApp</h1>
-              <p className="wr-sub">If nothing happens, tap the button below</p>
-              <Spinner />
-            </div>
-          )}
-
-          {status === "fallback" && (
-            <div className="wr-content wr-fade">
-              <h1 className="wr-title">Almost there!</h1>
-              <p className="wr-sub">Tap the button below to start chatting</p>
-            </div>
-          )}
-
-          {status === "error" && (
-            <div className="wr-content wr-fade">
-              <h1 className="wr-title">Link Unavailable</h1>
-              <p className="wr-sub">This chat link is currently inactive</p>
-            </div>
-          )}
-
-          {/* ── Primary CTA button ── */}
-          {linkData && status !== "error" && (
-            <button className="wr-btn wr-btn-primary" onClick={handleManualOpen}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              Open WhatsApp
-            </button>
-          )}
-
-          {/* ── Secondary: open in external browser (Meta in-app only) ── */}
-          {linkData && env.isInAppBrowser && (status === "fallback" || status === "launched") && (
-            <button className="wr-btn wr-btn-secondary" onClick={handleOpenExternal}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              Open in browser instead
-            </button>
-          )}
-
-          {/* ── Trust signal ── */}
-          <div className="wr-trust">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
-            </svg>
-            Secure · End-to-end encrypted
+  
+          <div className="wr-footer">
+            Powered by <strong>WhatsAppGPTX</strong>
           </div>
         </div>
-
-        {/* ── Footer ── */}
-        <div className="wr-footer">
-          Powered by <strong>WhatsAppGPTX</strong>
-        </div>
+      </>
+    );
+  }
+  
+  function Spinner() {
+    return (
+      <div className="wr-spinner" aria-label="Loading">
+        <div className="wr-dot" /><div className="wr-dot" /><div className="wr-dot" />
       </div>
-    </>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SPINNER COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
-
-function Spinner() {
-  return (
-    <div className="wr-spinner" aria-label="Loading">
-      <div className="wr-dot" />
-      <div className="wr-dot" />
-      <div className="wr-dot" />
-    </div>
-  );
-}
+    );
+  }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STYLES — embedded (zero external CSS request)
