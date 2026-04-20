@@ -20,6 +20,8 @@ import useFlowStore from '../../store/flowStore';
 import { exportFlow, importFlow } from '../../utils/flowUtils';
 import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { useTouchDrag } from './useTouchDrag';
+import TriggerPanel from './TriggerPanel';
+
 
 const FlowBuilder = ({ setEnableChatFlow }) => {
   const reactFlowWrapper = useRef(null);
@@ -30,7 +32,14 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+
   const [flowName, setFlowName] = useState('Flow 1');
+  const [triggerConfig, setTriggerConfig] = useState({
+    trigger_type: 'any',
+    trigger_keywords: [],
+    trigger_keyword_mode: 'contains',
+    is_enabled: true,
+  });
   const [isChatFlowEnabled, setIsChatFlowEnabled] = useState(() => localStorage.getItem('chatFlowEnabled') === 'true');
 
   const { setCurrentFlow, saveFlow, fetchFlows } = useFlowStore();
@@ -54,6 +63,13 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         setEdges(existingFlow.edges || []);
         setCurrentFlow(existingFlow);
         setFlowName(existingFlow.name);
+        // Hydrate trigger config (defaults preserve current behavior)
+        setTriggerConfig({
+          trigger_type: existingFlow.trigger_type || 'any',
+          trigger_keywords: existingFlow.trigger_keywords || [],
+          trigger_keyword_mode: existingFlow.trigger_keyword_mode || 'contains',
+          is_enabled: existingFlow.is_enabled !== false,
+        });
       }
     };
     loadFlows();
@@ -108,7 +124,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
       case 'start':
         return { label: 'Start Flow' };
       case 'messageNode':
-        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '' };
+        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '',follow_ups: [], parallel_sends: [] };
       case 'imageTextButtonsNode':
         return {
           message: 'Choose an option:',
@@ -119,8 +135,6 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
             { text: 'Button 2', value: '2' },
           ],
         };
-      case 'waitNode':
-        return { timeout: 60, variable: 'userResponse' };
       case 'conditionalNode':
         return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
       case 'apiNode':
@@ -135,6 +149,11 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
             { text: 'Option 2', value: '2' },
           ],
         };
+      case 'keywordListenerNode':
+        return { keyword_groups: [] };
+        
+      case 'waitNode':
+        return {delay_seconds: 5};
       default:
         return {};
     }
@@ -185,15 +204,21 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         })),
       };
 
+      if (triggerConfig.trigger_type === 'keyword' && triggerConfig.trigger_keywords.length === 0) {
+        alert('Add at least one keyword or change trigger type.');
+        return;
+      }
+
       try {
-      await saveFlow({
-        ...cleanFlow,
-        name: flowName,
-      });
-      alert("Flow saved successfully!");
-    } catch (err) {
-      alert("Save failed");
-    }
+        await saveFlow({
+          ...cleanFlow,
+          name: flowName,
+          ...triggerConfig,  // Persist trigger fields
+        });
+        alert("Flow saved successfully!");
+      } catch (err) {
+        alert("Save failed");
+      }
 
 
       // const flow = reactFlowInstance.toObject();
@@ -205,7 +230,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         // alert('Flow saved successfully!');
       
     }
-  }, [reactFlowInstance, saveFlow, flowName, nodes]);
+  }, [reactFlowInstance, saveFlow, flowName, nodes, triggerConfig]);
 
   const handleExportFlow = useCallback(() => {
     if (reactFlowInstance) {
@@ -375,6 +400,10 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
                         onChange={(e) => setFlowName(e.target.value)}
                         placeholder="Flow Name"
                         className="border rounded px-2 py-1 text-xs sm:text-sm w-full sm:w-32"
+                      />
+                      <TriggerPanel
+                        triggerConfig={triggerConfig}
+                        onChange={setTriggerConfig}
                       />
                       <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -1,36 +1,80 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
-import { Clock } from 'lucide-react';
+import { Clock, Pencil } from 'lucide-react';
 
 const WaitNode = ({ data, selected }) => {
+  const [editing, setEditing] = useState(false);
+  const [delay, setDelay] = useState(data.delay_seconds || 5);
+
+  const handleSave = () => {
+    let value = parseInt(delay);
+
+    if (isNaN(value)) value = 0;
+    value = Math.max(0, Math.min(300, value)); // clamp 0–300
+
+    data.delay_seconds = value;
+    setDelay(value);
+    setEditing(false);
+  };
+
   return (
-    <div className={`px-4 py-3 rounded-lg bg-node-wait border ${selected ? 'border-amber-400' : 'border-amber-200'} min-w-[180px]`}>
+    <div
+      className={`px-4 py-3 rounded-lg bg-node-wait border ${
+        selected ? 'border-amber-400' : 'border-amber-200'
+      } min-w-[180px]`}
+    >
       <Handle type="target" position={Position.Top} />
 
-      <div className="flex items-center mb-2">
-        <Clock className="mr-2 text-amber-500" size={16} />
-        <div className="text-sm font-medium text-amber-800">Wait for Reply</div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center">
+          <Clock className="mr-2 text-amber-500" size={16} />
+          <div className="text-sm font-medium text-amber-800">
+            Wait (Delay)
+          </div>
+        </div>
+
+        <button
+          onClick={() => setEditing(!editing)}
+          className="text-amber-600 hover:text-amber-800"
+        >
+          <Pencil size={14} />
+        </button>
       </div>
 
-      {data.message && (
-        <div className="bg-white p-2 rounded border border-amber-100 mb-2">
+      {/* EDIT MODE */}
+      {editing ? (
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs text-gray-600">Delay (seconds)</label>
+            <input
+              type="number"
+              min="0"
+              max="300"
+              className="w-full text-xs px-2 py-1 border border-amber-200 rounded"
+              value={delay}
+              onChange={(e) => setDelay(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={handleSave}
+            className="text-xs bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600"
+          >
+            Save
+          </button>
+        </div>
+      ) : (
+        /* VIEW MODE */
+        <div className="bg-white p-2 rounded border border-amber-100">
           <div className="text-xs text-gray-600">
-            {data.message}
+            Delay:{' '}
+            <span className="font-medium text-gray-800">
+              {data.delay_seconds || 0}s
+            </span>
           </div>
         </div>
       )}
-
-      <div className="bg-white p-2 rounded border border-amber-100 mb-2">
-        <div className="text-xs text-gray-600">
-          Timeout: <span className="font-medium text-gray-800">{data.timeout > 0 ? `${data.timeout}s` : 'None'}</span>
-        </div>
-      </div>
-      
-      <div className="bg-white p-2 rounded border border-amber-100">
-        <div className="text-xs text-gray-600">
-          Save as: <span className="font-medium text-gray-800">{data.variable || 'response'}</span>
-        </div>
-      </div>
 
       <Handle type="source" position={Position.Bottom} />
     </div>

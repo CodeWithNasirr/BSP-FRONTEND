@@ -3,7 +3,9 @@ import { Handle, Position } from 'reactflow';
 import { MessageSquare, Plus, Pencil, Trash2,Image,Upload } from 'lucide-react';
 import { uploadFlowMedia } from '../uploadFlowMedia';
 import { toast } from 'react-toastify';
-
+import VariablePicker from '../VariablePicker';
+import FollowUpEditor from '../FollowUpEditor';
+import ParallelSendsEditor from '../ParallelSendsEditor';
 
 const TextButtonsNode = ({ data, selected }) => {
   const [editing, setEditing] = useState(false);
@@ -13,7 +15,10 @@ const TextButtonsNode = ({ data, selected }) => {
   const [mediaUrl, setMediaUrl] = useState(data.media_url || "");
   const [mediaType, setMediaType] = useState(data.media_type || "");
   const [stopFlow, setStopFlow] = useState(data.stop_flow || false);
-   
+  const [localFollowUps, setLocalFollowUps] = useState(data.follow_ups || []);
+  const [parallelSends, setParallelSends] = useState(data.parallel_sends || []);
+  
+  const textareaRef = React.useRef(null);
 
   const handleFileUpload = async (file) => {
     // toast.loading("Uploading media...", { id: "media-upload" });
@@ -104,6 +109,9 @@ const TextButtonsNode = ({ data, selected }) => {
   data.media_url = mediaUrl;
   data.media_type = mediaType;
   data.stop_flow = stopFlow;   // ✅ NEW
+  data.follow_ups = localFollowUps;
+  data.parallel_sends = parallelSends;
+
 
   setEditing(false);
 };
@@ -166,14 +174,26 @@ const TextButtonsNode = ({ data, selected }) => {
             </span>
           </label>
 
+          <div className="space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-600">Message</span>
+            <VariablePicker
+              textareaRef={textareaRef}
+              currentText={message}
+              onInsert={setMessage}
+            />
+          </div>
+
           <textarea
+            ref={textareaRef}
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}
             placeholder="Enter message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-           <textarea
+        </div>
+           <input 
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}
             placeholder="Enter footer message"
@@ -226,6 +246,16 @@ const TextButtonsNode = ({ data, selected }) => {
           >
             Save
           </button>
+          <div className="border-t pt-2">
+          <ParallelSendsEditor
+            parallelSends={parallelSends}
+            onChange={setParallelSends}
+          />
+          <FollowUpEditor
+            followUps={localFollowUps}
+            onChange={setLocalFollowUps}
+          />
+        </div>
         </div>
       ) : (
         <>
@@ -272,6 +302,45 @@ const TextButtonsNode = ({ data, selected }) => {
               </button>
 
             )}
+            {data.follow_ups && data.follow_ups.length > 0 && (
+            <div className="mt-2 p-2 bg-indigo-50 border border-indigo-100 rounded">
+              <div className="text-[10px] font-medium text-indigo-700 mb-1">
+                Follow-ups:
+              </div>
+
+              <div className="space-y-1">
+                {data.follow_ups.map((fu, idx) => (
+                  <div key={idx} className="text-[10px] text-gray-700">
+                    ⏱ {fu.delay_minutes} min →
+                    <span className="ml-1 text-gray-800">
+                      {fu.message || "Empty message"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.parallel_sends && data.parallel_sends.length > 0 && (
+            <div className="mt-2 p-2 bg-purple-50 border border-purple-100 rounded">
+              <div className="text-[10px] font-medium text-purple-700 mb-1">
+                Parallel Sends ({data.parallel_sends.length}):
+              </div>
+
+              <div className="space-y-1">
+                {data.parallel_sends.map((ps, idx) => (
+                  <div key={idx} className="text-[10px] text-gray-700">
+                    ⚡ 
+                    <span className="ml-1 text-gray-800">
+                      {ps.type === "text" && (ps.content || "Empty message")}
+                      {ps.type !== "text" && `[${ps.type}]`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           </div>
         </>
       )}

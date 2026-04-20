@@ -34,6 +34,11 @@ const useFlowStore = create((set) => ({
           id: flow.id,
           name: flow.name,
           ...flow.flow_data, // Spread nodes and edges
+          // Trigger config (top-level fields on the model)
+          trigger_type: flow.trigger_type,
+          trigger_keywords: flow.trigger_keywords,
+          trigger_keyword_mode: flow.trigger_keyword_mode,
+          is_enabled: flow.is_enabled,
           createdAt: flow.created_at,
           updatedAt: flow.updated_at,
         }));
@@ -68,8 +73,16 @@ const useFlowStore = create((set) => ({
           nodes: flowToSave.nodes || [],
           edges: flowToSave.edges || [],
         },
-        language: 'en', // Adjust as needed
+        language: 'en',
       };
+
+      // Optional trigger config — only included if caller passed them.
+      // Server defaults preserve backward compat for callers that don't send.
+      if (flow.trigger_type !== undefined) payload.trigger_type = flow.trigger_type;
+      if (flow.trigger_keywords !== undefined) payload.trigger_keywords = flow.trigger_keywords;
+      if (flow.trigger_keyword_mode !== undefined) payload.trigger_keyword_mode = flow.trigger_keyword_mode;
+      if (flow.is_enabled !== undefined) payload.is_enabled = flow.is_enabled;
+
 
       let response;
       if (existingFlow && String(existingFlow.id).startsWith('flow-') === false) {
@@ -108,6 +121,10 @@ const useFlowStore = create((set) => ({
         id: response.data.id,
         name: response.data.name,
         ...response.data.flow_data,
+        trigger_type: response.data.trigger_type,
+        trigger_keywords: response.data.trigger_keywords,
+        trigger_keyword_mode: response.data.trigger_keyword_mode,
+        is_enabled: response.data.is_enabled,
         createdAt: response.data.created_at,
         updatedAt: response.data.updated_at,
       };

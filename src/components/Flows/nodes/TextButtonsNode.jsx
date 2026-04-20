@@ -1,6 +1,10 @@
 import React, { memo, useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { MessageSquare, Plus, Pencil, Trash2 } from 'lucide-react';
+import VariablePicker from '../VariablePicker';
+import FollowUpEditor from '../FollowUpEditor';
+import ParallelSendsEditor from '../ParallelSendsEditor';
+
 
 const TextButtonsNode = ({ data, selected }) => {
   const MAX_BUTTONS = 3;
@@ -11,9 +15,15 @@ const TextButtonsNode = ({ data, selected }) => {
   const [buttons, setButtons] = useState(
     data.buttons || [{ text: 'Button 1', value: '1', collect_cart: false, collect_payment_method: false, checkout: false }]
   );
+  
 
   const [stopFlow, setStopFlow] = useState(data.stop_flow || false);
+
+  const [localFollowUps, setLocalFollowUps] = useState(data.follow_ups || []);
+  const [parallelSends, setParallelSends] = useState(data.parallel_sends || []);
   
+  
+  const textareaRef = React.useRef(null);
 
   const handleAddButton = () => {
     if (buttons.length >= MAX_BUTTONS) return; // 🚫 hard stop
@@ -59,7 +69,10 @@ const TextButtonsNode = ({ data, selected }) => {
   const handleSave = () => {
     data.message = message;
     data.buttons = buttons;
-    data.stop_flow = stopFlow;   // ✅ NEW
+    data.stop_flow = stopFlow;
+    data.follow_ups = localFollowUps; // ✅ ADD THIS
+    data.parallel_sends = parallelSends;
+
     setEditing(false);
   };
 
@@ -84,6 +97,7 @@ const TextButtonsNode = ({ data, selected }) => {
           <Pencil size={14} />
         </button>
       </div>
+       
 
       {/* Stop flow indicator */}
       {data.stop_flow && (
@@ -91,6 +105,7 @@ const TextButtonsNode = ({ data, selected }) => {
           🚫 Flow stops here
         </div>
       )}
+      
     </div>
 
 
@@ -105,7 +120,15 @@ const TextButtonsNode = ({ data, selected }) => {
               <span className="text-xs text-red-600 font-medium">
                 Stop flow after this message
               </span>
-          <textarea
+              <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600">Message</span>
+              <VariablePicker
+                textareaRef={textareaRef}
+                currentText={message}
+                onInsert={setMessage}
+              />
+            </div>
+          <textarea ref={textareaRef}
             className="w-full text-xs p-2 border border-blue-200 rounded"
             rows={3}
             placeholder="Enter message"
@@ -195,6 +218,16 @@ const TextButtonsNode = ({ data, selected }) => {
           >
             Save
           </button>
+          <div className="border-t pt-2">
+          <ParallelSendsEditor
+            parallelSends={parallelSends}
+            onChange={setParallelSends}
+          />
+          <FollowUpEditor
+            followUps={localFollowUps}
+            onChange={setLocalFollowUps}
+          />
+        </div>
         </div>
       ) : (
         <>
@@ -227,6 +260,46 @@ const TextButtonsNode = ({ data, selected }) => {
               </div>
             )}
           </div>
+       {data.follow_ups && data.follow_ups.length > 0 && (
+      <div className="mt-2 p-2 bg-indigo-50 border border-indigo-100 rounded">
+        <div className="text-[10px] font-medium text-indigo-700 mb-1">
+          Follow-ups:
+        </div>
+
+        <div className="space-y-1">
+          {data.follow_ups.map((fu, idx) => (
+            <div key={idx} className="text-[10px] text-gray-700">
+              ⏱ {fu.delay_minutes} min →
+              <span className="ml-1 text-gray-800">
+                {fu.message || "Empty message"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {data.parallel_sends && data.parallel_sends.length > 0 && (
+      <div className="mt-2 p-2 bg-purple-50 border border-purple-100 rounded">
+        <div className="text-[10px] font-medium text-purple-700 mb-1">
+          Parallel Sends ({data.parallel_sends.length}):
+        </div>
+
+        <div className="space-y-1">
+          {data.parallel_sends.map((ps, idx) => (
+            <div key={idx} className="text-[10px] text-gray-700">
+              ⚡ 
+              <span className="ml-1 text-gray-800">
+                {ps.type === "text" && (ps.content || "Empty message")}
+                {ps.type !== "text" && `[${ps.type}]`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+          
         </>
       )}
 

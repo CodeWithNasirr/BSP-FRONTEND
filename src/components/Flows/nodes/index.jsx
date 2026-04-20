@@ -12,6 +12,7 @@ import TextButtonsNode from './TextButtonsNode';
 import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
 import BookingNode from './BookingNode';
+import KeywordListenerNode from './KeywordListenerNode';
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
  
@@ -34,14 +35,15 @@ export const nodeTypes = {
   waitNode: WaitNode,
   conditionalNode: ConditionalNode,
   apiNode: ApiNode,
-  bookingNode: BookingNode,
+  // bookingNode: BookingNode,
   endNode: EndNode,
   textButtonsNode: TextButtonsNode,
   imageTextButtonsNode:TextImageNode,
   listMessageNode: ListMessageNode,
   // metaFlowNode: MetaFlowNode,
-  catalogCarouselNode: CatalogCarouselNode, // ✅ Add this
-  appointment: Appointment_Booking, // ✅ Add this
-  leadcollector: LeadCollectorNode, // ✅ Add this
-  paymentMethodNode: PaymentMethodNode, // ✅ Add this
+  catalogCarouselNode: CatalogCarouselNode, 
+  appointment: Appointment_Booking, 
+  leadcollector: LeadCollectorNode, 
+  // paymentMethodNode: PaymentMethodNode, 
+  keywordListenerNode: KeywordListenerNode, 
 };

@@ -43,6 +43,7 @@ export default function MarkAsPaidModal({
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [isFreePayment, setIsFreePayment] = useState(false);
 
   // Reset form when client changes
   useEffect(() => {
@@ -87,8 +88,9 @@ export default function MarkAsPaidModal({
   };
 
   const subadmin = getSubadminInfo();
-  const commissionAmount = (planPrice * commissionPercent) / 100;
-  const platformRevenue = planPrice - commissionAmount;
+
+  const commissionAmount = isFreePayment ? 0 : (planPrice * commissionPercent) / 100;
+  const platformRevenue = isFreePayment ? 0 : planPrice - commissionAmount;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,13 +101,18 @@ export default function MarkAsPaidModal({
     try {
       const payload = {
         client_id: client.id,
-        commission_percent: commissionPercent,
-        note: note.trim()
+        commission_percent: isFreePayment ? 0 : commissionPercent,
+        note: note.trim(),
+        is_free_payment: isFreePayment
       };
 
       await adminApi.post("/workflow/mark-paid/", payload);
       
-      setSuccessMessage(`Payment confirmed! ${subadmin?.name || 'SubAdmin'} earns ${formatCurrency(commissionAmount)} commission.`);
+      if (isFreePayment) {
+        setSuccessMessage(`Payment marked as FREE successfully.`);
+      } else {
+        setSuccessMessage(`Payment confirmed! ${subadmin?.name || 'SubAdmin'} earns ${formatCurrency(commissionAmount)} commission.`);
+      }
       onSuccess?.();
       setTimeout(() => onClose(), 2000);
     } catch (err) {
@@ -218,7 +225,7 @@ export default function MarkAsPaidModal({
                 <span className="text-sm font-bold text-[#075E54]">{commissionPercent}%</span>
               </div>
               
-              <input
+              <input disabled={isFreePayment}
                 type="range"
                 min="0"
                 max="50"
@@ -237,6 +244,7 @@ export default function MarkAsPaidModal({
               <div className="flex gap-2 pt-1">
                 {[10,12.52, 20, 30, 40].map((rate) => (
                   <button
+                    disabled={isFreePayment}
                     key={rate}
                     type="button"
                     onClick={() => setCommissionPercent(rate)}
@@ -251,6 +259,18 @@ export default function MarkAsPaidModal({
                 ))}
               </div>
             </div>
+
+
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+            <input
+              type="checkbox"
+              checked={isFreePayment}
+              onChange={(e) => setIsFreePayment(e.target.checked)}
+            />
+            <span className="text-xs font-medium text-yellow-700">
+              Mark as FREE (No commission, No platform revenue)
+            </span>
+          </div>
 
             {/* Revenue Breakdown */}
             <div className="bg-[#075E54]/5 border border-[#075E54]/10 rounded-xl p-3 sm:p-4 space-y-2">

@@ -9,7 +9,7 @@ export const useTouchDrag = (reactFlowWrapper, reactFlowInstance, setNodes, node
       case 'start':
         return { label: 'Start Flow' };
       case 'messageNode':
-        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '' };
+        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '',follow_ups: [] };
       case 'imageTextButtonsNode':
         return {
           message: 'Choose an option:',
@@ -21,7 +21,7 @@ export const useTouchDrag = (reactFlowWrapper, reactFlowInstance, setNodes, node
           ],
         };
       case 'waitNode':
-        return { timeout: 60, variable: 'userResponse' };
+        return {delay_seconds: 5};
       case 'conditionalNode':
         return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
       case 'apiNode':

@@ -7,7 +7,8 @@ import {
   ListPlus,
   List,
   SquarePower,
-  Image
+  Image,
+  Filter
 } from 'lucide-react';
 
 const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
@@ -76,6 +77,38 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
         </div>
 
         <div 
+            className="p-3 bg-node-message rounded-lg border border-purple-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
+            onDragStart={(e) => onDragStart(e, 'keywordListenerNode')}
+            onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'keywordListenerNode')}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            draggable
+          >
+          <Filter className="mr-3 text-purple-500" size={20} />
+          <div>
+            <h4 className="font-medium text-sm">Keyword Router</h4>
+            <p className="text-xs text-gray-500">Route user's typed reply to different paths</p>
+          </div>
+        </div>
+
+
+
+        <div 
+          className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
+          onDragStart={(e) => onDragStart(e, 'listMessageNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'listMessageNode')}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          draggable
+        >
+          <List className="mr-3 text-blue-500" size={20} />
+          <div>
+            <h4 className="font-medium text-sm">List Message</h4>
+            <p className="text-xs text-gray-500">Send text or media message</p>
+          </div>
+        </div>
+
+        <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'textButtonsNode')}
           onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'textButtonsNode')}
@@ -120,20 +153,21 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
           </div>
         </div> 
 
-        {/* <div 
+        <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
-          onDragStart={(e) => onDragStart(e, 'appointment')}
-          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'appointment')}
+          onDragStart={(e) => onDragStart(e, 'waitNode')}
+          onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'waitNode')}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           draggable
         >
           <Image className="mr-3 text-blue-500" size={20} />
           <div>
-            <h4 className="font-medium text-sm">appointment</h4>
-            <p className="text-xs text-gray-500">Message with appointment</p>
+            <h4 className="font-medium text-sm">waitNode</h4>
+            <p className="text-xs text-gray-500">Message with waitNode</p>
           </div>
-        </div>  */}
+        </div> 
+
         {/* lead collector */}
         <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
@@ -167,7 +201,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
         </div> 
         {/*  */}
         {/* Booking Node */}
-        <div 
+        {/* <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'bookingNode')}
           onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'bookingNode')}
@@ -180,10 +214,10 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <h4 className="font-medium text-sm">Booking Node</h4>
             <p className="text-xs text-gray-500">Message with bookingNode</p>
           </div>
-        </div> 
+        </div>  */}
         {/*  */} 
         {/* Booking Node */}
-        <div 
+        {/* <div 
           className="p-3 bg-node-message rounded-lg border border-blue-200 cursor-move flex items-center transition-transform transform hover:scale-105 hover:shadow-md touch-action-none"
           onDragStart={(e) => onDragStart(e, 'paymentMethodNode')}
           onTouchStart={(e) => handleTouchStart && handleTouchStart(e, 'paymentMethodNode')}
@@ -196,7 +230,7 @@ const NodePanel = ({ onClose, onDragStart, touchDragHandlers }) => {
             <h4 className="font-medium text-sm">paymentMethodNode</h4>
             <p className="text-xs text-gray-500">Message with paymentMethodNode</p>
           </div>
-        </div> 
+        </div>  */}
         {/*  */} 
 
         {/* End node  */}
