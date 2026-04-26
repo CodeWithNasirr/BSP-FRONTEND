@@ -7,33 +7,53 @@ import API_BASE_URL from "../../config";
 const MEDIA_RULES = {
   image: {
     mimeTypes: ["image/jpeg", "image/png"],
-    maxSize: 5 * 1024 * 1024, // 5 MB
+    maxSize: 5 * 1024 * 1024,
   },
   video: {
     mimeTypes: ["video/mp4", "video/3gpp"],
-    maxSize: 16 * 1024 * 1024, // 16 MB
+    maxSize: 16 * 1024 * 1024,
   },
   audio: {
-  mimeTypes: [
-    "audio/aac",
-    "audio/mpeg",
-    "audio/ogg",
-    "audio/opus",
-    "audio/mp4",     // .m4a (standard)
-    "audio/x-m4a",   // .m4a (legacy / optional)
-  ],
+    mimeTypes: [
+      "audio/aac",
+      "audio/mpeg",
+      "audio/ogg",
+      "audio/opus",
+      "audio/mp4",
+      "audio/x-m4a",
+    ],
+    maxSize: 16 * 1024 * 1024,
+  },
 
-    maxSize: 16 * 1024 * 1024, // 16 MB
+  // ✅ NEW
+  document: {
+    mimeTypes: [
+      "application/pdf",
+      "application/x-pdf",
+    ],
+    maxSize: 100 * 1024 * 1024, // WhatsApp allows large docs
   },
 };
 
 /**
  * Determine media category from MIME type
  */
-const getMediaCategory = (mimeType) => {
+const getMediaCategory = (file) => {
+  const mimeType = file.type;
+  const name = file.name.toLowerCase();
+
   if (mimeType.startsWith("image/")) return "image";
   if (mimeType.startsWith("video/")) return "video";
   if (mimeType.startsWith("audio/")) return "audio";
+
+  if (
+    mimeType === "application/pdf" ||
+    mimeType === "application/x-pdf" ||
+    name.endsWith(".pdf")
+  ) {
+    return "document";
+  }
+
   return null;
 };
 
@@ -47,7 +67,8 @@ export async function uploadFlowMedia(file) {
   // ─────────────────────────────────────────────
   // META VALIDATION
   // ─────────────────────────────────────────────
-  const category = getMediaCategory(file.type);
+  const category = getMediaCategory(file);
+
 
   if (!category || !MEDIA_RULES[category]) {
     throw new Error("Unsupported media type for WhatsApp");
@@ -55,7 +76,10 @@ export async function uploadFlowMedia(file) {
 
   const { mimeTypes, maxSize } = MEDIA_RULES[category];
 
-  if (!mimeTypes.includes(file.type)) {
+  if (
+    file.type &&
+    !mimeTypes.includes(file.type)
+  ) {
     throw new Error(
       `Invalid ${category} format. Allowed: ${mimeTypes.join(", ")}`
     );
