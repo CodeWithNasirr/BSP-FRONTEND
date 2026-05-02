@@ -376,7 +376,13 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   const [isVisible, setIsVisible] = useState(true);
 
   // Filter state
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState(() => {
+    return localStorage.getItem("chat_filter") || "all";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("chat_filter", activeFilter);
+  }, [activeFilter]);
 
   // Selection mode
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -796,6 +802,9 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   // Initial load (original)
   useEffect(() => {
     if (!token) return;
+
+    // 🔥 IMPORTANT: prevent override when filter is active
+    if (activeFilter !== "all") return;
 
     const cacheAge = Date.now() - listCache.lastFetchTime;
     const filtersChanged =
