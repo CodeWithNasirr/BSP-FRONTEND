@@ -477,21 +477,29 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   // ═══════════════════════════════════════════════════════════════════════════
   // CLIENT-SIDE FILTERED LIST (ORIGINAL LOGIC + PIN FILTER)
   // ═══════════════════════════════════════════════════════════════════════════
-
   const filteredConversations = useMemo(() => {
-    let filtered = conversations;
-    
-    if (activeFilter === "unread") {
-      filtered = conversations.filter((c) => c.unread_count > 0);
-    } else if (activeFilter === "expired") {
-      filtered = conversations.filter((c) => c.is_expired);
-    } else if (activeFilter === "pinned") {
-      filtered = conversations.filter((c) => c.is_pinned);
+    if (activeFilter === "expired") {
+      return conversations.filter((c) => c.is_expired);
     }
-    // "all" returns everything (no filter)
-    
-    return filtered;
+    if (activeFilter === "pinned") {
+      return conversations.filter((c) => c.is_pinned);
+    }
+    return conversations; // unread handled by backend now
   }, [conversations, activeFilter]);
+  // const filteredConversations = useMemo(() => {
+  //   let filtered = conversations;
+    
+  //   if (activeFilter === "unread") {
+  //     filtered = conversations.filter((c) => c.unread_count > 0);
+  //   } else if (activeFilter === "expired") {
+  //     filtered = conversations.filter((c) => c.is_expired);
+  //   } else if (activeFilter === "pinned") {
+  //     filtered = conversations.filter((c) => c.is_pinned);
+  //   }
+  //   // "all" returns everything (no filter)
+    
+  //   return filtered;
+  // }, [conversations, activeFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SELECTION HANDLERS (ORIGINAL)
@@ -725,8 +733,11 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           ? `&tags=${encodeURIComponent(tags.join(","))}`
           : "";
 
+        const filterQuery =
+          activeFilter !== "all" ? `&filter=${activeFilter}` : "";
+
         const response = await axios.get(
-          `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(query)}${tagsQuery}`,
+           `${API_BASE_URL}/api/chats/?page=${pageNum}&search=${encodeURIComponent(query)}${tagsQuery}${filterQuery}`,
           {
             headers: { Authorization: `Token ${token}` },
             signal: abortControllerRef.current.signal,
@@ -761,9 +772,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         setIsLoadingMore(false);
         setIsInitialLoad(false);
       }
-    },
-    [token]
-  );
+    }, [token, activeFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEARCH (ORIGINAL)
@@ -814,6 +823,24 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
     fetchChatListInternal(1, debouncedSearch, selectedTags, false);
   }, [token, debouncedSearch, selectedTags, fetchChatListInternal]);
+
+  // ✅ NEW: refetch when filter changes
+  useEffect(() => {
+    setPage(1);
+    pageRef.current = 1;
+    setHasMore(true);
+    hasMoreRef.current = true;
+
+    // ✅ IMPORTANT: clear old data
+    setConversations([]);
+
+    // reset scroll
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTop = 0;
+    }
+
+    fetchChatListInternal(1, searchRef.current, tagsRef.current, false);
+  }, [activeFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CHAT SELECTION (ORIGINAL)
