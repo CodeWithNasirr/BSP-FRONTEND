@@ -92,7 +92,7 @@ const CampaignDetails = () => {
 
           {/* Campaign Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-0 w-full mb-8 rounded-lg">
-            {["Messages", "Sent", "Delivered", "Read", "Failed"].map(
+            {["All Messages", "Sent", "Delivered", "Read", "Failed"].map(
               (label, index) => (
                 <div
                   key={index}
