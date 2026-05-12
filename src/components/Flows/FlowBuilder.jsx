@@ -1,3 +1,520 @@
+// import React, { useState, useCallback, useRef, useEffect } from 'react';
+// import ReactFlow, {
+//   ReactFlowProvider,
+//   Background,
+//   Controls,
+//   Panel,
+//   useNodesState,
+//   useEdgesState,
+//   addEdge,
+//   MiniMap,
+// } from 'reactflow';
+// import { nanoid } from 'nanoid';
+// import 'reactflow/dist/style.css';
+// import { Save, Trash2, Download, Upload, Play,Workflow } from 'lucide-react';
+// import NodePanel from './NodePanel';
+// import PropertyPanel from './PropertyPanel';
+// import FlowSimulator from './FlowSimulator';
+// import { nodeTypes } from './nodes';
+// import useFlowStore from '../../store/flowStore';
+// import { exportFlow, importFlow } from '../../utils/flowUtils';
+// import RequireSubscription from '../Subscriptions/RequireSubscription';
+// import { useTouchDrag } from './useTouchDrag';
+// import TriggerPanel from './TriggerPanel';
+
+
+// const FlowBuilder = ({ setEnableChatFlow }) => {
+//   const reactFlowWrapper = useRef(null);
+//   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+//   const [nodes, setNodes, onNodesChange] = useNodesState([]);
+//   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+//   const [selectedNode, setSelectedNode] = useState(null);
+//   const [sidebarOpen, setSidebarOpen] = useState(true);
+//   const [propertiesOpen, setPropertiesOpen] = useState(true);
+//   const [simulatorOpen, setSimulatorOpen] = useState(false);
+
+//   const [flowName, setFlowName] = useState('Flow 1');
+//   const [triggerConfig, setTriggerConfig] = useState({
+//     trigger_type: 'any',
+//     trigger_keywords: [],
+//     trigger_keyword_mode: 'contains',
+//     is_enabled: true,
+//   });
+//   const [isChatFlowEnabled, setIsChatFlowEnabled] = useState(() => localStorage.getItem('chatFlowEnabled') === 'true');
+
+//   const { setCurrentFlow, saveFlow, fetchFlows } = useFlowStore();
+//   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchDrag(
+//     reactFlowWrapper,
+//     reactFlowInstance,
+//     setNodes,
+//     nodes
+//   );
+//   useEffect(() => {
+//     localStorage.setItem('chatFlowEnabled', isChatFlowEnabled);
+//     setEnableChatFlow(isChatFlowEnabled);
+//   }, [isChatFlowEnabled, setEnableChatFlow]);
+
+//   useEffect(() => { 
+//     const loadFlows = async () => {
+//       const flows = await fetchFlows();
+//       const existingFlow = flows[0];
+//       if (existingFlow) {
+//         setNodes(existingFlow.nodes || []);
+//         setEdges(existingFlow.edges || []);
+//         setCurrentFlow(existingFlow);
+//         setFlowName(existingFlow.name);
+//         // Hydrate trigger config (defaults preserve current behavior)
+//         setTriggerConfig({
+//           trigger_type: existingFlow.trigger_type || 'any',
+//           trigger_keywords: existingFlow.trigger_keywords || [],
+//           trigger_keyword_mode: existingFlow.trigger_keyword_mode || 'contains',
+//           is_enabled: existingFlow.is_enabled !== false,
+//         });
+//       }
+//     };
+//     loadFlows();
+//   }, [fetchFlows, setNodes, setEdges, setCurrentFlow]);
+
+//   const onConnect = useCallback(
+//     (params) => setEdges((eds) => addEdge(params, eds)),
+//     [setEdges]
+//   );
+
+//   const onDragOver = useCallback((event) => {
+//     event.preventDefault();
+//     event.dataTransfer.dropEffect = 'move';
+//   }, []);
+
+//   const onDrop = useCallback(
+//   (event) => {
+//       event.preventDefault();
+//       const type = event.dataTransfer.getData('application/reactflow');
+//       if (typeof type === 'undefined' || !type || !reactFlowInstance || !reactFlowWrapper.current) return;
+
+//       if (type === 'start' && nodes.some((node) => node.type === 'start')) {
+//         alert('Only one Start Flow node is allowed.');
+//         return;
+//       }
+
+//       const bounds = reactFlowWrapper.current.getBoundingClientRect();
+//       const clientX = event.clientX - bounds.left;
+//       const clientY = event.clientY - bounds.top;
+
+//       const position = reactFlowInstance.screenToFlowPosition({
+//         x: clientX,
+//         y: clientY,
+//       });
+
+//       const newNode = {
+//         id: `${type}-${nanoid(6)}`,
+//         // id: `${type}-${Date.now()}`,
+//         type,
+//         position,
+//         data: { label: `${type} node`, ...getDefaultDataForType(type) },
+//       };
+
+//       setNodes((nds) => [...nds, newNode]);
+//     },
+//     [reactFlowInstance, setNodes, nodes]
+//   );
+  
+
+//   const getDefaultDataForType = (type) => {
+//     switch (type) {
+//       case 'start':
+//         return { label: 'Start Flow' };
+//       case 'messageNode':
+//         return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '',follow_ups: [], parallel_sends: [] };
+//       case 'imageTextButtonsNode':
+//         return {
+//           message: 'Choose an option:',
+//           image: '',
+//           footerText: '',
+//           buttons: [
+//             { text: 'Button 1', value: '1' },
+//             { text: 'Button 2', value: '2' },
+//           ],
+//         };
+//       case 'conditionalNode':
+//         return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
+//       case 'apiNode':
+//         return { url: 'https://api.example.com/endpoint', method: 'GET', headers: {} };
+//       case 'endNode':
+//         return { endMessage: 'Flow completed' };
+//       case 'textButtonsNode':
+//         return {
+//           message: 'Please select an option:',
+//           buttons: [
+//             { text: 'Option 1', value: '1' },
+//             { text: 'Option 2', value: '2' },
+//           ],
+//         };
+//       case 'keywordListenerNode':
+//         return { keyword_groups: [] };
+
+//       case 'mediaConditionNode':
+//         return {
+//           allowed_types: ['image', 'document'],
+//           fallback_message: 'Please send an image or document.',
+//         };
+        
+//       case 'waitNode':
+//         return {delay_seconds: 5};
+//       default:
+//         return {};
+//     }
+//   };
+
+//   const onNodeClick = useCallback((_, node) => {
+//     setSelectedNode(node);
+//     setPropertiesOpen(true);
+//   }, []);
+
+//   const updateNodeData = useCallback(
+//     (nodeId, newData) => {
+//       setNodes((nds) =>
+//         nds.map((node) => {
+//           if (node.id === nodeId) {
+//             return { ...node, data: { ...node.data, ...newData } };
+//           }
+//           return node;
+//         })
+//       );
+//     },
+//     [setNodes]
+//   );
+
+//   const handleSaveFlow = useCallback(async () => {
+//     if (reactFlowInstance) {
+//       const startNodes = nodes.filter((node) => node.type === 'start');
+//       if (startNodes.length !== 1) {
+//         alert('Flow must have exactly one Start Flow node.');
+//         return;
+//       }
+
+//       const rfFlow = reactFlowInstance.toObject();
+
+//       const cleanFlow = {
+//         nodes: rfFlow.nodes.map(n => ({
+//           id: n.id,
+//           type: n.type,
+//           position: n.position,
+//           data: { ...(n.data || {}) },
+//         })),
+//         edges: rfFlow.edges.map(e => ({
+//           id: e.id,
+//           source: e.source,
+//           target: e.target,
+//           sourceHandle: e.sourceHandle,
+//           targetHandle: e.targetHandle,
+//         })),
+//       };
+
+//       if (triggerConfig.trigger_type === 'keyword' && triggerConfig.trigger_keywords.length === 0) {
+//         alert('Add at least one keyword or change trigger type.');
+//         return;
+//       }
+
+//       try {
+//         await saveFlow({
+//           ...cleanFlow,
+//           name: flowName,
+//           ...triggerConfig,  // Persist trigger fields
+//         });
+//         alert("Flow saved successfully!");
+//       } catch (err) {
+//         alert("Save failed");
+//       }
+
+
+//       // const flow = reactFlowInstance.toObject();
+//       // try {
+//       //   await saveFlow({
+//       //     ...flow,
+//       //     name: flowName,
+//       //   });
+//         // alert('Flow saved successfully!');
+      
+//     }
+//   }, [reactFlowInstance, saveFlow, flowName, nodes, triggerConfig]);
+
+//   const handleExportFlow = useCallback(() => {
+//     if (reactFlowInstance) {
+//       // const flow = reactFlowInstance.toObject();
+//       // exportFlow(flow);
+//       const rfFlow = reactFlowInstance.toObject();
+//       const cleanFlow = {
+//         nodes: rfFlow.nodes.map(n => ({
+//           id: n.id,
+//           type: n.type,
+//           position: n.position,
+//           data: { ...(n.data || {}) },
+//         })),
+//         edges: rfFlow.edges.map(e => ({
+//           id: e.id,
+//           source: e.source,
+//           target: e.target,
+//           sourceHandle: e.sourceHandle,
+//           targetHandle: e.targetHandle,
+//         })),
+//       };
+
+//       exportFlow(cleanFlow);
+
+//     }
+//   }, [reactFlowInstance]);
+
+//   const handleImportFlow = useCallback(() => {
+//     importFlow().then(async (flow) => {
+//       if (flow) {
+//         const startNodes = (flow.nodes || []).filter((node) => node.type === 'start');
+//         if (startNodes.length !== 1) {
+//           alert('Imported flow must have exactly one Start Flow node.');
+//           return;
+//         }
+
+//         try {
+//           const cleanFlow = {
+//           nodes: (flow.nodes || []).map(n => ({
+//             id: n.id,
+//             type: n.type,
+//             position: n.position,
+//             data: { ...(n.data || {}) },
+//           })),
+//           edges: (flow.edges || []).map(e => ({
+//             id: e.id,
+//             source: e.source,
+//             target: e.target,
+//             sourceHandle: e.sourceHandle,
+//             targetHandle: e.targetHandle,
+//           })),
+//         };
+
+//         await saveFlow({
+//           ...cleanFlow,
+//           name: flow.name || 'Imported Flow',
+//         });
+
+//         setNodes(cleanFlow.nodes);
+//         setEdges(cleanFlow.edges);
+//           // await saveFlow({
+//           //   ...flow,
+//           //   name: flow.name || 'Imported Flow',
+//           // // });
+//           // setNodes(flow.nodes || []);
+//           // setEdges(flow.edges || []);
+//           setCurrentFlow({
+//               ...cleanFlow,
+//               name: flow.name || 'Imported Flow',
+//             });
+//           setFlowName(flow.name || 'Imported Flow');
+//           alert('Flow imported successfully!');
+//         } catch (error) {
+//           alert(`Failed to save flow: ${error.message}`);
+//         }
+//       }
+//     });
+//   }, [setNodes, setEdges, setCurrentFlow, saveFlow]);
+
+//   const handleDeleteSelectedNodes = useCallback(() => {
+//     const deletedNodeIds = nodes
+//       .filter((node) => node.selected)
+//       .map((node) => node.id);
+
+//     setEdges((eds) =>
+//       eds.filter(
+//         (edge) =>
+//           !edge.selected &&
+//           !deletedNodeIds.includes(edge.source) &&
+//           !deletedNodeIds.includes(edge.target)
+//       )
+//     );
+
+//     setNodes((nds) => nds.filter((node) => !node.selected));
+//   }, [setNodes, setEdges, nodes]);
+
+//   const handleSimulateFlow = useCallback(() => {
+//     if (reactFlowInstance) {
+//       const flow = reactFlowInstance.toObject();
+//       setSimulatorOpen(true);
+//     }
+//   }, [reactFlowInstance]);
+
+//   return (
+//     <RequireSubscription>
+//       <div className="max-h-screen flex flex-col">
+//         <div className="flex-grow flex flex-col sm:flex-row">
+//           {sidebarOpen && (
+//             <div className="fixed inset-y-0 left-0 w-64 sm:w-80 bg-white shadow-lg z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col">
+//               <NodePanel
+//                 onClose={() => setSidebarOpen(false)}
+//                 onDragStart={(event, nodeType) => {
+//                   event.dataTransfer.setData('application/reactflow', nodeType);
+//                   event.dataTransfer.effectAllowed = 'move';
+//                 }}
+//                 touchDragHandlers={{ handleTouchStart, handleTouchMove, handleTouchEnd }}
+//               />
+//             </div>
+//           )}
+
+//           <div className="flex-grow relative h-[calc(100vh-4rem)] sm:h-screen">
+//             <ReactFlowProvider>
+//               <div className="h-full w-full" ref={reactFlowWrapper}>
+//                 <ReactFlow 
+//                   nodes={nodes}
+//                   edges={edges}
+//                   onNodesChange={onNodesChange}
+//                   onEdgesChange={onEdgesChange}
+//                   onConnect={onConnect}
+//                   onInit={setReactFlowInstance}
+//                   onDrop={onDrop}
+//                   onDragOver={onDragOver}
+//                   onNodeClick={onNodeClick}
+//                   nodeTypes={nodeTypes}
+//                   fitView
+//                   snapToGrid
+//                   snapGrid={[15, 15]}
+//                   className="touch-none sm:touch-auto"
+//                 >
+//                   <Controls position="bottom-right" />
+//                   <MiniMap
+//                     nodeStrokeColor={(n) => (n.selected ? '#25D366' : '#ddd')}
+//                     nodeColor={(n) => {
+//                       switch (n.type) {
+//                         case 'start': return '#CCFBF1';
+//                         case 'messageNode': return '#E0F2FE';
+//                         case 'listMessageNode': return '#E0F2FE';
+//                         case 'catalogCarouselNode': return '#E0F2FE';
+//                         case 'singleSelectNode': return '#E0F2FE';
+//                         case 'imageTextButtonsNode': return '#EEF2FF';
+//                         case 'waitNode': return '#FEF3C7';
+//                         case 'conditionalNode': return '#E0E7FF';
+//                         case 'apiNode': return '#F3E8FF';
+//                         case 'endNode': return '#FFE2E2';
+//                         default: return '#ffffff';
+//                       }
+//                     }}
+//                     className="sm:block hidden"
+//                   />
+//                   <Background color="#aaa" gap={16} />
+
+//                   <Panel position="top-left">
+//                     <div className="bg-white shadow-md rounded-md p-2 sm:p-3 flex flex-row flex-wrap items-center gap-2">
+//                       <input
+//                         type="text"
+//                         value={flowName}
+//                         onChange={(e) => setFlowName(e.target.value)}
+//                         placeholder="Flow Name"
+//                         className="border rounded px-2 py-1 text-xs sm:text-sm w-full sm:w-32"
+//                       />
+//                       <TriggerPanel
+//                         triggerConfig={triggerConfig}
+//                         onChange={setTriggerConfig}
+//                       />
+//                       <button
+//                         onClick={() => setSidebarOpen(!sidebarOpen)}
+//                         className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                       >
+//                         {sidebarOpen ? 'Hide' : 'Show'}
+//                       </button>
+//                       <button
+//                         onClick={handleSaveFlow}
+//                         className="flow-button flow-button-primary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                         title="Save Flow"
+//                       >
+//                         <Save size={14} className="mr-1 sm:mr-2" />
+//                         Save
+//                       </button>
+//                       <button
+//                         onClick={handleExportFlow}
+//                         className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                         title="Export Flow"
+//                       >
+//                         <Download size={14} />
+//                       </button>
+//                       <button
+//                         onClick={handleImportFlow}
+//                         className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                         title="Import Flow"
+//                       >
+//                         <Upload size={14} />
+//                       </button>
+//                       <button
+//                         onClick={handleDeleteSelectedNodes}
+//                         className="flow-button flow-button-danger py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                         title="Delete Selected"
+//                       >
+//                         <Trash2 size={14} />
+//                       </button>
+//                       <button
+//                         onClick={handleSimulateFlow}
+//                         className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
+//                         title="Simulate Flow"
+//                       >
+//                         <Play size={14} className="mr-1 sm:mr-2" />
+//                         Simulate
+//                       </button>
+//                       <div className="flex items-center space-x-2 w-auto">
+//                         <label className="flex items-center cursor-pointer">
+//                           <div className="relative">
+//                             <input
+//                               type="checkbox"
+//                               checked={isChatFlowEnabled}
+//                               onChange={() => setIsChatFlowEnabled(!isChatFlowEnabled)}
+//                               className="sr-only"
+//                             />
+//                             <div
+//                               className={`w-8 h-4 sm:w-10 sm:h-6 rounded-full shadow-inner ${
+//                                 isChatFlowEnabled ? 'bg-green-400' : 'bg-gray-200'
+//                               }`}
+//                             >
+//                               <div
+//                                 className={`absolute w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow transform transition duration-200 ease-in-out ${
+//                                   isChatFlowEnabled ? 'translate-x-4 sm:translate-x-6' : 'translate-x-0'
+//                                 }`}
+//                               />
+//                             </div>
+//                           </div>
+//                           <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium text-gray-700 flex items-center">
+//                             <Workflow size={14} className="mr-1" />
+//                             Flows
+//                           </span>
+//                         </label>
+//                       </div>
+//                     </div>
+//                   </Panel>
+//                 </ReactFlow>
+//               </div>
+//             </ReactFlowProvider>
+//           </div>
+
+//           {/* {propertiesOpen && selectedNode && (
+//             <div className="fixed inset-y-0 right-0 w-64 sm:w-80 bg-white shadow-lg z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col">
+//               <PropertyPanel
+//                 node={selectedNode}
+//                 onChange={updateNodeData}
+//                 onClose={() => setPropertiesOpen(false)}
+//               />
+//             </div>
+//           )} */}
+//         </div>
+
+//         {simulatorOpen && (
+//           <FlowSimulator
+//             flow={reactFlowInstance?.toObject()}
+//             onClose={() => setSimulatorOpen(false)}
+//           />
+//         )}
+//       </div>
+//     </RequireSubscription>
+//   );
+// };
+
+// export default FlowBuilder;
+
+
+
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
@@ -11,7 +528,7 @@ import ReactFlow, {
 } from 'reactflow';
 import { nanoid } from 'nanoid';
 import 'reactflow/dist/style.css';
-import { Save, Trash2, Download, Upload, Play,Workflow } from 'lucide-react';
+import { Save, Trash2, Download, Upload, Play, Workflow } from 'lucide-react';
 import NodePanel from './NodePanel';
 import PropertyPanel from './PropertyPanel';
 import FlowSimulator from './FlowSimulator';
@@ -22,7 +539,6 @@ import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { useTouchDrag } from './useTouchDrag';
 import TriggerPanel from './TriggerPanel';
 
-
 const FlowBuilder = ({ setEnableChatFlow }) => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -32,7 +548,6 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
-
   const [flowName, setFlowName] = useState('Flow 1');
   const [triggerConfig, setTriggerConfig] = useState({
     trigger_type: 'any',
@@ -49,12 +564,13 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
     setNodes,
     nodes
   );
+
   useEffect(() => {
     localStorage.setItem('chatFlowEnabled', isChatFlowEnabled);
     setEnableChatFlow(isChatFlowEnabled);
   }, [isChatFlowEnabled, setEnableChatFlow]);
 
-  useEffect(() => { 
+  useEffect(() => {
     const loadFlows = async () => {
       const flows = await fetchFlows();
       const existingFlow = flows[0];
@@ -63,7 +579,6 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         setEdges(existingFlow.edges || []);
         setCurrentFlow(existingFlow);
         setFlowName(existingFlow.name);
-        // Hydrate trigger config (defaults preserve current behavior)
         setTriggerConfig({
           trigger_type: existingFlow.trigger_type || 'any',
           trigger_keywords: existingFlow.trigger_keywords || [],
@@ -75,10 +590,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
     loadFlows();
   }, [fetchFlows, setNodes, setEdges, setCurrentFlow]);
 
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -86,76 +598,43 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
   }, []);
 
   const onDrop = useCallback(
-  (event) => {
+    (event) => {
       event.preventDefault();
       const type = event.dataTransfer.getData('application/reactflow');
       if (typeof type === 'undefined' || !type || !reactFlowInstance || !reactFlowWrapper.current) return;
-
       if (type === 'start' && nodes.some((node) => node.type === 'start')) {
         alert('Only one Start Flow node is allowed.');
         return;
       }
-
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const clientX = event.clientX - bounds.left;
-      const clientY = event.clientY - bounds.top;
-
       const position = reactFlowInstance.screenToFlowPosition({
-        x: clientX,
-        y: clientY,
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
       });
-
       const newNode = {
         id: `${type}-${nanoid(6)}`,
-        // id: `${type}-${Date.now()}`,
         type,
         position,
         data: { label: `${type} node`, ...getDefaultDataForType(type) },
       };
-
       setNodes((nds) => [...nds, newNode]);
     },
     [reactFlowInstance, setNodes, nodes]
   );
-  
 
   const getDefaultDataForType = (type) => {
     switch (type) {
-      case 'start':
-        return { label: 'Start Flow' };
-      case 'messageNode':
-        return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '',follow_ups: [], parallel_sends: [] };
-      case 'imageTextButtonsNode':
-        return {
-          message: 'Choose an option:',
-          image: '',
-          footerText: '',
-          buttons: [
-            { text: 'Button 1', value: '1' },
-            { text: 'Button 2', value: '2' },
-          ],
-        };
-      case 'conditionalNode':
-        return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
-      case 'apiNode':
-        return { url: 'https://api.example.com/endpoint', method: 'GET', headers: {} };
-      case 'endNode':
-        return { endMessage: 'Flow completed' };
-      case 'textButtonsNode':
-        return {
-          message: 'Please select an option:',
-          buttons: [
-            { text: 'Option 1', value: '1' },
-            { text: 'Option 2', value: '2' },
-          ],
-        };
-      case 'keywordListenerNode':
-        return { keyword_groups: [] };
-        
-      case 'waitNode':
-        return {delay_seconds: 5};
-      default:
-        return {};
+      case 'start': return { label: 'Start Flow' };
+      case 'messageNode': return { message: 'Hello, welcome to our WhatsApp bot!', mediaUrl: '', follow_ups: [], parallel_sends: [] };
+      case 'imageTextButtonsNode': return { message: 'Choose an option:', image: '', footerText: '', buttons: [{ text: 'Button 1', value: '1' }, { text: 'Button 2', value: '2' }] };
+      case 'conditionalNode': return { condition: 'response == "yes"', trueLabel: 'Yes', falseLabel: 'No' };
+      case 'apiNode': return { url: 'https://api.example.com/endpoint', method: 'GET', headers: {} };
+      case 'endNode': return { endMessage: 'Flow completed' };
+      case 'textButtonsNode': return { message: 'Please select an option:', buttons: [{ text: 'Option 1', value: '1' }, { text: 'Option 2', value: '2' }] };
+      case 'keywordListenerNode': return { keyword_groups: [] };
+      case 'mediaConditionNode': return { allowed_types: ['image', 'document'], fallback_message: 'Please send an image or document.' };
+      case 'waitNode': return { delay_seconds: 5 };
+      default: return {};
     }
   };
 
@@ -166,14 +645,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
 
   const updateNodeData = useCallback(
     (nodeId, newData) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return { ...node, data: { ...node.data, ...newData } };
-          }
-          return node;
-        })
-      );
+      setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node)));
     },
     [setNodes]
   );
@@ -185,76 +657,32 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         alert('Flow must have exactly one Start Flow node.');
         return;
       }
-
       const rfFlow = reactFlowInstance.toObject();
-
       const cleanFlow = {
-        nodes: rfFlow.nodes.map(n => ({
-          id: n.id,
-          type: n.type,
-          position: n.position,
-          data: { ...(n.data || {}) },
-        })),
-        edges: rfFlow.edges.map(e => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          sourceHandle: e.sourceHandle,
-          targetHandle: e.targetHandle,
-        })),
+        nodes: rfFlow.nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: { ...(n.data || {}) } })),
+        edges: rfFlow.edges.map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })),
       };
-
       if (triggerConfig.trigger_type === 'keyword' && triggerConfig.trigger_keywords.length === 0) {
         alert('Add at least one keyword or change trigger type.');
         return;
       }
-
       try {
-        await saveFlow({
-          ...cleanFlow,
-          name: flowName,
-          ...triggerConfig,  // Persist trigger fields
-        });
+        await saveFlow({ ...cleanFlow, name: flowName, ...triggerConfig });
         alert("Flow saved successfully!");
       } catch (err) {
         alert("Save failed");
       }
-
-
-      // const flow = reactFlowInstance.toObject();
-      // try {
-      //   await saveFlow({
-      //     ...flow,
-      //     name: flowName,
-      //   });
-        // alert('Flow saved successfully!');
-      
     }
   }, [reactFlowInstance, saveFlow, flowName, nodes, triggerConfig]);
 
   const handleExportFlow = useCallback(() => {
     if (reactFlowInstance) {
-      // const flow = reactFlowInstance.toObject();
-      // exportFlow(flow);
       const rfFlow = reactFlowInstance.toObject();
       const cleanFlow = {
-        nodes: rfFlow.nodes.map(n => ({
-          id: n.id,
-          type: n.type,
-          position: n.position,
-          data: { ...(n.data || {}) },
-        })),
-        edges: rfFlow.edges.map(e => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          sourceHandle: e.sourceHandle,
-          targetHandle: e.targetHandle,
-        })),
+        nodes: rfFlow.nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: { ...(n.data || {}) } })),
+        edges: rfFlow.edges.map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })),
       };
-
       exportFlow(cleanFlow);
-
     }
   }, [reactFlowInstance]);
 
@@ -266,41 +694,15 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
           alert('Imported flow must have exactly one Start Flow node.');
           return;
         }
-
         try {
           const cleanFlow = {
-          nodes: (flow.nodes || []).map(n => ({
-            id: n.id,
-            type: n.type,
-            position: n.position,
-            data: { ...(n.data || {}) },
-          })),
-          edges: (flow.edges || []).map(e => ({
-            id: e.id,
-            source: e.source,
-            target: e.target,
-            sourceHandle: e.sourceHandle,
-            targetHandle: e.targetHandle,
-          })),
-        };
-
-        await saveFlow({
-          ...cleanFlow,
-          name: flow.name || 'Imported Flow',
-        });
-
-        setNodes(cleanFlow.nodes);
-        setEdges(cleanFlow.edges);
-          // await saveFlow({
-          //   ...flow,
-          //   name: flow.name || 'Imported Flow',
-          // // });
-          // setNodes(flow.nodes || []);
-          // setEdges(flow.edges || []);
-          setCurrentFlow({
-              ...cleanFlow,
-              name: flow.name || 'Imported Flow',
-            });
+            nodes: (flow.nodes || []).map(n => ({ id: n.id, type: n.type, position: n.position, data: { ...(n.data || {}) } })),
+            edges: (flow.edges || []).map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })),
+          };
+          await saveFlow({ ...cleanFlow, name: flow.name || 'Imported Flow' });
+          setNodes(cleanFlow.nodes);
+          setEdges(cleanFlow.edges);
+          setCurrentFlow({ ...cleanFlow, name: flow.name || 'Imported Flow' });
           setFlowName(flow.name || 'Imported Flow');
           alert('Flow imported successfully!');
         } catch (error) {
@@ -311,35 +713,25 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
   }, [setNodes, setEdges, setCurrentFlow, saveFlow]);
 
   const handleDeleteSelectedNodes = useCallback(() => {
-    const deletedNodeIds = nodes
-      .filter((node) => node.selected)
-      .map((node) => node.id);
-
-    setEdges((eds) =>
-      eds.filter(
-        (edge) =>
-          !edge.selected &&
-          !deletedNodeIds.includes(edge.source) &&
-          !deletedNodeIds.includes(edge.target)
-      )
-    );
-
+    const deletedNodeIds = nodes.filter((node) => node.selected).map((node) => node.id);
+    setEdges((eds) => eds.filter((edge) => !edge.selected && !deletedNodeIds.includes(edge.source) && !deletedNodeIds.includes(edge.target)));
     setNodes((nds) => nds.filter((node) => !node.selected));
   }, [setNodes, setEdges, nodes]);
 
   const handleSimulateFlow = useCallback(() => {
-    if (reactFlowInstance) {
-      const flow = reactFlowInstance.toObject();
-      setSimulatorOpen(true);
-    }
+    if (reactFlowInstance) setSimulatorOpen(true);
   }, [reactFlowInstance]);
+
+  // Check dark mode for ReactFlow background
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
   return (
     <RequireSubscription>
-      <div className="max-h-screen flex flex-col">
+      <div className="h-screen flex flex-col bg-gray-50 dark:bg-[#0b1120] transition-colors duration-300">
         <div className="flex-grow flex flex-col sm:flex-row">
+          {/* Sidebar */}
           {sidebarOpen && (
-            <div className="fixed inset-y-0 left-0 w-64 sm:w-80 bg-white shadow-lg z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col">
+            <div className="fixed inset-y-0 left-0 w-64 sm:w-80 bg-white dark:bg-[#111827] shadow-lg dark:shadow-2xl z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col border-r border-gray-200 dark:border-white/5">
               <NodePanel
                 onClose={() => setSidebarOpen(false)}
                 onDragStart={(event, nodeType) => {
@@ -351,10 +743,11 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
             </div>
           )}
 
+          {/* Canvas */}
           <div className="flex-grow relative h-[calc(100vh-4rem)] sm:h-screen">
             <ReactFlowProvider>
               <div className="h-full w-full" ref={reactFlowWrapper}>
-                <ReactFlow 
+                <ReactFlow
                   nodes={nodes}
                   edges={edges}
                   onNodesChange={onNodesChange}
@@ -370,106 +763,76 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
                   snapGrid={[15, 15]}
                   className="touch-none sm:touch-auto"
                 >
-                  <Controls position="bottom-right" />
+                  <Controls position="bottom-right" className="dark:bg-[#111827] dark:border-white/10" />
                   <MiniMap
-                    nodeStrokeColor={(n) => (n.selected ? '#25D366' : '#ddd')}
+                    nodeStrokeColor={(n) => (n.selected ? '#25D366' : isDark ? '#334155' : '#ddd')}
                     nodeColor={(n) => {
                       switch (n.type) {
-                        case 'start': return '#CCFBF1';
-                        case 'messageNode': return '#E0F2FE';
-                        case 'listMessageNode': return '#E0F2FE';
-                        case 'catalogCarouselNode': return '#E0F2FE';
-                        case 'singleSelectNode': return '#E0F2FE';
-                        case 'imageTextButtonsNode': return '#EEF2FF';
-                        case 'waitNode': return '#FEF3C7';
-                        case 'conditionalNode': return '#E0E7FF';
-                        case 'apiNode': return '#F3E8FF';
-                        case 'endNode': return '#FFE2E2';
-                        default: return '#ffffff';
+                        case 'start': return isDark ? '#0f766e' : '#CCFBF1';
+                        case 'messageNode': return isDark ? '#075985' : '#E0F2FE';
+                        case 'listMessageNode': return isDark ? '#075985' : '#E0F2FE';
+                        case 'catalogCarouselNode': return isDark ? '#075985' : '#E0F2FE';
+                        case 'singleSelectNode': return isDark ? '#075985' : '#E0F2FE';
+                        case 'imageTextButtonsNode': return isDark ? '#3730a3' : '#EEF2FF';
+                        case 'waitNode': return isDark ? '#92400e' : '#FEF3C7';
+                        case 'conditionalNode': return isDark ? '#312e81' : '#E0E7FF';
+                        case 'apiNode': return isDark ? '#6b21a8' : '#F3E8FF';
+                        case 'endNode': return isDark ? '#991b1b' : '#FFE2E2';
+                        default: return isDark ? '#1e293b' : '#ffffff';
                       }
                     }}
-                    className="sm:block hidden"
+                    className="sm:block hidden dark:bg-[#111827] dark:border-white/10"
+                    style={{ backgroundColor: isDark ? '#111827' : '#fff' }}
                   />
-                  <Background color="#aaa" gap={16} />
+                  <Background color={isDark ? '#334155' : '#aaa'} gap={16} />
 
                   <Panel position="top-left">
-                    <div className="bg-white shadow-md rounded-md p-2 sm:p-3 flex flex-row flex-wrap items-center gap-2">
+                    <div className="bg-white/90 dark:bg-[#111827]/90 backdrop-blur-xl shadow-lg dark:shadow-2xl rounded-xl p-2 sm:p-3 flex flex-row flex-wrap items-center gap-2 border border-gray-200 dark:border-white/5">
                       <input
                         type="text"
                         value={flowName}
                         onChange={(e) => setFlowName(e.target.value)}
                         placeholder="Flow Name"
-                        className="border rounded px-2 py-1 text-xs sm:text-sm w-full sm:w-32"
+                        className="border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs sm:text-sm w-full sm:w-32 bg-white dark:bg-[#111827] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
                       />
-                      <TriggerPanel
-                        triggerConfig={triggerConfig}
-                        onChange={setTriggerConfig}
-                      />
-                      <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                      >
+                      <TriggerPanel triggerConfig={triggerConfig} onChange={setTriggerConfig} />
+                      <button onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="px-2 py-1 text-xs sm:text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95">
                         {sidebarOpen ? 'Hide' : 'Show'}
                       </button>
-                      <button
-                        onClick={handleSaveFlow}
-                        className="flow-button flow-button-primary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                        title="Save Flow"
-                      >
-                        <Save size={14} className="mr-1 sm:mr-2" />
-                        Save
+                      <button onClick={handleSaveFlow}
+                        className="flex items-center gap-1 px-2 py-1 text-xs sm:text-sm rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white hover:bg-indigo-500 dark:hover:bg-indigo-400 transition-all active:scale-95 shadow-sm">
+                        <Save size={14} /> Save
                       </button>
-                      <button
-                        onClick={handleExportFlow}
-                        className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                        title="Export Flow"
-                      >
+                      <button onClick={handleExportFlow}
+                        className="flex items-center justify-center px-2 py-1 text-xs sm:text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+                        title="Export Flow">
                         <Download size={14} />
                       </button>
-                      <button
-                        onClick={handleImportFlow}
-                        className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                        title="Import Flow"
-                      >
+                      <button onClick={handleImportFlow}
+                        className="flex items-center justify-center px-2 py-1 text-xs sm:text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+                        title="Import Flow">
                         <Upload size={14} />
                       </button>
-                      <button
-                        onClick={handleDeleteSelectedNodes}
-                        className="flow-button flow-button-danger py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                        title="Delete Selected"
-                      >
+                      <button onClick={handleDeleteSelectedNodes}
+                        className="flex items-center justify-center px-2 py-1 text-xs sm:text-sm rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all active:scale-95"
+                        title="Delete Selected">
                         <Trash2 size={14} />
                       </button>
-                      <button
-                        onClick={handleSimulateFlow}
-                        className="flow-button flow-button-secondary py-1 px-2 text-xs sm:text-sm w-auto flex items-center justify-center rounded-md"
-                        title="Simulate Flow"
-                      >
-                        <Play size={14} className="mr-1 sm:mr-2" />
-                        Simulate
+                      <button onClick={handleSimulateFlow}
+                        className="flex items-center gap-1 px-2 py-1 text-xs sm:text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+                        title="Simulate Flow">
+                        <Play size={14} /> Simulate
                       </button>
                       <div className="flex items-center space-x-2 w-auto">
                         <label className="flex items-center cursor-pointer">
                           <div className="relative">
-                            <input
-                              type="checkbox"
-                              checked={isChatFlowEnabled}
-                              onChange={() => setIsChatFlowEnabled(!isChatFlowEnabled)}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-8 h-4 sm:w-10 sm:h-6 rounded-full shadow-inner ${
-                                isChatFlowEnabled ? 'bg-green-400' : 'bg-gray-200'
-                              }`}
-                            >
-                              <div
-                                className={`absolute w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow transform transition duration-200 ease-in-out ${
-                                  isChatFlowEnabled ? 'translate-x-4 sm:translate-x-6' : 'translate-x-0'
-                                }`}
-                              />
+                            <input type="checkbox" checked={isChatFlowEnabled} onChange={() => setIsChatFlowEnabled(!isChatFlowEnabled)} className="sr-only" />
+                            <div className={`w-8 h-4 sm:w-10 sm:h-6 rounded-full shadow-inner transition-colors ${isChatFlowEnabled ? 'bg-green-500 dark:bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                              <div className={`absolute w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow transform transition duration-200 ease-in-out top-0.5 left-0.5 ${isChatFlowEnabled ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'}`} />
                             </div>
                           </div>
-                          <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium text-gray-700 flex items-center">
+                          <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center">
                             <Workflow size={14} className="mr-1" />
                             Flows
                           </span>
@@ -482,8 +845,9 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
             </ReactFlowProvider>
           </div>
 
+          {/* Properties Panel */}
           {/* {propertiesOpen && selectedNode && (
-            <div className="fixed inset-y-0 right-0 w-64 sm:w-80 bg-white shadow-lg z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col">
+            <div className="fixed inset-y-0 right-0 w-64 sm:w-80 bg-white dark:bg-[#111827] shadow-lg dark:shadow-2xl z-50 sm:static sm:shadow-none transform sm:transform-none transition-transform duration-300 ease-in-out sm:flex sm:flex-col border-l border-gray-200 dark:border-white/5">
               <PropertyPanel
                 node={selectedNode}
                 onChange={updateNodeData}
@@ -494,10 +858,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
         </div>
 
         {simulatorOpen && (
-          <FlowSimulator
-            flow={reactFlowInstance?.toObject()}
-            onClose={() => setSimulatorOpen(false)}
-          />
+          <FlowSimulator flow={reactFlowInstance?.toObject()} onClose={() => setSimulatorOpen(false)} />
         )}
       </div>
     </RequireSubscription>

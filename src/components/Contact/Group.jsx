@@ -1,11 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // contacts/Groups.jsx
-// Main Groups component (Refactored)
+// Main Groups component — Full theme support + Mobile Drawer Pattern
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
-import debounce from "lodash/debounce";
 
 // Hooks
 import { useGroups, useGroupSelection } from "./hooks/useGroups";
@@ -14,33 +13,22 @@ import { useGroups, useGroupSelection } from "./hooks/useGroups";
 import GroupList, { GroupListSkeleton } from "./components/GroupList";
 import GroupForm, { GroupWelcomeScreen } from "./components/GroupForm";
 
-/**
- * Groups Management Component
- *
- * Features:
- * - List groups with selection
- * - Create new groups
- * - Delete groups (single & bulk)
- * - Search groups
- * - Cached state
- */
 const Groups = ({ activeTab, setActiveTab, token }) => {
   // ═══════════════════════════════════════════════════════════════════════════
   // UI STATE
   // ═══════════════════════════════════════════════════════════════════════════
-  const [viewMode, setViewMode] = useState("list"); // "list" | "add"
+  const [viewMode, setViewMode] = useState("list");
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobileFormOpen, setIsMobileFormOpen] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HOOKS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Groups data
   const { groups, isLoading, createGroup, deleteGroups } = useGroups(token);
 
-  // Selection
   const {
     selectedIds,
     selectedCount,
@@ -56,7 +44,6 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return groups;
-
     const query = searchQuery.toLowerCase();
     return groups.filter((group) =>
       group.group_name?.toLowerCase().includes(query)
@@ -67,18 +54,17 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
   // HANDLERS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Start adding a new group
   const handleAddGroup = useCallback(() => {
     setViewMode("add");
+    setIsMobileFormOpen(true);
     clearSelection();
   }, [clearSelection]);
 
-  // Cancel form
   const handleCancelForm = useCallback(() => {
     setViewMode("list");
+    setIsMobileFormOpen(false);
   }, []);
 
-  // Submit group form
   const handleSubmitGroup = useCallback(
     async (groupName) => {
       setIsSubmitting(true);
@@ -86,6 +72,7 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
         const result = await createGroup(groupName);
         if (result.success) {
           setViewMode("list");
+          setIsMobileFormOpen(false);
         }
         return result;
       } finally {
@@ -95,10 +82,8 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
     [createGroup]
   );
 
-  // Delete selected groups
   const handleDeleteGroups = useCallback(async () => {
     if (selectedIds.length === 0) return;
-
     const result = await deleteGroups(selectedIds);
     if (result.success) {
       clearSelection();
@@ -106,21 +91,20 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
     }
   }, [selectedIds, deleteGroups, clearSelection]);
 
-  // Tab change
   const handleTabChange = useCallback(
     (tab) => {
       setActiveTab(tab);
       clearSelection();
+      setIsMobileFormOpen(false);
+      setViewMode("list");
     },
     [setActiveTab, clearSelection]
   );
 
-  // Search handler with debounce
   const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value);
   }, []);
 
-  // Close dropdown when clicking outside
   const handleDropdownToggle = useCallback(() => {
     setShowDropdown((prev) => !prev);
   }, []);
@@ -130,30 +114,32 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="md:h-screen flex flex-col w-full min-w-0">
-      <div className="md:bg-inherit bg-white md:flex md:flex-grow capitalize">
-        {/* ═══════════════════════════════════════════════════════════════════
-            LEFT PANEL: Group List
-        ═══════════════════════════════════════════════════════════════════ */}
-        <div className="md:w-[30%] flex-col h-full bg-white border-r border-slate-200 md:flex">
+    <div className="h-screen flex flex-col w-full min-w-0 bg-gray-50 dark:bg-[#0b1120] transition-colors duration-300 overflow-hidden">
+
+      <div className="flex flex-col md:flex-row h-full w-full relative">
+
+        {/* LEFT PANEL: Group List */}
+        <div className={`
+          flex flex-col h-full bg-white dark:bg-[#0b1120] 
+          border-r border-gray-200 dark:border-white/5 
+          transition-all duration-300 ease-in-out
+          w-full md:w-[30%]
+          ${isMobileFormOpen ? 'hidden md:flex' : 'flex'}
+        `}>
+
           {/* Header */}
-          <div className="px-4 pt-4">
-            <div className="flex justify-between mt-2 items-center">
-              <div className="flex space-x-2 text-xl items-center">
-                <h2 className="font-semibold">Groups</h2>
-                <span className="text-slate-500">({groups.length})</span>
+          <div className="px-4 pt-4 pb-2 shrink-0">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-gray-900 dark:text-white text-xl">Groups</h2>
+                <span className="text-gray-500 dark:text-gray-400 text-sm font-medium bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{groups.length}</span>
               </div>
               <button
                 title="Add Group"
                 onClick={handleAddGroup}
-                className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors"
+                className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 p-2 rounded-xl transition-all duration-200 active:scale-95"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
                   <g fill="currentColor" fillRule="evenodd" clipRule="evenodd">
                     <path d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12Zm10-8a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z" />
                     <path d="M13 7a1 1 0 1 0-2 0v4H7a1 1 0 1 0 0 2h4v4a1 1 0 1 0 2 0v-4h4a1 1 0 1 0 0-2h-4V7Z" />
@@ -164,46 +150,26 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
           </div>
 
           {/* Search Bar */}
-          <div className="px-4 pb-2">
-            <div className="border border-gray-200 rounded-md mt-6 flex items-center bg-white">
-              <span className="pl-3 py-2 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m15 15l6 6m-11-4a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z"
-                  />
+          <div className="px-4 pb-2 shrink-0">
+            <div className="border border-gray-200 dark:border-white/10 rounded-xl flex items-center bg-white dark:bg-[#111827] transition-all duration-200 focus-within:border-blue-400 dark:focus-within:border-blue-500/50 focus-within:ring-2 focus-within:ring-blue-500/20 dark:focus-within:ring-blue-400/20">
+              <span className="pl-3 py-2.5 text-gray-400 dark:text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
               </span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full outline-none rounded-xl py-2 pl-2 mr-2 text-sm"
+                className="w-full outline-none rounded-xl py-2.5 pl-2 mr-2 text-sm bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600"
                 placeholder="Search groups..."
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="pr-3 text-gray-400 hover:text-gray-600"
+                  className="pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
@@ -212,18 +178,18 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
           </div>
 
           {/* Bulk Actions */}
-          <div className="flex justify-between px-4 border-b border-slate-200 pb-2">
-            <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="flex justify-between px-4 py-2.5 border-b border-gray-100 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm shrink-0">
+            <label className="flex items-center gap-2.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 border border-gray-400 rounded-md accent-blue-600"
+                className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 {selectedCount > 0 ? (
                   <>
-                    <span className="font-medium">{selectedCount}</span> selected
+                    <span className="font-bold text-gray-900 dark:text-white">{selectedCount}</span> selected
                   </>
                 ) : (
                   `Select all`
@@ -231,30 +197,21 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
               </span>
             </label>
 
-            {/* Actions Dropdown */}
             {selectedCount > 0 && (
               <div className="relative">
                 <button
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-all duration-200"
                   onClick={handleDropdownToggle}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M12 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" className="text-gray-600 dark:text-gray-400">
+                    <path fill="currentColor" d="M12 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
                   </svg>
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white border rounded-md shadow-lg z-20">
+                  <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-white/10 rounded-2xl shadow-xl dark:shadow-2xl z-20 py-1.5 overflow-hidden backdrop-blur-xl">
                     <button
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-md"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors font-medium"
                       onClick={handleDeleteGroups}
                     >
                       Delete ({selectedCount})
@@ -266,23 +223,23 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex justify-between text-sm border-b border-slate-200">
+          <div className="flex justify-between text-sm border-b border-gray-100 dark:border-white/5 bg-white/50 dark:bg-white/5 backdrop-blur-sm shrink-0">
             <button
               onClick={() => handleTabChange("contact")}
-              className={`pt-3 w-1/2 text-center pb-3 font-medium transition-colors ${
+              className={`pt-3 w-1/2 text-center pb-3 font-bold transition-all duration-200 ${
                 activeTab === "contact"
-                  ? "bg-slate-50 border-b-2 border-slate-700 text-slate-900"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  ? "bg-blue-50/50 dark:bg-blue-500/5 border-b-2 border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-300"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5"
               }`}
             >
               All Contacts
             </button>
             <button
               onClick={() => handleTabChange("group")}
-              className={`pt-3 w-1/2 text-center pb-3 font-medium transition-colors ${
+              className={`pt-3 w-1/2 text-center pb-3 font-bold transition-all duration-200 ${
                 activeTab === "group"
-                  ? "bg-slate-50 border-b-2 border-slate-700 text-slate-900"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  ? "bg-blue-50/50 dark:bg-blue-500/5 border-b-2 border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-300"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5"
               }`}
             >
               Groups
@@ -290,45 +247,73 @@ const Groups = ({ activeTab, setActiveTab, token }) => {
           </div>
 
           {/* Group List */}
-          {isLoading && groups.length === 0 ? (
-            <GroupListSkeleton count={6} />
-          ) : (
-            <GroupList
-              groups={filteredGroups}
-              isLoading={isLoading}
-              selectedIds={selectedIds}
-              onSelect={toggleSelect}
-              emptyMessage={
-                searchQuery
-                  ? "No groups match your search"
-                  : "No groups yet"
-              }
-            />
-          )}
+          <div className="flex-1 overflow-hidden">
+            {isLoading && groups.length === 0 ? (
+              <GroupListSkeleton count={6} />
+            ) : (
+              <GroupList
+                groups={filteredGroups}
+                isLoading={isLoading}
+                selectedIds={selectedIds}
+                onSelect={toggleSelect}
+                emptyMessage={
+                  searchQuery
+                    ? "No groups match your search"
+                    : "No groups yet"
+                }
+              />
+            )}
+          </div>
 
           {/* Search Results Count */}
           {searchQuery && filteredGroups.length > 0 && (
-            <div className="px-4 py-2 text-xs text-gray-500 border-t border-gray-100">
+            <div className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-white/5 bg-white/50 dark:bg-white/5 font-medium shrink-0">
               Showing {filteredGroups.length} of {groups.length} groups
             </div>
           )}
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            RIGHT PANEL: Form or Welcome Screen
-        ═══════════════════════════════════════════════════════════════════ */}
+        {/* RIGHT PANEL: Desktop side panel / Mobile full-screen overlay */}
+        <div className={`
+          flex-col h-full bg-gray-50 dark:bg-[#0b1120]
+          transition-all duration-300 ease-in-out
+          w-full md:w-[70%]
+          ${isMobileFormOpen ? 'flex fixed inset-0 z-50 md:static md:z-auto' : 'hidden md:flex'}
+        `}>
 
-        {/* Welcome Screen */}
-        {viewMode === "list" && <GroupWelcomeScreen onAddGroup={handleAddGroup} />}
+          {/* Mobile Header */}
+          {isMobileFormOpen && (
+            <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-white/5 shrink-0">
+              <button 
+                onClick={handleCancelForm}
+                className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold text-sm active:scale-95 transition-transform"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back
+              </button>
+              <h2 className="font-bold text-gray-900 dark:text-white text-base">
+                New Group
+              </h2>
+              <div className="w-14" />
+            </div>
+          )}
 
-        {/* Add Group Form */}
-        {viewMode === "add" && (
-          <GroupForm
-            onSubmit={handleSubmitGroup}
-            onCancel={handleCancelForm}
-            isSubmitting={isSubmitting}
-          />
-        )}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {viewMode === "list" && !isMobileFormOpen && <GroupWelcomeScreen onAddGroup={handleAddGroup} />}
+
+            {viewMode === "add" && isMobileFormOpen && (
+              <GroupForm
+                onSubmit={handleSubmitGroup}
+                onCancel={handleCancelForm}
+                isSubmitting={isSubmitting}
+                isMobile={true}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

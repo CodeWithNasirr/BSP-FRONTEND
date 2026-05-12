@@ -479,6 +479,141 @@ textarea::-webkit-scrollbar {
 }
 
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   APPEND this to the BOTTOM of your existing src/index.css
+   Do NOT replace your existing styles — append only
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── DARK MODE BASE ─────────────────────────────────────────────────────────── */
+/* To enable dark mode: add the 'dark' class to your <html> element             */
+/* Or use system preference: add this to a hook and toggle class on <html>      */
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    color-scheme: dark;
+  }
+}
+
+.dark body {
+  background-color: #030712; /* gray-950 */
+  color: #f9fafb;
+}
+
+/* ── SCROLLBAR HIDE UTILITY ──────────────────────────────────────────────────── */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── SAFE AREA BOTTOM NAV ────────────────────────────────────────────────────── */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ── SMOOTH PAGE TRANSITIONS ─────────────────────────────────────────────────── */
+.page-enter {
+  animation: pageEnter 0.2s ease-out;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── GLASS EFFECT ────────────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+/* ── SIDEBAR TRANSITION ──────────────────────────────────────────────────────── */
+aside {
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── CARD HOVER LIFT ─────────────────────────────────────────────────────────── */
+.card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.08);
+}
+.dark .card-hover:hover {
+  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.4);
+}
+
+/* ── LOADING SHIMMER ─────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.dark .shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+/* ── TOAST OVERRIDE ──────────────────────────────────────────────────────────── */
+.Toastify__toast {
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  padding: 12px 16px !important;
+  min-height: 48px !important;
+  font-family: inherit !important;
+  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.15) !important;
+}
+.Toastify__toast--success {
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
+.Toastify__toast--error {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+}
+.Toastify__progress-bar {
+  height: 2px !important;
+  border-radius: 1px !important;
+}
+
+/* ── MOBILE BOTTOM NAV SAFE AREA ─────────────────────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-nav-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
+  }
+}
+
+/* ── FOCUS RING ──────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* ── INPUT GLOBAL OVERRIDE ───────────────────────────────────────────────────── */
+input, textarea, select {
+  font-size: 16px !important; /* prevent iOS zoom */
+  font-family: inherit;
+}
+
+/* ── TAILWIND DARK MODE SETUP ─────────────────────────────────────────────────── */
+/* Add this to tailwind.config.js:
+   module.exports = {
+     darkMode: 'class',
+     ...
+   }
+*/
+
 /* ═══════════════════════════════════════════════════════════════════════════════
  * TAILWIND CONFIG VERSION
  * 

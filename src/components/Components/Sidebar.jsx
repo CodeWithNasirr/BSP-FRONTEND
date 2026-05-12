@@ -1,148 +1,332 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Sidebar.jsx — Drop-in replacement for src/components/Components/Sidebar.jsx
+// Keeps all existing routing logic, upgrades only the UI
+// ─────────────────────────────────────────────────────────────────────────────
 import axios from "axios";
-import { MoreVertical, ChevronLast,ContactRound, ChevronFirst } from "lucide-react";
-import { useContext, createContext, useState, useEffect } from "react";
-import { useNavigate,Link } from "react-router-dom";
-import { toast } from 'react-toastify'
-const SidebarContext = createContext();
+import API_BASE_URL from "../../config";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  MessagesSquare,
+  ContactRound,
+  MessageSquareMore,
+  MessageCircleMore,
+  Workflow,
+  CreditCard,
+  House,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  Zap,
+} from "lucide-react";
+import { SiWhatsapp as SiWA } from "react-icons/si";
+import { Avatar } from "../ui";
 import { Context } from "../context/Context";
+import useUnreadChats from "../../hooks/useUnreadChats";
+const SidebarCtx = createContext({ expanded: true, mobile: false });
+
+// ── MAIN SIDEBAR WRAPPER ──────────────────────────────────────────────────────
 export default function Sidebar({ children }) {
-  const [expanded, setExpanded] = useState(false); 
-
+  const [expanded, setExpanded] = useState(() => window.innerWidth >= 1024);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
-  const logout=()=>{
+  const { userInfo } = useContext(Context);
+  const unreadChats = useUnreadChats();
+  const logout = () => {
     localStorage.removeItem("authToken");
-    navigate('/login')
-  }
-  const {userInfo} = useContext(Context)
-  
+    navigate("/login");
+  };
 
- return (
-    <aside className="h-screen w-full sm:w-1/10 md:w-1/10">
-      <nav className="h-full flex flex-col bg-zinc-800 text-white border-r border-slate-700 shadow-sm">
-        <div className="p-2 md:p-4 flex justify-between items-center">
-          <h1
-            className={`overflow-hidden transition-all font-extrabold text-center mx-2 ${
-              expanded ? "w-32" : "w-0"
-            }`}
-          >
-            {/* Add your app name or logo text here if needed */}
-          </h1>
-          <button
-            onClick={() => setExpanded((curr) => !curr)}
-            className="p-1 md:p-2 rounded-lg bg-gray-700 hover:bg-gray-600"
-          >
-            {expanded ? <ChevronFirst size={20} /> : <ChevronLast size={20} />}
-          </button>
-        </div>
-        {/* Sidebar Content */}
-        <SidebarContext.Provider value={{ expanded }}>
-          <ul className="flex-1 px-1 md:px-2">{children}</ul>
-        </SidebarContext.Provider>
+  // Close drawer on route change
+  const location = useLocation();
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-        {/* Sidebar down area */}
-        <div className="border-t border-slate-700 flex p-2 md:p-3">
-          <div
-            className={`flex space-x-2 items-center overflow-hidden transition-all ${
-              expanded ? "w-52 ml-2" : "w-0"
-            }`}
-          >
-            <div className="rounded-xl p-1 bg-slate-600">
-              <div className="rounded-full w-8 h-8 flex justify-center items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                >
-                  <g fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="6" r="4"></circle>
-                    <path
-                      strokeLinecap="round"
-                      d="m19.998 18c.002-.164.002-.331.002-.5c0-2.485-3.582-4.5-8-4.5s-8 2.015-8 4.5S4 22 12 22c2.231 0 3.84-.157 5-.437"
-                    ></path>
-                  </g>
-                </svg>
-              </div>
+  // Collapse sidebar on small desktops
+  useEffect(() => {
+    const handler = () => {
+      if (window.innerWidth < 1024) setExpanded(false);
+    };
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  const SidebarInner = (
+    <nav className="h-full flex flex-col bg-[#0f172a] text-white relative">
+      {/* Header */}
+      <div className={`flex items-center px-3 py-4 border-b border-white/5 ${expanded ? "justify-between" : "justify-center"}`}>
+        {expanded && (
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shrink-0">
+              <SiWA className="w-4 h-4 text-white" />
             </div>
-            <div className="leading-4">
-              <h4 className="font-semibold text-sm">{userInfo.username || "Anonymous"}</h4>
-              <span className="text-xs text-gray-300">
-                {userInfo.email || "User has no Email"}
-              </span>
-            </div>
+            <span className="font-bold text-sm text-white truncate">Gpx Platform</span>
           </div>
-          <span
-            onClick={() => logout()}
-            className="flex items-center ml-auto hover:cursor-pointer"
+        )}
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          className="hidden lg:flex w-7 h-7 rounded-lg items-center justify-center hover:bg-white/10 text-gray-400 hover:text-white transition-colors shrink-0"
+        >
+          {expanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        </button>
+      </div>
+
+      {/* Nav items */}
+      <SidebarCtx.Provider value={{ expanded, mobile: mobileOpen }}>
+        <ul className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 scrollbar-hide">
+          {children}
+        </ul>
+      </SidebarCtx.Provider>
+
+      {/* Divider */}
+      <div className="border-t border-white/5 mx-3" />
+
+      {/* User profile */}
+      <div className={`p-3 flex items-center gap-3 ${expanded ? "" : "justify-center"}`}>
+        <Avatar name={userInfo.username || "User"} size="sm" online />
+        {expanded && (
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-white truncate">{userInfo.username || "User"}</p>
+            <p className="text-[10px] text-gray-500 truncate">{userInfo.email || ""}</p>
+          </div>
+        )}
+        {expanded && (
+          <button
+            onClick={logout}
+            className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+            title="Log out"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              className="text-white hover:text-gray-300"
-            >
-              <path
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m12 15l3-3m0 0l-3-3m3 3H4m5-4.751V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C10.52 4 11.08 4 12.2 4h4.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105v9.607c0 1.118 0 1.677-.218 2.104a2.002 2.002 0 0 1-.875.874c-.427.218-.986.218-2.104.218h-4.606c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C9 18.48 9 17.92 9 16.8v-.05"
-              ></path>
-            </svg>
-          </span>
+            <LogOut size={14} />
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className={`
+          hidden lg:flex flex-col h-screen sticky top-0 transition-all duration-300 ease-in-out shrink-0
+          ${expanded ? "w-56" : "w-16"}
+        `}
+      >
+        {SidebarInner}
+      </aside>
+
+      {/* Mobile hamburger button (rendered externally, see MobileNav) */}
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-64 h-full flex flex-col">
+            {SidebarInner}
+          </aside>
         </div>
-      </nav>
-    </aside>
+      )}
+
+      {/* Expose mobile toggle globally via context — alternative: pass prop down */}
+      <SidebarMobileCtx.Provider value={{ open: mobileOpen, toggle: () => setMobileOpen((p) => !p) }}>
+        {/* nothing — consumed by MobileTopbar */}
+      </SidebarMobileCtx.Provider>
+    </>
   );
 }
 
-export function SidebarItem({ icon, text, active, alert, to }) {
-  const { expanded } = useContext(SidebarContext);
+export const SidebarMobileCtx = createContext({ open: false, toggle: () => {} });
+
+// ── SIDEBAR ITEM ──────────────────────────────────────────────────────────────
+export function SidebarItem({ icon, text, to, badge }) {
+  const { expanded } = useContext(SidebarCtx);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(to + "/");
 
   return (
     <li
-      className={`
-        relative flex items-center py-2 px-2 md:px-3 my-1
-        font-medium rounded-md cursor-pointer
-        transition-colors group
-        ${active
-          ? "bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white"
-          : "hover:bg-indigo-700 text-gray-200"
-        }
-    `}
       onClick={() => navigate(to)}
+      title={!expanded ? text : undefined}
+      className={`
+        relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer
+        transition-all duration-150 group
+        ${isActive
+          ? "bg-gradient-to-r from-green-500/20 to-emerald-500/10 text-white"
+          : "text-gray-400 hover:text-white hover:bg-white/5"
+        }
+      `}
     >
-      {icon}
-      <span
-        className={`overflow-hidden transition-all ${
-          expanded ? "w-40 ml-3" : "w-0"
-        } text-sm`}
-      >
-        {text}
-      </span>
-      {alert && (
-        <div
-          className={`absolute right-2 w-2 h-2 rounded bg-indigo-400 ${
-            expanded ? "" : "top-2"
-          }`}
-        />
+      {/* Active indicator */}
+      {isActive && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-green-400 rounded-r-full" />
       )}
 
+      <span className={`shrink-0 ${isActive ? "text-green-400" : ""}`}>
+        {React.cloneElement(icon, { size: 18 })}
+      </span>
+
+      {expanded && (
+        <span className="text-sm font-medium flex-1 truncate">{text}</span>
+      )}
+
+      {badge > 0 && (
+          expanded ? (
+            <span className="
+              min-w-[18px] h-[18px]
+              rounded-full
+              bg-red-500
+              text-white
+              text-[10px]
+              font-bold
+              flex items-center
+              justify-center
+              px-1
+              animate-pulse
+            ">
+              {badge > 99 ? "99+" : badge}
+            </span>
+          ) : (
+            <span className="
+              absolute top-2 right-2
+              min-w-[16px] h-[16px]
+              rounded-full
+              bg-red-500
+              text-white
+              text-[9px]
+              font-bold
+              flex items-center
+              justify-center
+              animate-pulse
+              ring-2 ring-[#0f172a]
+            ">
+              {badge > 9 ? "9+" : badge}
+            </span>
+          )
+        )}
+
+      {/* Tooltip for collapsed state */}
       {!expanded && (
-        <div
-          className={`
-          absolute left-full rounded-md px-2 py-1 ml-6
-          bg-indigo-800 text-white text-xs
-          invisible opacity-20 -translate-x-3 transition-all
-          group-hover:visible group-hover:opacity-100 group-hover:translate-x-0
-      `}
-        >
+        <div className="absolute left-full ml-3 px-2 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg">
           {text}
+          {badge !== undefined && <span className="ml-1.5 bg-green-500 px-1 rounded">{badge}</span>}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-800 rotate-45" />
         </div>
       )}
     </li>
+  );
+}
+
+// ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────────────
+// Place this at the bottom of AppContent, outside the sidebar condition
+export function MobileBottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { userInfo } = useContext(Context);
+  const unreadChats = useUnreadChats();
+
+
+  const items = [
+    {
+      to: "/dashboard",
+      icon: <House size={22} />,
+      label: "Home",
+    },
+     {
+      to: "/chats",
+      icon: <MessageCircleMore size={22} />,
+      label: "Chats",
+      badge: unreadChats,
+    },
+
+    
+    {
+      to: "/chat-flow",
+      icon: <Workflow size={22} />,
+      label: "Flows",
+    },
+
+
+    {
+      to: "/contacts",
+      icon: <ContactRound size={22} />,
+      label: "Contacts",
+    },
+
+    {
+      to: "/smart-contacts",
+      icon: <Zap size={22} />,
+      label: "Smart",
+    },
+
+      {
+      to: "/whatsapp-setting",
+      icon: <SiWA size={20} />,
+      label: "WA",
+    },
+
+    {
+      to: "/campaigns",
+      icon: <MessagesSquare size={22} />,
+      label: "Campaigns",
+    },
+
+    {
+      to: "/templates",
+      icon: <MessageSquareMore size={22} />,
+      label: "Templates",
+    },
+
+   
+
+
+    {
+      to: "/subscriptions",
+      icon: <CreditCard size={22} />,
+      label: "Plans",
+    },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#0f172a]/95 backdrop-blur-md border-t border-white/5 safe-area-inset-bottom">
+      <div className="flex items-center overflow-x-auto scrollbar-hide">
+        {items.map((item) => {
+          const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+          return (
+            <button
+              key={item.to}
+              onClick={() => navigate(item.to)}
+              className={`relative min-w-[72px] flex flex-col items-center justify-center py-3 gap-0.5 transition-colors active:scale-95 ${
+                isActive ? "text-green-400" : "text-gray-500"
+              }`}
+            >
+              <div className="relative">
+              {item.icon}
+
+              {!!item.badge && item.badge > 0 && (
+                <span className="
+                  absolute -top-1.5 -right-2
+                  min-w-[18px] h-[18px]
+                  px-1 rounded-full
+                  bg-red-500 text-white
+                  text-[10px] font-bold
+                  flex items-center justify-center
+                  animate-pulse
+                  shadow-lg
+                ">
+                  {item.badge > 99 ? "99+" : item.badge}
+                </span>
+              )}
+            </div>
+              <span className={`text-[9px] font-medium ${isActive ? "text-green-400" : "text-gray-600"}`}>
+                {item.label}
+              </span>
+              {isActive && <span className="relative bottom-1 w-1 h-1 rounded-full bg-green-400" />}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

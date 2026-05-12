@@ -77,27 +77,39 @@ const WhatsAppSettings = () => {
 
 
 
-  return (
-    <div className="container p-6 max-h-[100vh] overflow-auto bg-slate-100">
+return (
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 lg:px-6 py-6 transition-colors duration-300">
 
-      {/* CONNECT UI */}
-      {!isConnected && (
+    {/* CONNECT UI */}
+    {!isConnected && (
+      <div className="flex justify-center items-center min-h-[70vh]">
 
-        <div className="flex justify-center">
+        <div className="w-full max-w-md rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-8">
 
-          <div className="w-[450px] bg-white border shadow rounded-md p-8">
+          <div className="flex flex-col items-center text-center">
 
-            <h3 className="text-lg font-semibold text-center mb-4">
-              Connect your WhatsApp account
-            </h3>
+            <div className="w-16 h-16 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-8 h-8 text-green-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.42 0 .06 5.36.06 12c0 2.12.55 4.18 1.6 6L0 24l6.18-1.62A11.94 11.94 0 0 0 12.06 24c6.64 0 12-5.36 12-12 0-3.2-1.25-6.22-3.54-8.52ZM12.06 21.8c-1.82 0-3.6-.49-5.15-1.42l-.37-.22-3.67.96.98-3.58-.24-.37A9.73 9.73 0 0 1 2.26 12c0-5.4 4.4-9.8 9.8-9.8 2.62 0 5.08 1.02 6.93 2.87A9.72 9.72 0 0 1 21.86 12c0 5.4-4.4 9.8-9.8 9.8Z" />
+              </svg>
+            </div>
 
-            <p className="text-center text-sm text-gray-600 mb-6">
-              Connect your WhatsApp Business account to start sending and receiving messages.
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              Connect WhatsApp
+            </h2>
+
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
+              Connect your WhatsApp Business account to start sending and receiving customer messages.
             </p>
 
             <Link
               to="/connect-form"
-              className="block bg-indigo-600 hover:bg-indigo-500 text-white text-center py-2 rounded-md"
+              className="w-full rounded-2xl bg-green-600 hover:bg-green-500 text-white py-3 font-medium transition-all duration-200 text-center"
             >
               Connect WhatsApp Business
             </Link>
@@ -105,424 +117,144 @@ const WhatsAppSettings = () => {
           </div>
 
         </div>
-      )}
 
+      </div>
+    )}
 
+    {/* CONNECTED UI */}
+    {isConnected && (
+      <div className="max-w-6xl mx-auto space-y-5">
 
-      {/* CONNECTED UI */}
-      {isConnected && (
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
 
-        <div className="flex justify-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              WhatsApp Settings
+            </h1>
 
-          <div className="w-[900px]">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Manage your connected WhatsApp Business account
+            </p>
+          </div>
 
-            {/* DETAILS CARD */}
-            <div className="bg-white border rounded-lg p-6 mb-4">
+          <div className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium">
+            Connected
+          </div>
 
-              <h3 className="text-lg font-semibold mb-4">
-                WhatsApp Account Details
-              </h3>
+        </div>
 
+        {/* DETAILS CARD */}
+        <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
 
-              <div className="grid grid-cols-2 gap-6 text-sm">
+          <div className="flex items-center justify-between mb-6">
 
-                <div>
-                  <div className="font-medium">Display name</div>
-                  <div>{wp_Details.display_name || "-"}</div>
-                </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Account Details
+              </h2>
 
-                <div>
-                  <div className="font-medium">Connected number</div>
-                  <div>{wp_Details.connected_number || "-"}</div>
-                </div>
-
-                <div>
-                  <div className="font-medium">Message limits</div>
-                  <div>{wp_Details.message_limits || "-"}</div>
-                </div>
-
-                <div>
-                  <div className="font-medium">Quality rating</div>
-
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      wp_Details.quality_rating === "GREEN"
-                        ? "bg-green-500 text-white"
-                        : "bg-red-500 text-white"
-                    }`}
-                  >
-                    {wp_Details.quality_rating || "UNKNOWN"}
-                  </span>
-
-                </div>
-
-                <div>
-                  <div className="font-medium">
-                    WhatsApp Business Account ID
-                  </div>
-                  <div>{wp_Details.whatsapp_business_account_id || "-"}</div>
-                </div>
-
-                <div>
-                  <div className="font-medium">Account status</div>
-
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      wp_Details.number_status === "verified" ||
-                      wp_Details.number_status === "ACTIVE"
-                        ? "bg-green-500 text-white"
-                        : "bg-red-500 text-white"
-                    }`}
-                  >
-                    {wp_Details.number_status || "PENDING"}
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            {/* DISCONNECT BUTTON */}
-            <div className="flex justify-end">
-
-              <button
-                onClick={handleDisconnect}
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-md"
-              >
-                {loading ? "Disconnecting..." : "Disconnect WhatsApp"}
-              </button>
-
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                WhatsApp Business account information
+              </p>
             </div>
 
           </div>
 
-        </div>
-      )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-    </div>
-  );
-};
+            {/* CARD ITEM */}
+            {[
+              {
+                label: "Display Name",
+                value: wp_Details.display_name || "-"
+              },
+              {
+                label: "Connected Number",
+                value: wp_Details.connected_number || "-"
+              },
+              {
+                label: "Message Limits",
+                value: wp_Details.message_limits || "-"
+              },
+              {
+                label: "Business Account ID",
+                value: wp_Details.whatsapp_business_account_id || "-"
+              }
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 p-4"
+              >
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                  {item.label}
+                </p>
+
+                <p className="text-sm font-medium text-gray-900 dark:text-white break-all">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+
+            {/* QUALITY */}
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 p-4">
+
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                Quality Rating
+              </p>
+
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                  wp_Details.quality_rating === "GREEN"
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                }`}
+              >
+                {wp_Details.quality_rating || "UNKNOWN"}
+              </span>
+
+            </div>
+
+            {/* STATUS */}
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 p-4">
+
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                Account Status
+              </p>
+
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                  wp_Details.number_status === "verified" ||
+                  wp_Details.number_status === "ACTIVE"
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                }`}
+              >
+                {wp_Details.number_status || "PENDING"}
+              </span>
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex justify-end">
+
+          <button
+            onClick={handleDisconnect}
+            disabled={loading}
+            className="rounded-2xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-6 py-3 text-sm font-medium transition-all duration-200"
+          >
+            {loading ? "Disconnecting..." : "Disconnect WhatsApp"}
+          </button>
+
+        </div>
+
+      </div>
+    )}
+  </div>
+);
+}
 
 export default WhatsAppSettings;
-
-
-
-
-            {/* Business Profile Settings Form */}
-            {/* <form className="bg-white border border-slate-200 rounded-lg py-2 text-sm mb-4 pb-4">
-              <div className="flex items-center justify-between px-4 pt-2 pb-4">
-                <div>
-                  <h2 className="text-[17px]">Business profile settings</h2>
-                  <span className="flex items-center mt-1">
-                    <svg
-                      className="mr-2"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    Setup the Whatsapp business profile for your number
-                  </span>
-                </div>
-                <div></div>
-              </div>
-   */}
-              {/* Profile Picture */}
-              {/* <div className="flex space-x-10 border-b border-zinc-200 w-full px-4 py-6">
-                <div className="w-[40%]">
-                  <span className="text-slate-600">Whatsapp profile picture</span>
-                  <div className="text-xs text-slate-700 flex items-center">
-                    <svg
-                      className="mr-1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    <span>Add/update your profile picture</span>
-                  </div>
-                </div>
-                <div className="w-[60%]">
-                    <div className="Img flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                      <input 
-                        type="file"
-                        className="sr-only"
-                        accept=".jpg, .png"
-                        id="file-upload"
-                        name='header_img_video_file_url'
-                      />
-                      <div className="text-center">
-                        <div>
-                          <label htmlFor="file-upload">
-                            <svg
-                              className="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M14 9a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0Z"
-                              ></path>
-                              <path
-                                fill="currentColor"
-                                fillRule="evenodd"
-                                d="M7.268 4.658a54.647 54.647 0 0 1 9.465 0l1.51.132a3.138 3.138 0 0 1 2.831 2.66a30.604 30.604 0 0 1 0 9.1a3.138 3.138 0 0 1-2.831 2.66l-1.51.131c-3.15.274-6.316.274-9.465 0l-1.51-.131a3.138 3.138 0 0 1-2.832-2.66a30.601 30.601 0 0 1 0-9.1a3.138 3.138 0 0 1 2.831-2.66l1.51-.132Zm9.335 1.495a53.147 53.147 0 0 0-9.206 0l-1.51.131A1.638 1.638 0 0 0 4.41 7.672a29.101 29.101 0 0 0-.311 5.17L7.97 8.97a.75.75 0 0 1 1.09.032l3.672 4.13l2.53-.844a.75.75 0 0 1 .796.21l3.519 3.91a29.101 29.101 0 0 0 .014-8.736a1.638 1.638 0 0 0-1.478-1.388l-1.51-.131Zm2.017 11.435l-3.349-3.721l-2.534.844a.75.75 0 0 1-.798-.213l-3.471-3.905l-4.244 4.243c.049.498.11.996.185 1.491a1.638 1.638 0 0 0 1.478 1.389l1.51.131c3.063.266 6.143.266 9.206 0l1.51-.131c.178-.016.35-.06.507-.128Z"
-                                clipRule="evenodd"
-                              ></path>
-                            </svg>
-                          </label>
-                          <div className="flex text-sm text-gray-600">
-                            <label
-                              htmlFor="file-upload"
-                              className="relative cursor-pointer bg-white rounded-md font-medium hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                            >
-                              <span>Provide examples of the variables or media in the box</span>
-                            </label>
-                          </div>
-                          <p className="text-xs text-gray-500">PNG or JPG files only</p>
-                        </div>
-                      </div>
-                  </div>
-  
-                </div>
-              </div> */}
-  
-              {/* Business Address */}
-              {/* <div className="flex space-x-10 border-b border-zinc-200 w-full px-4 py-6">
-                <div className="w-[40%]">
-                  <span className="text-slate-600">Business address</span>
-                  <div className="text-xs text-slate-700 flex items-center">
-                    <svg
-                      className="mr-1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    <span>Specify your physical business address</span>
-                  </div>
-                </div>
-                <div className="w-[60%]">
-                  <div className="col-span-4">
-                    <label
-                      htmlFor="business-address"
-                      className="block text-sm leading-6 text-gray-900"
-                    ></label>
-                    <div>
-                      <input
-                        className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                        type="text"
-                        step="any"
-                        id="business-address"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-  
-              {/* Business Email */}
-              {/* <div className="flex space-x-10 border-b border-slate-200 w-full px-4 py-6">
-                <div className="w-[40%]">
-                  <span className="text-slate-600">Business email</span>
-                  <div className="text-xs text-slate-700 flex items-center">
-                    <svg
-                      className="mr-1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    <span>Add your business email address</span>
-                  </div>
-                </div>
-                <div className="w-[60%]">
-                  <div className="col-span-4">
-                    <label
-                      htmlFor="business-email"
-                      className="block text-sm leading-6 text-gray-900"
-                    ></label>
-                    <div>
-                      <input
-                        className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                        type="email"
-                        step="any"
-                        id="business-email"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-   */}
-              {/* Business Description */}
-              {/* <div className="flex space-x-10 border-b border-zinc-200 w-full px-4 py-6">
-                <div className="w-[40%]">
-                  <span className="text-slate-600">Business description</span>
-                  <div className="text-xs text-slate-700 flex items-center">
-                    <svg
-                      className="mr-1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    <span>Edit your whatsapp business account description</span>
-                  </div>
-                </div>
-                <div className="w-[60%]">
-                  <div className="col-span-4">
-                    <label
-                      htmlFor="business-description"
-                      className="block text-sm leading-6 text-gray-900"
-                    ></label>
-                    <div className="mt-2">
-                      <textarea
-                        className="block w-full rounded-md border-0 py-1.5 px-4 text-gray-900 shadow-sm outline-none ring-1 ring-inset placeholder:text-gray-400 sm:text-sm sm:leading-6 ring-gray-300"
-                        id="business-description"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-  
-              {/* Business Industry */}
-              {/* <div className="flex space-x-10 w-full px-4 py-6">
-                <div className="w-[40%]">
-                  <span className="text-slate-600">Business industry</span>
-                  <div className="text-xs text-slate-700 flex items-center">
-                    <svg
-                      className="mr-1"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
-                      />
-                    </svg>
-                    <span>Specify your business vertical</span>
-                  </div>
-                </div>
-                <div className="w-[60%]">
-                  <div className="col-span-4" type="text">
-                    <label
-                      htmlFor="business-industry"
-                      className="block text-sm leading-6 text-gray-900"
-                    ></label>
-                    <div className="">
-                      <div className="relative">
-                        <button
-                          id="headlessui-listbox-button-1"
-                          type="button"
-                          aria-haspopup="listbox"
-                          aria-expanded="false"
-                          className="relative w-full cursor-default rounded-lg bg-white py-2 px-5 pr-10 shadow-sm text-left ring-1 ring-inset focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm ring-gray-300"
-                        >
-                          <span className="block truncate">Clothing</span>
-                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              aria-hidden="true"
-                              className="h-5 w-5 text-gray-400"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-  
-              {/* Submit Button */}
-              {/* <div className="flex px-4 pt-1 pb-2">
-                <div className="ml-auto">
-                  <button
-                    type="submit"
-                    className="float-right rounded-md bg-primary px-3 py-2 text-sm text-white shadow-sm hover:shadow-md hover:bg-primary  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    <span>Save</span>
-                  </button>
-                </div>
-              </div>
-            </form> */}
-  
-            {/* Remove WhatsApp Account */}
-            {/* <div className="bg-white border border-slate-200 rounded-lg py-2 text-sm mb-20">
-              <div className="flex items-center px-4 pt-2 pb-4">
-                <div className="w-[60%]">
-                  <h2 className="text-[17px]">Remove Whatsapp account</h2>
-                  <span className="flex items-center mt-1">
-                    This will completely delete your whatsapp integration. Your
-                    contacts & messages will be unaffected.
-                  </span>
-                </div>
-                <div className="w-[40%] ml-auto">
-                  <button className="float-right rounded-md bg-red-700 px-3 py-2 text-sm text-white shadow-sm hover:bg-red-500 focus-visible:outline  focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    Delete integration
-                  </button>
-                </div>
-              </div>
-            </div> */}

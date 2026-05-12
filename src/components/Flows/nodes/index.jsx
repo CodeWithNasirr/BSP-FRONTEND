@@ -13,6 +13,8 @@ import TextImageNode from './TextImageNode';
 import ListMessageNode from './ListMessageNode';
 import BookingNode from './BookingNode';
 import KeywordListenerNode from './KeywordListenerNode';
+import MediaConditionNode from './MediaConditionNode';
+
 import { Handle, Position } from 'reactflow';
 import { SquarePower } from 'lucide-react';
  
@@ -21,11 +23,19 @@ const nodeStyles = {
   start: 'bg-teal-100 border-teal-300',
 };
 
-const StartNode = ({ data }) => (
-  <div className={`${nodeStyles.base} ${nodeStyles.start}`}>
-    <SquarePower size={20} className="text-teal-600" />
-    <span className="font-medium">{data.label || 'Start Flow'}</span>
-    <Handle type="source" position={Position.Bottom} id="source" />
+const StartNode = ({ data, selected }) => (
+  <div
+    className={`p-3 rounded-xl shadow-md flex items-center space-x-2 min-w-[150px] border transition-colors ${
+      selected
+        ? 'bg-teal-100 dark:bg-teal-500/20 border-teal-400 dark:border-teal-400'
+        : 'bg-teal-50 dark:bg-teal-500/10 border-teal-200 dark:border-teal-500/20'
+    }`}
+  >
+    <SquarePower size={20} className="text-teal-600 dark:text-teal-400 shrink-0" />
+    <span className="font-bold text-sm text-teal-800 dark:text-teal-300">
+      {data.label || 'Start Flow'}
+    </span>
+    <Handle type="source" position={Position.Bottom} id="source" className="!bg-teal-500" />
   </div>
 );
 
@@ -45,5 +55,7 @@ export const nodeTypes = {
   appointment: Appointment_Booking, 
   leadcollector: LeadCollectorNode, 
   // paymentMethodNode: PaymentMethodNode, 
-  keywordListenerNode: KeywordListenerNode, 
+  keywordListenerNode: KeywordListenerNode,
+  mediaConditionNode: MediaConditionNode,  // NEW — routes by media type
+ 
 };

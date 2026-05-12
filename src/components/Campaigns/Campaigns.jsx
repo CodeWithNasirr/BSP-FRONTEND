@@ -1,18 +1,23 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Campaigns.jsx — Premium UI replacement
+// All existing API calls, state, routing, pagination preserved
+// ─────────────────────────────────────────────────────────────────────────────
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify';
 import RequireSubscription from "../Subscriptions/RequireSubscription";
+import { Megaphone, Plus, ChevronLeft, ChevronRight, TrendingUp, CheckCircle, Clock, Search } from "lucide-react";
+import { Card, Button, Badge, EmptyState, Skeleton } from "../ui";
 
 function Campaigns() {
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
-
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Pagination state
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ next: null, previous: null, count: 0 });
 
@@ -20,186 +25,162 @@ function Campaigns() {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/api/campaigns/?page=${pageNum}`, {
-        headers: {
-          Authorization: `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
       });
-
-
       const { results, next, previous, count } = response.data;
+      console.log("Fetched campaigns:", results);
       setCampaigns(results);
       setPagination({ next, previous, count });
-
-      
     } catch (error) {
-      toast.error(error.response.data.error);
-      // toast.error(response.data.error);
+      toast.error(error.response?.data?.error || "Failed to fetch campaigns");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-  fetchCampaigns(page);
-}, [page, token]);
+  useEffect(() => { fetchCampaigns(page); }, [page, token]);
+
+  const filtered = campaigns.filter(c =>
+    c.campaigns_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.template_name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <RequireSubscription>
-      <div className="Main w-full min-h-screen bg-slate-100 px-4 sm:px-15">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 lg:pb-6">
         {/* Header */}
-        <div className="header flex flex-col sm:flex-row justify-between py-1 px-5">
-          <div className="left px-5 py-5">
-            <h2 className="font-semibold text-xl mb-1">Campaigns</h2>
-            <p className="mb-6 flex items-center text-sm leading-6 text-gray-600">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 11v5m0 5a9 9 0 1 1 0-18a9 9 0 0 1 0 18Zm.05-13v.1h-.1V8h.1Z"
+        <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 lg:px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-base font-semibold text-gray-900 dark:text-white">Campaigns</h1>
+              <p className="text-xs text-gray-500 mt-0.5">{pagination.count} total campaigns</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative hidden sm:block">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search campaigns..."
+                  className="pl-8 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 w-48"
                 />
-              </svg>
-              <span className="ml-1 mt-1">Add Campaigns</span>
-            </p>
-          </div>
-          <div className="right gap-2 px-5 sm:px-10 text-white flex items-center">
-            <button
-              className="rounded-full bg-indigo-600 hover:bg-indigo-500 cursor-pointer px-5 py-2 text-white text-sm font-semibold flex items-center"
-              onClick={() => navigate("/campaigns/create")}
-            >
-              Create Campaign
-            </button>
+              </div>
+              <Button variant="primary" size="sm" icon={<Plus size={15} />} onClick={() => navigate("/campaigns/create")}>
+                New Campaign
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Table Headers */}
-        <div className="container max-h-[500px] overflow-y-auto">
-          <div className="mx-4 sm:mx-10 bg-white py-3 px-2 rounded-md sticky top-0 z-10 shadow-md">
-            <div className="hidden sm:flex justify-center text-blue-600 font-semibold text-sm bg-gray-100 py-3 rounded-md">
-              {["CampaignName", "Template", "Delivery Rate", "Read Rate", "Status"].map((item, index) => (
-                <div key={index} className="w-1/4 text-center">{item}</div>
-              ))}
-            </div>
-            <div className="sm:hidden flex justify-between text-blue-600 font-semibold text-sm bg-gray-100 py-3 rounded-md">
-              <div className="w-1/2 text-center">Campaign</div>
-              <div className="w-1/2 text-center">Status</div>
-            </div>
-          </div> 
-
-          {/* Campaigns List */}
-          {loading ? (
-            <p className="animate-pulse text-center py-30 text-2xl text-gray-600">
-              Loading Campaigns...
-            </p>
-          ) : campaigns.length !== 0 ? (
-            <div className="Campaigns flex-grow mx-4 sm:mx-10 rounded-xl bg-white py-3 mt-2 overflow-y-auto h-[55vh]">
-              {campaigns.map((campaign, index) => (
-                <div key={index} className="border-b last:border-none py-2">
-                  <Link to={`/campaigns/${campaign.campaign_id}`} className="flex items-center flex-col sm:flex-row">
-                    <div className="sm:hidden w-full flex justify-between px-2">
-                      <p className="text-gray-700 font-medium">{campaign.campaigns_name}</p>
-                      <p
-                        className={`text-center px-2 py-1 text-xs rounded-md ${
-                          campaign.is_sent ? "bg-green-700" : "bg-red-700"
-                        } text-white`}
-                      >
-                        {campaign.is_sent ? "Completed" : "Pending"}
-                      </p>
+        <div className="px-4 lg:px-6 py-5 space-y-3">
+          {/* Loading state */}
+          {loading && (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i} className="p-4">
+                  <div className="animate-pulse flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
                     </div>
-                    <div className="sm:hidden w-full px-2 mt-2 text-sm text-gray-600">
-                      <p>Template: {campaign.template_name}</p>
-                      <p>
-                        Delivery: {campaign.total_delivered}/{campaign.total_message} ({campaign.delivery_rate}%)
-                      </p>
-                      <p>
-                        Read: {campaign.total_read}/{campaign.total_message} ({campaign.read_rate}%)
-                      </p>
+                    <div className="hidden sm:flex gap-3">
+                      {[...Array(3)].map((_, j) => <div key={j} className="h-10 w-20 bg-gray-100 dark:bg-gray-800 rounded-xl" />)}
                     </div>
-                    <p className="hidden sm:block w-1/4 text-center text-gray-700">{campaign.campaigns_name}</p>
-                    <p className="hidden sm:block w-1/4 text-center text-gray-700">{campaign.template_name}</p>
-                    <p className="hidden sm:block w-1/4 text-center text-gray-700">
-                      <span className="bg-slate-200 px-1 py-1 rounded-lg mr-2">
-                        {campaign.delivery_rate}%
-                      </span>
-                      {campaign.total_delivered}/{campaign.total_message}
-                    </p>
-                    <p className="hidden sm:block w-1/4 text-center text-gray-700">
-                      <span className="bg-slate-200 px-1 py-1 rounded-lg mr-2">
-                        {campaign.read_rate}%
-                      </span>
-                      {campaign.total_read}/{campaign.total_message}
-                    </p>
-                    <p
-                      className={`hidden sm:block w-1/4 text-center px-2 py-1 text-xs rounded-md ${
-                        campaign.is_sent ? "bg-green-700" : "bg-red-700"
-                      } text-white`}
-                    >
-                      {campaign.is_sent ? "Completed" : "Pending"}
-                    </p>
-                  </Link>
-                </div>
+                  </div>
+                </Card>
               ))}
-            </div>
-          ) : (
-            <div className="p-4 py-3 pb-10 mx-4 sm:mx-10 my-10 rounded-xl bg-white">
-              <div className="flex justify-center mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="72"
-                  height="72"
-                  viewBox="0 0 32 32"
-                >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="2"
-                    d="M12 15h8m-8 4h8m8 5V11c0-1.105-.892-2-1.997-2H17c-2 0-2-3-5-3H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2Z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-center text-lg font-medium mb-4">
-                You don't have any Campaigns
-              </h3>
-              <div className="flex justify-center">
-                <button
-                  className="rounded-full bg-green-900 hover:bg-green-700 cursor-pointer px-5 py-2 text-white text-sm font-semibold flex items-center"
-                  onClick={() => navigate("/campaigns/create")}
-                >
-                  Create Campaigns
-                </button>
-              </div>
             </div>
           )}
-        </div>
 
-        {/* Pagination Controls */}
-        <div className="flex justify-between mt-4 mx-4 sm:mx-10">
-          <button
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!pagination.previous}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span>
-            Page {page} of {Math.ceil(pagination.count / 10)}
-          </span>
-          <button
-            onClick={() => setPage((prev) => prev + 1)}
-            disabled={!pagination.next}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
+          {/* Empty state */}
+          {!loading && filtered.length === 0 && (
+            <Card>
+              <EmptyState
+                icon={<Megaphone size={28} />}
+                title="No campaigns yet"
+                description="Create your first WhatsApp campaign to start reaching your contacts."
+                action={<Button variant="primary" icon={<Plus size={15} />} onClick={() => navigate("/campaigns/create")}>Create Campaign</Button>}
+              />
+            </Card>
+          )}
+
+          {/* Campaign rows */}
+          {!loading && filtered.map((campaign) => (
+            <Link key={campaign.campaign_id} to={`/campaigns/${campaign.campaign_id}`} className="block group">
+              <Card className="p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 flex items-center justify-center shrink-0">
+                    <Megaphone size={16} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-green-600 transition-colors">
+                      {campaign.campaigns_name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">Template: {campaign.template_name}</p>
+                  </div>
+
+                  {/* Stats — hidden on mobile */}
+                  <div className="hidden sm:flex items-center gap-3">
+                    <div className="text-center px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 min-w-[72px]">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white tabular-nums">{campaign.delivery_rate ?? 0}%</p>
+                      <p className="text-[10px] text-gray-400">Delivery</p>
+                    </div>
+                    <div className="text-center px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 min-w-[72px]">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white tabular-nums">{campaign.read_rate ?? 0}%</p>
+                      <p className="text-[10px] text-gray-400">Read</p>
+                    </div>
+                    <div className="text-center px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 min-w-[60px]">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white tabular-nums">{campaign.total_message ?? 0}</p>
+                      <p className="text-[10px] text-gray-400">Messages</p>
+                    </div>
+                  </div>
+
+                  <Badge color={campaign.is_sent ? "green" : "amber"}>
+                    {campaign.is_sent ? "Completed" : "Pending"}
+                  </Badge>
+
+                  <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-green-500 group-hover:translate-x-0.5 transition-all shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </div>
+
+                {/* Mobile stats bar */}
+                <div className="sm:hidden mt-3 flex items-center gap-2 text-xs text-gray-500">
+                  <span>{campaign.delivery_rate ?? 0}% delivered</span>
+                  <span className="text-gray-300">·</span>
+                  <span>{campaign.read_rate ?? 0}% read</span>
+                  <span className="text-gray-300">·</span>
+                  <span>{campaign.total_message ?? 0} msgs</span>
+                </div>
+              </Card>
+            </Link>
+          ))}
+
+          {/* Pagination */}
+          {pagination.count > 10 && (
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<ChevronLeft size={14} />}
+                onClick={() => setPage(p => Math.max(p - 1, 1))}
+                disabled={!pagination.previous}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500">
+                Page {page} of {Math.ceil(pagination.count / 10)}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={!pagination.next}
+              >
+                Next
+                <ChevronRight size={14} className="ml-1" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </RequireSubscription>

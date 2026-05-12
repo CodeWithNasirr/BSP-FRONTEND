@@ -36,6 +36,13 @@ export const useTouchDrag = (reactFlowWrapper, reactFlowInstance, setNodes, node
             { text: 'Option 2', value: '2' },
           ],
         };
+
+      case 'mediaConditionNode':
+        return {
+          allowed_types: ['image', 'document'],
+          fallback_message: 'Please send an image or document.',
+        };
+        
       default:
         return {};
     }
