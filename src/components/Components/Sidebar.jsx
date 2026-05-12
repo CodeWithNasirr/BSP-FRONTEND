@@ -21,6 +21,7 @@ import {
   X,
   Bell,
   Zap,
+  User,
 } from "lucide-react";
 import { SiWhatsapp as SiWA } from "react-icons/si";
 import { Avatar } from "../ui";
@@ -226,6 +227,13 @@ export function MobileBottomNav() {
   const { userInfo } = useContext(Context);
   const unreadChats = useUnreadChats();
 
+  const logout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userInfo");
+    localStorage.removeItem("waStatus");
+
+    navigate("/login");
+  };
 
   const items = [
     {
@@ -286,6 +294,11 @@ export function MobileBottomNav() {
       icon: <CreditCard size={22} />,
       label: "Plans",
     },
+        {
+      action: "logout",
+      icon: <LogOut size={20} />,
+      label: "Logout",
+    },
   ];
 
   return (
@@ -296,7 +309,13 @@ export function MobileBottomNav() {
           return (
             <button
               key={item.to}
-              onClick={() => navigate(item.to)}
+              onClick={() => {
+                if (item.action === "logout") {
+                  logout();
+                } else {
+                  navigate(item.to);
+                }
+              }}
               className={`relative min-w-[72px] flex flex-col items-center justify-center py-3 gap-0.5 transition-colors active:scale-95 ${
                 isActive ? "text-green-400" : "text-gray-500"
               }`}

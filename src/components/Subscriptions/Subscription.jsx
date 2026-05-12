@@ -254,8 +254,8 @@ const Subscription = () => {
   return (
     <section className="bg-gray-50 py-5 ">
       <div className="container mx-auto px-4 text-center mb-12">
-        <p className="text-sm font-semibold text-green-600 tracking-wide uppercase">PRICING PLANS</p>
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Simple & Transparent Pricing</h2>
+        {/* <p className="text-sm font-semibold text-green-600 tracking-wide uppercase">PRICING PLANS</p> */}
+        {/* <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Simple & Transparent Pricing</h2> */}
         <div className="flex justify-center mt-4">
           <div className="inline-flex bg-white shadow rounded-full">
             <button

@@ -90,7 +90,7 @@ function DashboardPreview() {
           <div className="w-3 h-3 rounded-full bg-red-500/80" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
           <div className="w-3 h-3 rounded-full bg-green-500/80" />
-          <span className="ml-3 text-xs text-white/30 font-mono">WhatsGPTX Dashboard</span>
+          <span className="ml-3 text-xs text-white/30 font-mono">WhatsappGptx Dashboard</span>
         </div>
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-px bg-white/5 border-b border-white/5">
