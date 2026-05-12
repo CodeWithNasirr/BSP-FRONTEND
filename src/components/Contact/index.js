@@ -7,6 +7,7 @@
 export { default as ContactManagement } from "./ContactManagement";
 export { default as Contacts } from "./Contacts";
 export { default as Groups } from "./Groups";
+export { default as SmartContactManagement } from "./SmartContactManagement";
 
 // Hooks
 export { useContacts } from "./hooks/useContacts";
@@ -36,3 +37,22 @@ export { default as GroupForm, GroupWelcomeScreen } from "./components/GroupForm
 
 // API
 export { contactsApi, groupsApi, segmentsApi } from "./api/contactsApi";
+
+
+// Smart Contact Management
+export { default as SmartContactManagement } from "./SmartContactManagement";
+export {
+  StatusBadge,
+  StatsCards,
+  StatusFilterTabs,
+  SmartBulkActionsBar,
+  SmartEmptyState,
+} from "./components/SmartComponents";
+export { ExportModal, ExportHistoryPanel } from "./components/ExportModal";
+export {
+  useContactStats,
+  useSmartContacts,
+  useExportHistory,
+  useContactExport,
+  useBulkActions,
+} from "./hooks/useSmartContacts";
