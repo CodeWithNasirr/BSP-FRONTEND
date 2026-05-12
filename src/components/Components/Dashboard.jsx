@@ -42,52 +42,6 @@ const Dashboard = () => {
   const [dark, setDark] = useDarkMode();
 
 
-
-
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchUnreadChats = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE_URL}/api/chats/?filter=unread`,
-          {
-            headers: {
-              Authorization: `Token ${token}`,
-            },
-          }
-        );
-
-        const results = res.data.results || [];
-
-        let total = 0;
-
-        results.forEach((chat) => {
-          total += chat.unread_count || 0;
-        });
-
-        setUnreadChats((prev) =>
-          prev !== total ? total : prev
-        );
-
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchUnreadChats();
-
-    const interval = setInterval(() => {
-      if (!document.hidden) {
-        fetchUnreadChats();
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-
-  }, [token]);
-
-
   // ── All existing useEffects preserved ──
   useEffect(() => {
     async function checkExistingSub() {

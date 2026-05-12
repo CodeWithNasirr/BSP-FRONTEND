@@ -1465,18 +1465,36 @@ const OVERSCAN = 3;
 const SCROLL_THRESHOLD = 300;
 const LONG_PRESS_DURATION = 500;
 
-// ── MODULE-LEVEL CACHE ────────────────────────────────────────────────────────
-// Lives outside React — survives component re-renders.
-const listCache = {
-  conversations: [],
-  page: 1,
-  hasMore: true,
-  scrollTop: 0,
-  searchQuery: "",
-  selectedTags: [],
-  lastFetchTime: 0,
-};
+// ── MODULE-LEVEL PER-FILTER CACHE ────────────────────────────────────────────
+// A Map keyed by `${filter}|${search}|${tags}`.
+// Every filter (all, unread, expired, pinned) + search + tag combination gets
+// its own independent slot: conversations, page, hasMore, scrollTop, lastFetchTime.
+// Lives outside React — survives re-renders and CSS hide/show navigation.
+//
+// Old behaviour: single `listCache` object → only "all" filter preserved state;
+// "unread", "expired", "pinned" always cleared conversations + reset scroll.
+// New behaviour: every filter preserves its own state independently.
+const filterCacheMap = new Map();
 const CACHE_TTL = 30_000; // 30s — WS handles live updates; API is catchup only
+
+/** Stable string key for a given filter + search + tag combination. */
+function makeCacheKey(filter, search, tags) {
+  return `${filter}|${search}|${(tags || []).join(",")}`;
+}
+
+/**
+ * Get (or lazily create) the cache slot for a filter/search/tags triple.
+ * All reads and writes go through this function so the Map stays consistent.
+ */
+function getFilterCache(filter, search, tags) {
+  const key = makeCacheKey(filter, search, tags);
+  if (!filterCacheMap.has(key)) {
+    filterCacheMap.set(key, {
+      conversations: [], page: 1, hasMore: true, scrollTop: 0, lastFetchTime: 0,
+    });
+  }
+  return filterCacheMap.get(key);
+}
 
 const FILTERS = [
   { key: "all",     label: "All"       },
@@ -1686,20 +1704,26 @@ VirtualChatItem.displayName = "VirtualChatItem";
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 const ChatListVirtualized = ({ onSelectConversation }) => {
-  const [conversations,       setConversations]       = useState(() => listCache.conversations);
-  const [searchQuery,         setSearchQuery]         = useState(() => listCache.searchQuery);
-  const [debouncedSearch,     setDebouncedSearch]     = useState(() => listCache.searchQuery);
-  const [selectedTags,        setSelectedTags]        = useState(() => listCache.selectedTags);
+  // Compute once at call-site — used only to seed the initial useState values.
+  // Both calls are cheap (localStorage read + Map lookup) so running them on
+  // every render is inconsequential; lazy initialisers only execute once anyway.
+  const _initFilter = localStorage.getItem("chat_filter") || "all";
+  const _initCache  = getFilterCache(_initFilter, "", []);
+
+  const [conversations,       setConversations]       = useState(() => _initCache.conversations);
+  const [searchQuery,         setSearchQuery]         = useState("");
+  const [debouncedSearch,     setDebouncedSearch]     = useState("");
+  const [selectedTags,        setSelectedTags]        = useState([]);
   const [availableTags,       setAvailableTags]       = useState([]);
   const [showTags,            setShowTags]            = useState(false);
-  const [page,                setPage]                = useState(() => listCache.page);
-  const [hasMore,             setHasMore]             = useState(() => listCache.hasMore);
+  const [page,                setPage]                = useState(() => _initCache.page);
+  const [hasMore,             setHasMore]             = useState(() => _initCache.hasMore);
   const [isLoadingMore,       setIsLoadingMore]       = useState(false);
-  const [isInitialLoad,       setIsInitialLoad]       = useState(() => listCache.conversations.length === 0);
+  const [isInitialLoad,       setIsInitialLoad]       = useState(() => _initCache.conversations.length === 0);
   const [newMessagesCount,    setNewMessagesCount]    = useState(0);
-  const [scrollTop,           setScrollTop]           = useState(() => listCache.scrollTop);
+  const [scrollTop,           setScrollTop]           = useState(() => _initCache.scrollTop);
   const [containerHeight,     setContainerHeight]     = useState(0);
-  const [activeFilter,        setActiveFilter]        = useState(() => localStorage.getItem("chat_filter") || "all");
+  const [activeFilter,        setActiveFilter]        = useState(_initFilter);
   const [isSelectionMode,     setIsSelectionMode]     = useState(false);
   const [selectedCount,       setSelectedCount]       = useState(0);
   const [showBroadcastComposer, setShowBroadcastComposer] = useState(false);
@@ -1722,6 +1746,14 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   const conversationsRef   = useRef(conversations);
   const selectedRecipientsRef = useRef(new Set());
 
+  // ── CURRENT CACHE SLOT REF ────────────────────────────────────────────────
+  // Always points to the active filter's cache slot.
+  // Kept in sync via a useEffect (declared before the initial-load effect so
+  // React's ordered-effect guarantee ensures it runs first on the same commit).
+  // The scroll handler ([] deps, set up once) reads/writes this ref so it
+  // always touches the right slot even as filter / search / tags change.
+  const currentCacheRef = useRef(getFilterCache(_initFilter, "", []));
+
   useEffect(() => { pageRef.current          = page;            }, [page]);
   useEffect(() => { hasMoreRef.current       = hasMore;         }, [hasMore]);
   useEffect(() => { searchRef.current        = debouncedSearch; }, [debouncedSearch]);
@@ -1729,14 +1761,21 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   useEffect(() => { conversationsRef.current = conversations;   }, [conversations]);
   useEffect(() => { localStorage.setItem("chat_filter", activeFilter); }, [activeFilter]);
 
-  // Keep module cache in sync
+  // Keep currentCacheRef pointed at the active filter's slot.
+  // Declared BEFORE the initial-load effect so React runs this first when
+  // filter/search/tags all change in the same commit — guaranteeing that
+  // fetchChatListInternal writes lastFetchTime to the correct slot.
   useEffect(() => {
-    listCache.conversations = conversations;
-    listCache.page          = page;
-    listCache.hasMore       = hasMore;
-    listCache.searchQuery   = debouncedSearch;
-    listCache.selectedTags  = selectedTags;
-  }, [conversations, page, hasMore, debouncedSearch, selectedTags]);
+    currentCacheRef.current = getFilterCache(activeFilter, debouncedSearch, selectedTags);
+  }, [activeFilter, debouncedSearch, selectedTags]);
+
+  // Keep the active filter's cache slot in sync with live state
+  useEffect(() => {
+    const slot         = currentCacheRef.current;
+    slot.conversations = conversations;
+    slot.page          = page;
+    slot.hasMore       = hasMore;
+  }, [conversations, page, hasMore]);
 
   // ── PIN ────────────────────────────────────────────────────────────────────
   const handlePinChange = useCallback((recipient, isPinned) => {
@@ -1840,7 +1879,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
         rafId = requestAnimationFrame(() => {
           const st = container.scrollTop;
           setScrollTop(st);
-          listCache.scrollTop = st;
+          currentCacheRef.current.scrollTop = st;
           const gap = container.scrollHeight - st - container.clientHeight;
           if (gap < SCROLL_THRESHOLD && hasMoreRef.current && !isLoadingRef.current) {
             const nextPage = pageRef.current + 1;
@@ -1863,10 +1902,11 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
     };
   }, []); // stable — only set up once
 
-  // Restore scroll on mount (edge-case remount protection)
+  // Restore scroll on mount for the initial filter's cached position
   useEffect(() => {
-    if (listContainerRef.current && listCache.scrollTop > 0) {
-      listContainerRef.current.scrollTop = listCache.scrollTop;
+    const savedScroll = currentCacheRef.current.scrollTop;
+    if (listContainerRef.current && savedScroll > 0) {
+      listContainerRef.current.scrollTop = savedScroll;
     }
   }, []);
 
@@ -1993,7 +2033,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
         setHasMore(hasNext);
         hasMoreRef.current = hasNext;
-        listCache.lastFetchTime = Date.now();
+        currentCacheRef.current.lastFetchTime = Date.now();
       } catch (err) {
         if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
           toast.error("Failed to fetch chats");
@@ -2017,30 +2057,42 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
   // ── INITIAL / FILTER LOAD ──────────────────────────────────────────────────
+  // Uniform for ALL filters — checks the per-filter cache slot first.
+  //
+  // Cache HIT  (slot has data + age < TTL):
+  //   → Restore conversations, page, hasMore from the slot.
+  //   → Restore this filter's scrollTop via requestAnimationFrame.
+  //   → No API call, no spinner, no scroll reset.
+  //
+  // Cache MISS (slot empty or stale):
+  //   → Clear list, reset scroll, fetch page 1 from API.
+  //
+  // OLD bug: `activeFilter !== "all"` always cleared + refetched,
+  // so unread/expired/pinned behaved like a remount every time.
   useEffect(() => {
     if (!token) return;
 
-    if (activeFilter !== "all") {
-      // Filter views always need fresh data
-      setPage(1); pageRef.current = 1;
-      setHasMore(true); hasMoreRef.current = true;
-      setConversations([]);
-      if (listContainerRef.current) listContainerRef.current.scrollTop = 0;
-      fetchChatListInternal(1, debouncedSearch, selectedTags, false, false);
+    const slot     = getFilterCache(activeFilter, debouncedSearch, selectedTags);
+    const cacheAge = Date.now() - slot.lastFetchTime;
+
+    if (slot.conversations.length > 0 && cacheAge < CACHE_TTL) {
+      // ── CACHE HIT ──────────────────────────────────────────────────────
+      setConversations(slot.conversations);
+      setPage(slot.page);       pageRef.current    = slot.page;
+      setHasMore(slot.hasMore); hasMoreRef.current = slot.hasMore;
+      setIsInitialLoad(false);
+      // Restore this filter's scroll position on the next paint
+      requestAnimationFrame(() => {
+        if (listContainerRef.current) {
+          listContainerRef.current.scrollTop = slot.scrollTop;
+          setScrollTop(slot.scrollTop);
+        }
+      });
       return;
     }
 
-    const cacheAge         = Date.now() - listCache.lastFetchTime;
-    const filtersUnchanged = listCache.searchQuery === debouncedSearch &&
-                             JSON.stringify(listCache.selectedTags) === JSON.stringify(selectedTags);
-
-    if (listCache.conversations.length > 0 && cacheAge < CACHE_TTL && filtersUnchanged) {
-      setIsInitialLoad(false);
-      return; // serve from cache — scroll position is already in DOM
-    }
-
-    // Cache miss or filter change
-    setPage(1); pageRef.current = 1;
+    // ── CACHE MISS ─────────────────────────────────────────────────────
+    setPage(1); pageRef.current    = 1;
     setHasMore(true); hasMoreRef.current = true;
     setConversations([]);
     if (listContainerRef.current) listContainerRef.current.scrollTop = 0;
@@ -2101,7 +2153,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
           }
           // ── refresh_chatlist: silent background merge ────────────────────
           else if (action === "refresh_chatlist") {
-            listCache.lastFetchTime = 0;
+            currentCacheRef.current.lastFetchTime = 0;
             setTimeout(() => fetchChatListInternalRef.current?.(1, searchRef.current, tagsRef.current, false, true), 500);
           }
           // ── batch_update ──────────────────────────────────────────────────
@@ -2118,7 +2170,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
               if (a === "broadcast_result" || a === "refresh_chatlist") needRefresh = true;
             });
             if (needRefresh) {
-              listCache.lastFetchTime = 0;
+              currentCacheRef.current.lastFetchTime = 0;
               setTimeout(() => fetchChatListInternalRef.current?.(1, searchRef.current, tagsRef.current, false, true), 500);
             }
           }
@@ -2136,7 +2188,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
   // ── VISIBILITY CHANGE ──────────────────────────────────────────────────────
   useEffect(() => {
     const handler = () => {
-      if (document.visibilityState === "visible" && Date.now() - listCache.lastFetchTime > CACHE_TTL) {
+      if (document.visibilityState === "visible" && Date.now() - currentCacheRef.current.lastFetchTime > CACHE_TTL) {
         fetchChatListInternalRef.current?.(1, searchRef.current, tagsRef.current, false, true);
       }
     };
@@ -2146,7 +2198,9 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
 
   // ── CHAT SELECT ────────────────────────────────────────────────────────────
   const saveScrollPosition = useCallback(() => {
-    if (listContainerRef.current) listCache.scrollTop = listContainerRef.current.scrollTop;
+    if (listContainerRef.current) {
+      currentCacheRef.current.scrollTop = listContainerRef.current.scrollTop;
+    }
   }, []);
 
   const handleSelect = useCallback((recipient) => {
@@ -2372,7 +2426,7 @@ const ChatListVirtualized = ({ onSelectConversation }) => {
       <MarkPurchaseModal
         show={showPurchaseModal} onClose={handleCloseModal} contact={selectedContact}
         purchaseForm={purchaseForm} setPurchaseForm={setPurchaseForm} availableTags={availableTags}
-        fetchChatList={() => { listCache.lastFetchTime = 0; fetchChatListInternalRef.current?.(1, debouncedSearch, selectedTags, false, true); }}
+        fetchChatList={() => { currentCacheRef.current.lastFetchTime = 0; fetchChatListInternalRef.current?.(1, debouncedSearch, selectedTags, false, true); }}
         token={token} loading={isLoadingMore} setLoading={setIsLoadingMore}
       />
     </div>
