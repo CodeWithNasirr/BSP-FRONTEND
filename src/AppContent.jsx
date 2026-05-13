@@ -175,11 +175,11 @@ function AppContent() {
           <Route path="/bulk-upload" element={<FullProtectedRoute element={BulkImportContacts} />} />
           <Route path="/connect-form" element={<FullProtectedRoute element={ConnectWhatsAppForm} />} />
           <Route path="/whatsapp-setting" element={<FullProtectedRoute element={WhatsAppSettings} />} />
-          <Route path="/chats" element={<FullProtectedRoute element={() => <MainChat />} />} />
-          <Route path="/chats/:id" element={<FullProtectedRoute element={() => <ChatWindow />} />} />
+          <Route path="/chats" element={<FullProtectedRoute element={MainChat} />} />
+          <Route path="/chats/:id" element={<FullProtectedRoute element={ChatWindow} />} />
           <Route path="/subscriptions" element={<FullProtectedRoute element={Subscription} />} />
           <Route path="/my-usage-panel" element={<FullProtectedRoute element={MyUsagePanel} />} />
-          <Route path="/chat-flow" element={<FullProtectedRoute element={() => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} />
+          <Route path="/chat-flow" element={<FullProtectedRoute element={ () => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} />
           <Route path="/Credits" element={<FullProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<FullProtectedRoute element={Order} />} />
           <Route path="/products" element={<FullProtectedRoute element={ProductView} />} />
