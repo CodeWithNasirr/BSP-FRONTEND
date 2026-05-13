@@ -308,7 +308,7 @@ export function MobileBottomNav() {
           const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
           return (
             <button
-              key={item.to}
+              key={item.to || item.action}
               onClick={() => {
                 if (item.action === "logout") {
                   logout();
