@@ -1,69 +1,1310 @@
-// src/admin/pages/WebhookDashboardPage.jsx
+// // src/admin/pages/WebhookDashboardPage.jsx
+// import React, { useState, useEffect, useCallback } from "react";
+// import {
+//   LineChart, Line, BarChart, Bar, XAxis, YAxis,
+//   CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
+// } from "recharts";
+// import { adminApi } from "../utils/api";
+// import {
+//   Radio, AlertTriangle, CheckCircle2, RefreshCw,
+//   Inbox, ShieldAlert, Zap, TrendingDown, Activity,
+//   ChevronDown, ChevronUp, Trash2, RotateCcw, Clock,
+//   MousePointerClick, BarChart2, Megaphone,
+// } from "lucide-react";
+// import { LoadingSpinner } from "../components/UIComponents";
+
+// // ── helpers ──────────────────────────────────────────────────────────────────
+// const fmt       = (n) => (n ?? 0).toLocaleString();
+// const pct       = (n) => ((n ?? 0).toFixed(1)) + "%";
+// const shortDate = (d) => (d ?? "").slice(5); // "2026-02-22" → "02-22"
+
+// function lossColor(v) {
+//   if (v > 10) return "#ef4444";
+//   if (v > 2)  return "#f59e0b";
+//   return "#22c55e";
+// }
+// function lossBg(v) {
+//   if (v > 10) return { bg: "#2e0a0a", border: "#dc2626" };
+//   if (v > 2)  return { bg: "#2e2008", border: "#d97706" };
+//   return       { bg: "#0d2e1c", border: "#16a34a" };
+// }
+
+// const HEALTH_CONFIG = {
+//   healthy:  { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "Healthy" },
+//   degraded: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/20",   label: "Degraded" },
+//   critical: { bg: "bg-red-500/10",     text: "text-red-400",     border: "border-red-500/20",     label: "Critical" },
+//   unknown:  { bg: "bg-slate-500/10",   text: "text-slate-400",   border: "border-slate-500/20",   label: "Unknown"  },
+// };
+
+// // ── sub-components ────────────────────────────────────────────────────────────
+
+// function HealthBadge({ health }) {
+//   const c = HEALTH_CONFIG[health] || HEALTH_CONFIG.unknown;
+//   return (
+//     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${c.bg} ${c.text} ${c.border}`}>
+//       {c.label}
+//     </span>
+//   );
+// }
+
+// function MetricCard({ label, value, sub, warning, accent = "amber", icon: Icon }) {
+//   const accentMap = {
+//     amber:   { top: "border-t-amber-400",   val: "text-amber-400",   icon: "text-amber-400/40"   },
+//     emerald: { top: "border-t-emerald-500", val: "text-emerald-400", icon: "text-emerald-400/40" },
+//     red:     { top: "border-t-red-500",     val: "text-red-400",     icon: "text-red-400/40"     },
+//     slate:   { top: "border-t-slate-600",   val: "text-slate-400",   icon: "text-slate-400/40"   },
+//     cyan:    { top: "border-t-cyan-500",    val: "text-cyan-400",    icon: "text-cyan-400/40"    },
+//   };
+//   const colors = accentMap[warning ? "red" : accent] || accentMap.amber;
+//   return (
+//     <div className={`bg-slate-900/50 border border-slate-800/50 rounded-2xl p-5 flex-1 min-w-[130px] border-t-2 ${colors.top} transition-all hover:border-slate-700/50 relative overflow-hidden`}>
+//       {Icon && (
+//         <Icon size={40} className={`absolute -bottom-2 -right-2 ${colors.icon}`} strokeWidth={1} />
+//       )}
+//       <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</p>
+//       <p className={`text-2xl font-extrabold font-mono leading-none ${warning ? "text-red-400" : "text-white"}`}>{value}</p>
+//       {sub && <p className="text-xs text-slate-600 mt-1.5">{sub}</p>}
+//     </div>
+//   );
+// }
+
+// function ChartTooltip({ active, payload, label }) {
+//   if (!active || !payload?.length) return null;
+//   return (
+//     <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs shadow-2xl">
+//       <p className="text-slate-400 font-semibold mb-2">{label}</p>
+//       {payload.map(p => (
+//         <div key={p.name} className="flex items-center gap-2 mb-1">
+//           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
+//           <span className="text-slate-400">{p.name}:</span>
+//           <span className="text-white font-bold font-mono">{fmt(p.value)}</span>
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
+
+// function DLQFlowStep({ step, label, desc }) {
+//   return (
+//     <div className="flex gap-3 items-start">
+//       <div className="w-6 h-6 rounded-md bg-amber-400/20 border border-amber-400/30 text-amber-400 font-bold text-[11px] flex items-center justify-center flex-shrink-0">
+//         {step}
+//       </div>
+//       <div>
+//         <p className="text-sm font-medium text-white">{label}</p>
+//         <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+//       </div>
+//     </div>
+//   );
+// }
+
+// // Minimal sparkline for CTWA per-client
+// function Sparkline({ data, dataKey, color }) {
+//   if (!data?.length) return <span className="text-slate-600 text-xs">—</span>;
+//   return (
+//     <div className="w-24 h-8">
+//       <ResponsiveContainer width="100%" height="100%">
+//         <AreaChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+//           <defs>
+//             <linearGradient id={`sg-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
+//               <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
+//               <stop offset="95%" stopColor={color} stopOpacity={0}   />
+//             </linearGradient>
+//           </defs>
+//           <Area
+//             type="monotone" dataKey={dataKey}
+//             stroke={color} strokeWidth={1.5}
+//             fill={`url(#sg-${color.replace("#","")})`}
+//             dot={false}
+//           />
+//         </AreaChart>
+//       </ResponsiveContainer>
+//     </div>
+//   );
+// }
+
+// // ── Main Component ────────────────────────────────────────────────────────────
+
+// export default function WebhookDashboardPage() {
+//   const [view, setView]             = useState("overview");
+//   const [days, setDays]             = useState(7);
+//   const [timeline, setTimeline]     = useState([]);
+//   const [clients, setClients]       = useState([]);
+//   const [ctwaClients, setCtwaClients] = useState([]);
+//   const [totalCtwa, setTotalCtwa]   = useState(0);
+//   const [dlq, setDlq]               = useState({ total: 0, items: [] });
+//   const [selected, setSelected]     = useState(null);
+//   const [loading, setLoading]       = useState(true);
+//   const [ctwaLoading, setCtwaLoading] = useState(false);
+//   const [actionMsg, setActionMsg]   = useState(null);
+//   const [replayLoading, setReplayLoading] = useState(false);
+//   const [clearLoading, setClearLoading]   = useState(null);
+
+//   // ── Hourly filter state ──
+//   const [hourlyDate,     setHourlyDate]     = useState(() => new Date().toISOString().slice(0,10));
+//   const [hourlyFrom,     setHourlyFrom]     = useState(0);
+//   const [hourlyTo,       setHourlyTo]       = useState(23);
+//   const [hourlyClient,   setHourlyClient]   = useState("");   // "" = global
+//   const [hourlyData,     setHourlyData]     = useState(null);
+//   const [hourlyLoading,  setHourlyLoading]  = useState(false);
+
+//   // ── fetch ────────────────────────────────────────────────────────────────
+
+//   const fetchAll = useCallback(async () => {
+//     setLoading(true);
+//     try {
+//       const [analyticsRes, dlqRes] = await Promise.all([
+//         adminApi.get(`/webhook-analytics/?days=${days}`),
+//         adminApi.get("/webhook-analytics/dlq/"),
+//       ]);
+//       setTimeline(analyticsRes.data.timeline   ?? []);
+//       setClients(analyticsRes.data.clients     ?? []);
+//       setTotalCtwa(analyticsRes.data.total_ctwa ?? 0);
+//       setDlq({
+//         total: dlqRes.data.total ?? 0,
+//         items: dlqRes.data.items ?? [],
+//       });
+//     } catch (err) {
+//       console.error("Webhook analytics fetch failed:", err);
+//       flash("error", "Failed to load webhook analytics.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [days]);
+
+//   const fetchCtwa = useCallback(async () => {
+//     setCtwaLoading(true);
+//     try {
+//       const res = await adminApi.get(`/webhook-analytics/ctwa/?days=${days}`);
+//       setCtwaClients(res.data.clients ?? []);
+//     } catch (err) {
+//       console.error("CTWA fetch failed:", err);
+//       flash("error", "Failed to load CTWA data.");
+//     } finally {
+//       setCtwaLoading(false);
+//     }
+//   }, [days]);
+
+//   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+//   const fetchHourly = useCallback(async () => {
+//     setHourlyLoading(true);
+//     try {
+//       const params = new URLSearchParams({
+//         date: hourlyDate,
+//         from_hour: hourlyFrom,
+//         to_hour: hourlyTo,
+//       });
+//       if (hourlyClient) params.set("client_id", hourlyClient);
+//       const res = await adminApi.get(`/webhook-analytics/hourly/?${params}`);
+//       setHourlyData(res.data);
+//     } catch (err) {
+//       flash("error", "Failed to load hourly data.");
+//     } finally {
+//       setHourlyLoading(false);
+//     }
+//   }, [hourlyDate, hourlyFrom, hourlyTo, hourlyClient]);
+
+//   // Fetch CTWA data when user switches to that tab
+//   useEffect(() => {
+//     if (view === "ctwa") fetchCtwa();
+//   }, [view, fetchCtwa]);
+
+//   // Fetch hourly when switching to hourly tab
+//   useEffect(() => {
+//     if (view === "hourly") fetchHourly();
+//   }, [view]);  // intentionally only trigger on tab switch, not on param change
+
+//   // ── actions ──────────────────────────────────────────────────────────────
+
+//   const flash = (type, text) => {
+//     setActionMsg({ type, text });
+//     setTimeout(() => setActionMsg(null), 5000);
+//   };
+
+//   const clearInactiveCache = async (clientId, phoneId) => {
+//     setClearLoading(clientId);
+//     try {
+//       await adminApi.post("/webhook-analytics/clear-inactive-cache/", { phone_id: phoneId });
+//       setClients(prev =>
+//         prev.map(c =>
+//           c.client_id === clientId
+//             ? { ...c, inactive_phone_cached: false, health: "healthy" }
+//             : c
+//         )
+//       );
+//       flash("success", `✓ Cleared inactive_phone cache for phone_id ${phoneId}`);
+//     } catch (err) {
+//       flash("error", err.response?.data?.error || "Failed to clear cache.");
+//     } finally {
+//       setClearLoading(null);
+//     }
+//   };
+
+//   const replayDLQ = async () => {
+//     setReplayLoading(true);
+//     try {
+//       const res = await adminApi.post("/webhook-analytics/replay-dlq/", { limit: 100 });
+//       const replayed = res.data.replayed ?? dlq.total;
+//       setDlq({ total: 0, items: [] });
+//       flash("success", `✓ Replayed ${replayed} failed webhook(s) from DLQ`);
+//     } catch (err) {
+//       flash("error", err.response?.data?.error || "DLQ replay failed.");
+//     } finally {
+//       setReplayLoading(false);
+//     }
+//   };
+
+//   // ── derived totals ────────────────────────────────────────────────────────
+
+//   const totals = timeline.reduce(
+//     (acc, r) => ({
+//       received:        acc.received        + (r.received         ?? 0),
+//       enqueued:        acc.enqueued        + (r.enqueued          ?? 0),
+//       missed:          acc.missed          + (r.missed            ?? 0),
+//       inactive:        acc.inactive        + (r.inactive_dropped  ?? 0),
+//       failed:          acc.failed          + (r.failed            ?? 0),
+//       dedup:           acc.dedup           + (r.dedup_dropped      ?? 0),
+//       ctwa:            acc.ctwa            + (r.ctwa_received      ?? 0),
+//       status_enqueued: acc.status_enqueued + (r.status_enqueued    ?? 0),
+//     }),
+//     { received: 0, enqueued: 0, missed: 0, inactive: 0, failed: 0, dedup: 0, ctwa: 0, status_enqueued: 0 }
+//   );
+
+//   const overallLoss = totals.received
+//     ? parseFloat(((totals.missed / totals.received) * 100).toFixed(1))
+//     : 0;
+
+//   const inactiveCached  = clients.filter(c => c.inactive_phone_cached);
+//   const criticalClients = clients.filter(c => c.health === "critical");
+//   const chartData       = timeline.map(r => ({ ...r, date: shortDate(r.date) }));
+
+//   // Clients with CTWA activity (from health data)
+//   const ctwaActiveClients = clients.filter(c => (c.ctwa_total_7d ?? 0) > 0);
+
+//   // ── render ────────────────────────────────────────────────────────────────
+
+//   if (loading) return (
+//     <div className="flex items-center justify-center min-h-[60vh]">
+//       <LoadingSpinner />
+//     </div>
+//   );
+
+//   return (
+//     <div className="space-y-6">
+
+//       {/* ── Page Header ── */}
+//       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+//         <div className="flex items-center gap-3">
+//           <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center">
+//             <Radio size={20} className="text-amber-400" />
+//           </div>
+//           <div>
+//             <h1 className="text-xl font-bold text-white">Webhook Analytics</h1>
+//             <p className="text-sm text-slate-500 mt-0.5">Real-time pipeline health · loss tracking · CTWA monitoring</p>
+//           </div>
+//         </div>
+
+//         <div className="flex items-center gap-3 flex-wrap">
+//           {inactiveCached.length > 0 && (
+//             <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
+//               <ShieldAlert size={12} />
+//               {inactiveCached.length} cache poisoned
+//             </div>
+//           )}
+//           {dlq.total > 0 && (
+//             <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
+//               <Inbox size={12} />
+//               DLQ: {dlq.total} pending
+//             </div>
+//           )}
+//           {totals.ctwa > 0 && (
+//             <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
+//               <MousePointerClick size={12} />
+//               {fmt(totals.ctwa)} CTWA
+//             </div>
+//           )}
+
+//           <select
+//             value={days}
+//             onChange={e => setDays(Number(e.target.value))}
+//             className="bg-slate-900/50 border border-slate-800/50 text-slate-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+//           >
+//             {[7, 14, 30].map(d => (
+//               <option key={d} value={d}>Last {d} days</option>
+//             ))}
+//           </select>
+
+//           <button
+//             onClick={fetchAll}
+//             className="flex items-center gap-1.5 bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white text-sm rounded-xl px-3 py-2 transition-all"
+//           >
+//             <RefreshCw size={14} />
+//             Refresh
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* ── Flash Message ── */}
+//       {actionMsg && (
+//         <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border ${
+//           actionMsg.type === "success"
+//             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+//             : "bg-red-500/10 border-red-500/20 text-red-400"
+//         }`}>
+//           {actionMsg.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+//           {actionMsg.text}
+//         </div>
+//       )}
+
+//       {/* ── Tab Nav ── */}
+//       <div className="flex gap-1 border-b border-slate-800/50 overflow-x-auto">
+//         {[
+//           { id: "overview", label: "Overview",          icon: Activity },
+//           { id: "clients",  label: "Client Health",     icon: Zap },
+//           { id: "ctwa",     label: "CTWA Ads",          icon: MousePointerClick },
+//           { id: "dlq",      label: "Dead Letter Queue", icon: Inbox },
+//           { id: "hourly",   label: "Time Filter",        icon: Clock },
+//         ].map(({ id, label, icon: Icon }) => (
+//           <button
+//             key={id}
+//             onClick={() => setView(id)}
+//             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+//               view === id
+//                 ? "text-amber-400 border-amber-400"
+//                 : "text-slate-500 border-transparent hover:text-slate-300"
+//             }`}
+//           >
+//             <Icon size={14} />
+//             {label}
+//             {id === "dlq" && dlq.total > 0 && (
+//               <span className="ml-1 bg-amber-400/20 text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+//                 {dlq.total}
+//               </span>
+//             )}
+//             {id === "clients" && inactiveCached.length > 0 && (
+//               <span className="ml-1 bg-red-400/20 text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+//                 {inactiveCached.length}
+//               </span>
+//             )}
+//             {id === "ctwa" && totals.ctwa > 0 && (
+//               <span className="ml-1 bg-cyan-400/20 text-cyan-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+//                 {fmt(totals.ctwa)}
+//               </span>
+//             )}
+//           </button>
+//         ))}
+//       </div>
+
+//       {/* ══════════════════════ OVERVIEW TAB ══════════════════════ */}
+//       {view === "overview" && (
+//         <div className="space-y-6">
+
+//           {/* Stat cards — now 6 including CTWA */}
+//           <div className="flex gap-4 flex-wrap">
+//             <MetricCard
+//               label="Messages Received"
+//               value={fmt(totals.received)}
+//               sub={`Inbound from customers · ${days}d`}
+//               accent="amber"
+//               icon={Activity}
+//             />
+//             <MetricCard
+//               label="Messages Enqueued"
+//               value={fmt(totals.enqueued)}
+//               sub="Inbound msgs → Celery"
+//               accent="emerald"
+//               icon={CheckCircle2}
+//             />
+//             <MetricCard
+//               label="Status Callbacks"
+//               value={fmt(totals.status_enqueued)}
+//               sub="sent/delivered/read (not missed)"
+//               accent="slate"
+//               icon={Activity}
+//             />
+//             <MetricCard
+//               label="Missed Messages"
+//               value={fmt(totals.missed)}
+//               sub={`${pct(overallLoss)} loss rate`}
+//               warning={overallLoss > 5}
+//               icon={TrendingDown}
+//             />
+//             <MetricCard
+//               label="CTWA Messages"
+//               value={fmt(totals.ctwa)}
+//               sub={`${ctwaActiveClients.length} active ad clients`}
+//               accent="cyan"
+//               icon={MousePointerClick}
+//             />
+//             <MetricCard
+//               label="Inactive Cache Drops"
+//               value={fmt(totals.inactive)}
+//               sub="Bug #1 victims"
+//               warning={totals.inactive > 0}
+//               icon={ShieldAlert}
+//             />
+//             <MetricCard
+//               label="Enqueue Failures"
+//               value={fmt(totals.failed)}
+//               sub="Broker errors → DLQ"
+//               warning={totals.failed > 0}
+//               icon={AlertTriangle}
+//             />
+//           </div>
+
+//           {/* Loss rate chart + CTWA overlay */}
+//           <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//             <div className="flex items-center justify-between mb-6">
+//               <div>
+//                 <h3 className="text-sm font-semibold text-white">Webhook Loss Rate + CTWA Volume</h3>
+//                 <p className="text-xs text-slate-500 mt-0.5">
+//                   Loss % left axis · CTWA count shown as teal area
+//                 </p>
+//               </div>
+//               <div
+//                 className="px-4 py-1.5 rounded-lg text-lg font-extrabold font-mono border"
+//                 style={{
+//                   color: lossColor(overallLoss),
+//                   background: lossBg(overallLoss).bg,
+//                   borderColor: lossBg(overallLoss).border,
+//                 }}
+//               >
+//                 {pct(overallLoss)}
+//               </div>
+//             </div>
+//             <ResponsiveContainer width="100%" height={240}>
+//               <AreaChart data={chartData}>
+//                 <defs>
+//                   <linearGradient id="ctwaGrad" x1="0" y1="0" x2="0" y2="1">
+//                     <stop offset="5%"  stopColor="#06b6d4" stopOpacity={0.25} />
+//                     <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}    />
+//                   </linearGradient>
+//                 </defs>
+//                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+//                 <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                 <YAxis
+//                   yAxisId="loss"
+//                   stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }}
+//                   unit="%" domain={[0, "auto"]}
+//                 />
+//                 <YAxis
+//                   yAxisId="ctwa"
+//                   orientation="right"
+//                   stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }}
+//                 />
+//                 <Tooltip content={<ChartTooltip />} />
+//                 <Area
+//                   yAxisId="ctwa"
+//                   type="monotone" dataKey="ctwa_received" name="CTWA"
+//                   stroke="#06b6d4" strokeWidth={1.5}
+//                   fill="url(#ctwaGrad)"
+//                   dot={false}
+//                 />
+//                 <Line
+//                   yAxisId="loss"
+//                   type="monotone" dataKey="loss_pct" name="Loss %"
+//                   stroke="#ef4444" strokeWidth={2.5}
+//                   dot={{ fill: "#ef4444", r: 4, strokeWidth: 0 }}
+//                   activeDot={{ r: 6, fill: "#ef4444" }}
+//                 />
+//               </AreaChart>
+//             </ResponsiveContainer>
+//           </div>
+
+//           {/* Volume + breakdown side by side */}
+//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+//             <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//               <h3 className="text-sm font-semibold text-white mb-4">Received vs Enqueued</h3>
+//               <ResponsiveContainer width="100%" height={180}>
+//                 <BarChart data={chartData}>
+//                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+//                   <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                   <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                   <Tooltip content={<ChartTooltip />} />
+//                   <Bar dataKey="received" name="Msg Received" fill="#1d4ed8" radius={[3,3,0,0]} />
+//                   <Bar dataKey="enqueued" name="Msg Enqueued" fill="#22c55e" radius={[3,3,0,0]} />
+//                   <Bar dataKey="status_enqueued" name="Statuses" fill="#475569" radius={[3,3,0,0]} />
+//                   <Bar dataKey="ctwa_received" name="CTWA" fill="#06b6d4" radius={[3,3,0,0]} />
+//                 </BarChart>
+//               </ResponsiveContainer>
+//             </div>
+
+//             <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//               <h3 className="text-sm font-semibold text-white mb-4">Drop Breakdown by Cause</h3>
+//               <ResponsiveContainer width="100%" height={180}>
+//                 <BarChart data={chartData}>
+//                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+//                   <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                   <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                   <Tooltip content={<ChartTooltip />} />
+//                   <Bar dataKey="dedup_dropped"    name="Dedup (OK)"        fill="#475569" stackId="a" />
+//                   <Bar dataKey="inactive_dropped" name="Inactive Cache"    fill="#ef4444" stackId="a" />
+//                   <Bar dataKey="failed"           name="Enqueue Failed"    fill="#f59e0b" stackId="a" />
+//                   <Bar dataKey="missed"           name="Unaccounted"       fill="#7c3aed" stackId="a" radius={[3,3,0,0]} />
+//                 </BarChart>
+//               </ResponsiveContainer>
+//             </div>
+//           </div>
+
+//           {/* Bug #1 alert */}
+//           {(inactiveCached.length > 0 || totals.inactive > 0) && (
+//             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
+//               <div className="flex items-start gap-3">
+//                 <ShieldAlert size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
+//                 <div>
+//                   <p className="text-sm font-bold text-red-400 mb-1">
+//                     Bug #1 Detected — inactive_phone cache poisoning
+//                   </p>
+//                   <p className="text-xs text-red-400/70 leading-relaxed">
+//                     <strong>{fmt(totals.inactive)}</strong> webhook(s) were silently dropped because the{" "}
+//                     <code className="bg-red-900/40 px-1.5 py-0.5 rounded text-red-300">
+//                       inactive_phone:{"{phone_id}"}
+//                     </code>{" "}
+//                     Redis key was set with <code className="bg-red-900/40 px-1.5 py-0.5 rounded text-red-300">timeout=None</code>.
+//                     Meta received 200 responses but nothing was processed.{" "}
+//                     Switch to the <strong>Client Health</strong> tab to clear affected caches.
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       {/* ══════════════════════ CLIENTS TAB ══════════════════════ */}
+//       {view === "clients" && (
+//         <div className="space-y-4">
+//           <div className="flex items-center justify-between">
+//             <div>
+//               <h2 className="text-base font-semibold text-white">Per-Client Webhook Health</h2>
+//               <p className="text-xs text-slate-500 mt-0.5">
+//                 Sorted by loss rate · 🔴 = inactive_phone cache bug active · 🔵 = CTWA active
+//               </p>
+//             </div>
+//             <div className="flex gap-3 text-xs text-slate-500">
+//               <span>Total: <strong className="text-white">{clients.length}</strong></span>
+//               <span>Critical: <strong className="text-red-400">{criticalClients.length}</strong></span>
+//               <span>Cache issues: <strong className="text-red-400">{inactiveCached.length}</strong></span>
+//               <span>CTWA active: <strong className="text-cyan-400">{ctwaActiveClients.length}</strong></span>
+//             </div>
+//           </div>
+
+//           {clients.length === 0 ? (
+//             <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
+//               <Activity size={32} className="text-slate-600 mx-auto mb-3" />
+//               <p className="text-slate-500 text-sm">No client data available</p>
+//             </div>
+//           ) : (
+//             <div className="space-y-3">
+//               {clients.map(client => {
+//                 const isOpen  = selected?.client_id === client.client_id;
+//                 const hasCTWA = (client.ctwa_total_7d ?? 0) > 0;
+//                 return (
+//                   <div
+//                     key={client.client_id}
+//                     className={`bg-slate-900/50 rounded-2xl border transition-all overflow-hidden ${
+//                       client.inactive_phone_cached
+//                         ? "border-red-500/30"
+//                         : client.health === "degraded"
+//                         ? "border-amber-500/20"
+//                         : "border-slate-800/50"
+//                     }`}
+//                   >
+//                     <div
+//                       className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-800/30 transition-colors flex-wrap"
+//                       onClick={() => setSelected(isOpen ? null : client)}
+//                     >
+//                       <div className="flex-1 min-w-[180px]">
+//                         <p className="text-sm font-semibold text-white">
+//                           {client.inactive_phone_cached && <span className="text-red-400 mr-1">🔴</span>}
+//                           {hasCTWA && <span className="text-cyan-400 mr-1">🔵</span>}
+//                           {client.username}
+//                         </p>
+//                         <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
+//                           phone_id: {client.phone_id}
+//                         </p>
+//                       </div>
+
+//                       <HealthBadge health={client.health} />
+
+//                       <div className="text-right">
+//                         <p className="text-[10px] text-slate-500 uppercase tracking-wide">7d loss</p>
+//                         <p className="text-xl font-extrabold font-mono" style={{ color: lossColor(client.loss_pct_7d) }}>
+//                           {pct(client.loss_pct_7d)}
+//                         </p>
+//                       </div>
+
+//                       <div className="text-right">
+//                         <p className="text-[10px] text-slate-500 uppercase tracking-wide">Received</p>
+//                         <p className="text-base font-bold text-white font-mono">{fmt(client.totals?.received)}</p>
+//                       </div>
+
+//                       <div className="text-right">
+//                         <p className="text-[10px] text-slate-500 uppercase tracking-wide">Missed</p>
+//                         <p className={`text-base font-bold font-mono ${(client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"}`}>
+//                           {fmt(client.totals?.missed)}
+//                         </p>
+//                       </div>
+
+//                       {hasCTWA && (
+//                         <div className="text-right">
+//                           <p className="text-[10px] text-cyan-500/70 uppercase tracking-wide">CTWA</p>
+//                           <p className="text-base font-bold font-mono text-cyan-400">{fmt(client.ctwa_total_7d)}</p>
+//                         </div>
+//                       )}
+
+//                       {client.inactive_phone_cached && (
+//                         <button
+//                           onClick={e => {
+//                             e.stopPropagation();
+//                             clearInactiveCache(client.client_id, client.phone_id);
+//                           }}
+//                           disabled={clearLoading === client.client_id}
+//                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 disabled:opacity-50 transition-all"
+//                         >
+//                           {clearLoading === client.client_id
+//                             ? <RefreshCw size={12} className="animate-spin" />
+//                             : <Trash2 size={12} />}
+//                           Fix Cache
+//                         </button>
+//                       )}
+
+//                       <div className="text-slate-600">
+//                         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+//                       </div>
+//                     </div>
+
+//                     {/* Expanded drill-down */}
+//                     {isOpen && (
+//                       <div className="px-5 pb-5 pt-0 border-t border-slate-800/50">
+//                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+//                           {[
+//                             ["Msg Received", client.totals?.received, "text-white"],
+//                             ["Msg Enqueued", client.totals?.enqueued, "text-emerald-400"],
+//                             ["Msg Missed",  client.totals?.missed,  (client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"],
+//                             ["CTWA",     client.totals?.ctwa,     "text-cyan-400"],
+//                           ].map(([k, v, cls]) => (
+//                             <div key={k} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/30">
+//                               <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{k}</p>
+//                               <p className={`text-2xl font-extrabold font-mono ${cls}`}>{fmt(v)}</p>
+//                             </div>
+//                           ))}
+//                         </div>
+
+//                         {client.inactive_phone_cached && (
+//                           <div className="mt-3 text-xs text-red-400/70 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
+//                             ℹ️ Click <strong>Fix Cache</strong> to delete the{" "}
+//                             <code className="bg-red-900/30 px-1 rounded">inactive_phone:{client.phone_id}</code>{" "}
+//                             Redis key. Confirm subscription is <strong>ACTIVE</strong> in DB before clearing.
+//                           </div>
+//                         )}
+//                       </div>
+//                     )}
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       {/* ══════════════════════ CTWA TAB ══════════════════════ */}
+//       {view === "ctwa" && (
+//         <div className="space-y-6">
+
+//           {/* Header */}
+//           <div className="flex items-start justify-between gap-4 flex-wrap">
+//             <div>
+//               <h2 className="text-base font-semibold text-white flex items-center gap-2">
+//                 <MousePointerClick size={16} className="text-cyan-400" />
+//                 Click-To-WhatsApp Ads Monitoring
+//               </h2>
+//               <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+//                 Tracks the <strong className="text-slate-300">first message</strong> sent by users who clicked a WhatsApp ad (CTWA).
+//                 Meta attaches a <code className="bg-slate-800 px-1.5 py-0.5 rounded text-cyan-300 text-[11px]">referral.ctwa_clid</code> field to these messages.
+//                 If a client's CTWA count is 0 but ads are running, the first message is being dropped — check their health tab.
+//               </p>
+//             </div>
+//             <button
+//               onClick={fetchCtwa}
+//               className="flex items-center gap-1.5 bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white text-sm rounded-xl px-3 py-2 transition-all"
+//             >
+//               <RefreshCw size={14} className={ctwaLoading ? "animate-spin" : ""} />
+//               Refresh
+//             </button>
+//           </div>
+
+//           {/* CTWA summary cards */}
+//           <div className="flex gap-4 flex-wrap">
+//             <MetricCard
+//               label="Total CTWA Messages"
+//               value={fmt(totals.ctwa)}
+//               sub={`Last ${days} days`}
+//               accent="cyan"
+//               icon={MousePointerClick}
+//             />
+//             <MetricCard
+//               label="Clients with CTWA"
+//               value={fmt(ctwaActiveClients.length)}
+//               sub="Running ad campaigns"
+//               accent="amber"
+//               icon={Megaphone}
+//             />
+//             <MetricCard
+//               label="CTWA of Total Traffic"
+//               value={totals.received > 0 ? pct((totals.ctwa / totals.received) * 100) : "0.0%"}
+//               sub="Ads-driven share"
+//               accent="emerald"
+//               icon={BarChart2}
+//             />
+//           </div>
+
+//           {/* CTWA volume chart */}
+//           <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//             <h3 className="text-sm font-semibold text-white mb-4">Daily CTWA Volume</h3>
+//             <ResponsiveContainer width="100%" height={200}>
+//               <AreaChart data={chartData}>
+//                 <defs>
+//                   <linearGradient id="ctwaFill" x1="0" y1="0" x2="0" y2="1">
+//                     <stop offset="5%"  stopColor="#06b6d4" stopOpacity={0.3} />
+//                     <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}   />
+//                   </linearGradient>
+//                 </defs>
+//                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+//                 <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                 <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                 <Tooltip content={<ChartTooltip />} />
+//                 <Area
+//                   type="monotone" dataKey="ctwa_received" name="CTWA Messages"
+//                   stroke="#06b6d4" strokeWidth={2.5}
+//                   fill="url(#ctwaFill)"
+//                   dot={{ fill: "#06b6d4", r: 4, strokeWidth: 0 }}
+//                   activeDot={{ r: 6, fill: "#06b6d4" }}
+//                 />
+//               </AreaChart>
+//             </ResponsiveContainer>
+//           </div>
+
+//           {/* Per-client CTWA breakdown */}
+//           {ctwaLoading ? (
+//             <div className="flex items-center justify-center py-12">
+//               <LoadingSpinner />
+//             </div>
+//           ) : ctwaClients.length === 0 ? (
+//             <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
+//               <MousePointerClick size={32} className="text-slate-600 mx-auto mb-3" />
+//               <p className="text-slate-400 font-semibold">No CTWA activity in the last {days} days</p>
+//               <p className="text-slate-500 text-sm mt-1">
+//                 CTWA messages appear here when users click WhatsApp ads and send the first message.
+//               </p>
+//             </div>
+//           ) : (
+//             <div className="space-y-3">
+//               <div className="flex items-center justify-between">
+//                 <h3 className="text-sm font-semibold text-white">Per-Client Breakdown</h3>
+//                 <p className="text-xs text-slate-500">{ctwaClients.length} clients with ad traffic</p>
+//               </div>
+
+//               {/* Table header */}
+//               <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-2 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
+//                 <div className="col-span-3">Client</div>
+//                 <div className="col-span-2 text-right">CTWA Total</div>
+//                 <div className="col-span-2 text-right">All Received</div>
+//                 <div className="col-span-2 text-right">CTWA Rate</div>
+//                 <div className="col-span-3">Daily Trend</div>
+//               </div>
+
+//               {ctwaClients.map(client => (
+//                 <div
+//                   key={client.client_id}
+//                   className="bg-slate-900/50 border border-cyan-500/10 rounded-2xl px-5 py-4 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center hover:border-cyan-500/20 transition-all"
+//                 >
+//                   {/* Identity */}
+//                   <div className="sm:col-span-3">
+//                     <p className="text-sm font-semibold text-white">{client.username}</p>
+//                     <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
+//                       {client.phone_id}
+//                     </p>
+//                   </div>
+
+//                   {/* CTWA total */}
+//                   <div className="sm:col-span-2 sm:text-right">
+//                     <p className="text-xl font-extrabold font-mono text-cyan-400">{fmt(client.ctwa_total)}</p>
+//                     <p className="text-[10px] text-slate-500 uppercase tracking-wide">CTWA msgs</p>
+//                   </div>
+
+//                   {/* Total received */}
+//                   <div className="sm:col-span-2 sm:text-right">
+//                     <p className="text-base font-bold font-mono text-white">{fmt(client.total_received)}</p>
+//                     <p className="text-[10px] text-slate-500 uppercase tracking-wide">all msgs</p>
+//                   </div>
+
+//                   {/* CTWA rate */}
+//                   <div className="sm:col-span-2 sm:text-right">
+//                     <p className="text-base font-bold font-mono text-amber-400">{pct(client.ctwa_rate)}</p>
+//                     <p className="text-[10px] text-slate-500 uppercase tracking-wide">of traffic</p>
+//                   </div>
+
+//                   {/* Sparkline */}
+//                   <div className="sm:col-span-3 flex items-center gap-3">
+//                     <Sparkline data={client.daily} dataKey="ctwa" color="#06b6d4" />
+//                     <div className="text-[10px] text-slate-500 leading-relaxed hidden lg:block">
+//                       {client.daily?.filter(d => d.ctwa > 0).length ?? 0} active days
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+
+//           {/* What is CTWA explainer */}
+//           <div className="bg-cyan-500/5 border border-cyan-500/15 rounded-2xl p-5">
+//             <div className="flex items-start gap-3">
+//               <MousePointerClick size={18} className="text-cyan-400 mt-0.5 flex-shrink-0" />
+//               <div>
+//                 <p className="text-sm font-bold text-cyan-400 mb-2">How CTWA detection works</p>
+//                 <div className="space-y-1.5 text-xs text-cyan-400/60 leading-relaxed">
+//                   <p>
+//                     When a user clicks a <strong className="text-cyan-400/80">WhatsApp Ad</strong> on Facebook or Instagram, Meta opens
+//                     WhatsApp and pre-populates a message. The first message they send includes a{" "}
+//                     <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">referral</code> object with
+//                     a unique <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">ctwa_clid</code> per click.
+//                   </p>
+//                   <p>
+//                     The webhook service calls <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">
+//                     _detect_and_track_ctwa()</code> <strong className="text-cyan-400/80">before</strong> the dedup check,
+//                     so every CTWA attempt is counted — including Meta retries.
+//                   </p>
+//                   <p>
+//                     If a client's CTWA count here is <strong className="text-cyan-400/80">0</strong> but they're running ads,
+//                     their WABA subscription may be broken. Check <strong>Client Health</strong> tab and verify
+//                     with <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">
+//                     get_waba_subscription_status(waba_id, token)</code>.
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ══════════════════════ DLQ TAB ══════════════════════ */}
+//       {view === "dlq" && (
+//         <div className="space-y-6">
+
+//           <div className="flex items-start justify-between gap-4">
+//             <div>
+//               <h2 className="text-base font-semibold text-white">Dead Letter Queue</h2>
+//               <p className="text-xs text-slate-500 mt-0.5 max-w-lg leading-relaxed">
+//                 Webhook payloads that failed to enqueue. Stored in Redis, auto-replayed every 60 seconds.
+//               </p>
+//             </div>
+//             <button
+//               onClick={replayDLQ}
+//               disabled={replayLoading || dlq.total === 0}
+//               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+//             >
+//               {replayLoading
+//                 ? <><RefreshCw size={14} className="animate-spin" /> Replaying…</>
+//                 : <><RotateCcw size={14} /> Replay All ({dlq.total})</>
+//               }
+//             </button>
+//           </div>
+
+//           <div className="flex gap-4 flex-wrap">
+//             <MetricCard label="DLQ Depth"    value={fmt(dlq.total)}  sub="Failed enqueues"      warning={dlq.total > 0} icon={Inbox} />
+//             <MetricCard label="Auto-Replay"  value="Every 60s"       sub="Celery beat task"      accent="emerald" icon={RotateCcw} />
+//             <MetricCard label="Max TTL"      value="24h"             sub="Older items discarded" accent="slate"   icon={Clock} />
+//           </div>
+
+//           {dlq.total === 0 ? (
+//             <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-12 text-center">
+//               <CheckCircle2 size={36} className="text-emerald-400 mx-auto mb-3" />
+//               <p className="text-emerald-400 font-bold text-base">Dead Letter Queue is empty</p>
+//               <p className="text-slate-500 text-sm mt-1">All webhook enqueues are succeeding.</p>
+//             </div>
+//           ) : (
+//             <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5">
+//               <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
+//                 <AlertTriangle size={16} />
+//                 {dlq.total} message(s) waiting for replay
+//               </div>
+//               <p className="text-xs text-slate-500 leading-relaxed">
+//                 These messages were received but Celery enqueue failed. The{" "}
+//                 <code className="bg-slate-800 px-1.5 rounded text-slate-300">replay_dlq_task</code> Celery beat
+//                 task runs every 60 seconds. Click <strong className="text-amber-400">Replay All</strong> to process immediately.
+//               </p>
+
+//               {dlq.items?.length > 0 && (
+//                 <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+//                   {dlq.items.map((item, i) => (
+//                     <div key={i} className="flex items-center justify-between px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/30 text-xs">
+//                       <div>
+//                         <span className="font-mono text-slate-300">{item.message_id ?? `item-${i}`}</span>
+//                         {item.client_id && <span className="text-slate-500 ml-2">client #{item.client_id}</span>}
+//                       </div>
+//                       {item.timestamp && (
+//                         <div className="flex items-center gap-1 text-slate-500">
+//                           <Clock size={10} />
+//                           {new Date(item.timestamp * 1000).toLocaleTimeString()}
+//                         </div>
+//                       )}
+//                     </div>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           )}
+
+//           <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//             <h3 className="text-sm font-semibold text-white mb-5">How the DLQ works</h3>
+//             <div className="space-y-4">
+//               <DLQFlowStep step="1" label="Webhook arrives"          desc="Meta POSTs to /api/whatsapp/webhook/. WebhookAuditMiddleware logs raw payload before any business logic." />
+//               <DLQFlowStep step="2" label="Atomic dedup check"       desc="cache.add(msg_lock:{id}) — atomic Redis SET NX. If already seen, returns 200 immediately. No duplicates." />
+//               <DLQFlowStep step="3" label="Celery enqueue attempt"   desc="process_inbound_message.delay(). If broker healthy → task queued → HTTP 200 back to Meta." />
+//               <DLQFlowStep step="4" label="Enqueue fails"            desc="Broker saturated or Redis pool exhausted. Dedup lock is CLEARED so Meta's retry can succeed." />
+//               <DLQFlowStep step="5" label="DLQ storage"              desc="Failed payload saved to dlq:failed_webhooks Redis list with timestamp and client context." />
+//               <DLQFlowStep step="6" label="Returns HTTP 500"         desc="Meta receives 500 → schedules retry ~20s. Auto-replay task also handles it every 60s." />
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ══════════════════════ HOURLY FILTER TAB ══════════════════════ */}
+//       {view === "hourly" && (
+//         <div className="space-y-6">
+
+//           {/* Header */}
+//           <div>
+//             <h2 className="text-base font-semibold text-white flex items-center gap-2">
+//               <Clock size={16} className="text-amber-400" />
+//               Time Range Filter
+//             </h2>
+//             <p className="text-xs text-slate-500 mt-1">
+//               Query message volume for any time window within a single day.
+//               Powered by hourly Redis buckets — data available from deploy date onwards.
+//             </p>
+//           </div>
+
+//           {/* Filter Controls */}
+//           <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-5">
+//             <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mb-4">Filter</p>
+//             <div className="flex flex-wrap gap-4 items-end">
+
+//               {/* Date */}
+//               <div className="flex flex-col gap-1.5">
+//                 <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Date</label>
+//                 <input
+//                   type="date"
+//                   value={hourlyDate}
+//                   max={new Date().toISOString().slice(0,10)}
+//                   onChange={e => setHourlyDate(e.target.value)}
+//                   className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+//                 />
+//               </div>
+
+//               {/* From hour */}
+//               <div className="flex flex-col gap-1.5">
+//                 <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">From</label>
+//                 <select
+//                   value={hourlyFrom}
+//                   onChange={e => {
+//                     const v = Number(e.target.value);
+//                     setHourlyFrom(v);
+//                     if (v > hourlyTo) setHourlyTo(v);
+//                   }}
+//                   className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+//                 >
+//                   {Array.from({length: 24}, (_, i) => (
+//                     <option key={i} value={i}>{String(i).padStart(2,"0")}:00</option>
+//                   ))}
+//                 </select>
+//               </div>
+
+//               {/* To hour */}
+//               <div className="flex flex-col gap-1.5">
+//                 <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">To</label>
+//                 <select
+//                   value={hourlyTo}
+//                   onChange={e => setHourlyTo(Number(e.target.value))}
+//                   className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+//                 >
+//                   {Array.from({length: 24}, (_, i) => i).filter(i => i >= hourlyFrom).map(i => (
+//                     <option key={i} value={i}>{String(i).padStart(2,"0")}:59</option>
+//                   ))}
+//                 </select>
+//               </div>
+
+//               {/* Client filter */}
+//               <div className="flex flex-col gap-1.5 min-w-[160px]">
+//                 <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Client</label>
+//                 <select
+//                   value={hourlyClient}
+//                   onChange={e => setHourlyClient(e.target.value)}
+//                   className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
+//                 >
+//                   <option value="">All clients (global)</option>
+//                   {clients.map(c => (
+//                     <option key={c.client_id} value={c.client_id}>{c.username}</option>
+//                   ))}
+//                 </select>
+//               </div>
+
+//               {/* Apply button */}
+//               <button
+//                 onClick={fetchHourly}
+//                 disabled={hourlyLoading}
+//                 className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-50 transition-all"
+//               >
+//                 {hourlyLoading
+//                   ? <><RefreshCw size={14} className="animate-spin" /> Loading…</>
+//                   : <><Zap size={14} /> Apply</>
+//                 }
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Results */}
+//           {hourlyLoading && (
+//             <div className="flex items-center justify-center py-16">
+//               <LoadingSpinner />
+//             </div>
+//           )}
+
+//           {!hourlyLoading && hourlyData && (
+//             <div className="space-y-5">
+
+//               {/* Window label */}
+//               <div className="flex items-center gap-3">
+//                 <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-lg">
+//                   <Clock size={12} />
+//                   {hourlyData.date} · {hourlyData.window}
+//                   {hourlyData.client_id && (
+//                     <span className="text-amber-300/70 ml-1">
+//                       · {clients.find(c => String(c.client_id) === String(hourlyData.client_id))?.username ?? `Client #${hourlyData.client_id}`}
+//                     </span>
+//                   )}
+//                 </div>
+//               </div>
+
+//               {/* Summary cards */}
+//               <div className="flex gap-4 flex-wrap">
+//                 <MetricCard
+//                   label="Messages Received"
+//                   value={fmt(hourlyData.summary?.inbound_message_received)}
+//                   sub="Inbound customer msgs"
+//                   accent="amber"
+//                   icon={Activity}
+//                 />
+//                 <MetricCard
+//                   label="Enqueued"
+//                   value={fmt(hourlyData.summary?.message_enqueued)}
+//                   sub="Reached Celery"
+//                   accent="emerald"
+//                   icon={CheckCircle2}
+//                 />
+//                 <MetricCard
+//                   label="Status Callbacks"
+//                   value={fmt(hourlyData.summary?.status_enqueued)}
+//                   sub="sent/delivered/read"
+//                   accent="slate"
+//                   icon={Activity}
+//                 />
+//                 <MetricCard
+//                   label="Missed"
+//                   value={fmt(hourlyData.summary?.missed)}
+//                   sub={`${hourlyData.summary?.loss_pct ?? 0}% loss`}
+//                   warning={(hourlyData.summary?.missed ?? 0) > 0}
+//                   icon={TrendingDown}
+//                 />
+//                 {(hourlyData.summary?.ctwa_message_received ?? 0) > 0 && (
+//                   <MetricCard
+//                     label="CTWA Messages"
+//                     value={fmt(hourlyData.summary?.ctwa_message_received)}
+//                     sub="Ad-driven first msgs"
+//                     accent="cyan"
+//                     icon={MousePointerClick}
+//                   />
+//                 )}
+//               </div>
+
+//               {/* Hourly bar chart */}
+//               {hourlyData.per_hour?.length > 0 && (
+//                 <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
+//                   <h3 className="text-sm font-semibold text-white mb-4">
+//                     Messages per Hour
+//                     <span className="text-slate-500 font-normal ml-2 text-xs">
+//                       {String(hourlyData.from_hour).padStart(2,"0")}:00 – {String(hourlyData.to_hour).padStart(2,"0")}:59
+//                     </span>
+//                   </h3>
+//                   <ResponsiveContainer width="100%" height={220}>
+//                     <BarChart data={hourlyData.per_hour} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+//                       <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+//                       <XAxis
+//                         dataKey="label"
+//                         stroke="#475569"
+//                         tick={{ fill: "#64748b", fontSize: 11 }}
+//                       />
+//                       <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+//                       <Tooltip content={<ChartTooltip />} />
+//                       <Bar dataKey="inbound_message_received" name="Received" fill="#1d4ed8" radius={[4,4,0,0]} />
+//                       <Bar dataKey="message_enqueued"         name="Enqueued" fill="#22c55e" radius={[4,4,0,0]} />
+//                       <Bar dataKey="status_enqueued"          name="Statuses" fill="#334155" radius={[4,4,0,0]} />
+//                       {hourlyData.per_hour.some(r => r.ctwa_message_received > 0) && (
+//                         <Bar dataKey="ctwa_message_received" name="CTWA" fill="#06b6d4" radius={[4,4,0,0]} />
+//                       )}
+//                     </BarChart>
+//                   </ResponsiveContainer>
+//                 </div>
+//               )}
+
+//               {/* Per-hour table */}
+//               <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl overflow-hidden">
+//                 <div className="px-5 py-3 border-b border-slate-800/50">
+//                   <h3 className="text-sm font-semibold text-white">Hourly Breakdown</h3>
+//                 </div>
+//                 <div className="overflow-x-auto">
+//                   <table className="w-full text-sm">
+//                     <thead>
+//                       <tr className="border-b border-slate-800/50">
+//                         {["Hour", "Received", "Enqueued", "Statuses", "CTWA", "Missed", "Loss %"].map(h => (
+//                           <th key={h} className="px-4 py-2.5 text-left text-[10px] text-slate-500 font-semibold uppercase tracking-widest">
+//                             {h}
+//                           </th>
+//                         ))}
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {hourlyData.per_hour.map((row, i) => (
+//                         <tr
+//                           key={row.hour}
+//                           className={`border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors ${
+//                             row.missed > 0 ? "bg-red-500/5" : ""
+//                           }`}
+//                         >
+//                           <td className="px-4 py-2.5 font-mono text-slate-300 font-semibold">{row.label}</td>
+//                           <td className="px-4 py-2.5 font-mono text-white">{fmt(row.inbound_message_received)}</td>
+//                           <td className="px-4 py-2.5 font-mono text-emerald-400">{fmt(row.message_enqueued)}</td>
+//                           <td className="px-4 py-2.5 font-mono text-slate-500">{fmt(row.status_enqueued)}</td>
+//                           <td className="px-4 py-2.5 font-mono text-cyan-400">
+//                             {row.ctwa_message_received > 0 ? fmt(row.ctwa_message_received) : <span className="text-slate-700">—</span>}
+//                           </td>
+//                           <td className="px-4 py-2.5 font-mono">
+//                             <span className={row.missed > 0 ? "text-red-400 font-bold" : "text-slate-600"}>
+//                               {fmt(row.missed)}
+//                             </span>
+//                           </td>
+//                           <td className="px-4 py-2.5">
+//                             {row.inbound_message_received > 0 ? (
+//                               <span
+//                                 className="text-xs font-bold font-mono px-2 py-0.5 rounded-md"
+//                                 style={{
+//                                   color: lossColor(row.missed / row.inbound_message_received * 100),
+//                                   background: lossBg(row.missed / row.inbound_message_received * 100).bg,
+//                                 }}
+//                               >
+//                                 {(row.missed / row.inbound_message_received * 100).toFixed(1)}%
+//                               </span>
+//                             ) : (
+//                               <span className="text-slate-700 text-xs">—</span>
+//                             )}
+//                           </td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                     {/* Totals row */}
+//                     <tfoot>
+//                       <tr className="border-t-2 border-slate-700/50 bg-slate-800/30">
+//                         <td className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</td>
+//                         <td className="px-4 py-3 font-mono font-bold text-white">{fmt(hourlyData.summary?.inbound_message_received)}</td>
+//                         <td className="px-4 py-3 font-mono font-bold text-emerald-400">{fmt(hourlyData.summary?.message_enqueued)}</td>
+//                         <td className="px-4 py-3 font-mono font-bold text-slate-400">{fmt(hourlyData.summary?.status_enqueued)}</td>
+//                         <td className="px-4 py-3 font-mono font-bold text-cyan-400">
+//                           {(hourlyData.summary?.ctwa_message_received ?? 0) > 0
+//                             ? fmt(hourlyData.summary.ctwa_message_received)
+//                             : <span className="text-slate-700">—</span>}
+//                         </td>
+//                         <td className="px-4 py-3 font-mono font-bold">
+//                           <span className={(hourlyData.summary?.missed ?? 0) > 0 ? "text-red-400" : "text-slate-600"}>
+//                             {fmt(hourlyData.summary?.missed)}
+//                           </span>
+//                         </td>
+//                         <td className="px-4 py-3">
+//                           <span
+//                             className="text-sm font-extrabold font-mono px-2 py-1 rounded-lg"
+//                             style={{
+//                               color: lossColor(hourlyData.summary?.loss_pct ?? 0),
+//                               background: lossBg(hourlyData.summary?.loss_pct ?? 0).bg,
+//                             }}
+//                           >
+//                             {hourlyData.summary?.loss_pct ?? 0}%
+//                           </span>
+//                         </td>
+//                       </tr>
+//                     </tfoot>
+//                   </table>
+//                 </div>
+//               </div>
+
+//               {/* Zero state within results */}
+//               {hourlyData.summary?.inbound_message_received === 0 && (
+//                 <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 text-center">
+//                   <Clock size={28} className="text-slate-600 mx-auto mb-2" />
+//                   <p className="text-slate-400 font-semibold text-sm">No messages in this window</p>
+//                   <p className="text-slate-600 text-xs mt-1">
+//                     {hourlyData.date === new Date().toISOString().slice(0,10)
+//                       ? "Hourly data only available from when this version was deployed."
+//                       : "No customer messages arrived during this time range."}
+//                   </p>
+//                 </div>
+//               )}
+//             </div>
+//           )}
+
+//           {/* Null state — before first fetch */}
+//           {!hourlyLoading && !hourlyData && (
+//             <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
+//               <Clock size={36} className="text-slate-700 mx-auto mb-3" />
+//               <p className="text-slate-400 font-semibold">Set a time range and click Apply</p>
+//               <p className="text-slate-600 text-xs mt-1 max-w-sm mx-auto">
+//                 Select a date, from/to hours, and optionally a specific client. Hourly buckets are stored
+//                 separately from daily counters — data starts from when this version was deployed.
+//               </p>
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//     </div>
+//   );
+// }
+
+// src/admin/pages/WebhookDashboardPage.jsx — Premium theme applied
+// ALL business logic, charts, DLQ, CTWA, hourly filter — 100% preserved.
+// Changes: consistent bg-[#0d1120], border-white/[0.04], refined spacing.
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
-} from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { adminApi } from "../utils/api";
-import {
-  Radio, AlertTriangle, CheckCircle2, RefreshCw,
-  Inbox, ShieldAlert, Zap, TrendingDown, Activity,
-  ChevronDown, ChevronUp, Trash2, RotateCcw, Clock,
-  MousePointerClick, BarChart2, Megaphone,
-} from "lucide-react";
+import { Radio, AlertTriangle, CheckCircle2, RefreshCw, Inbox, ShieldAlert, Zap, TrendingDown, Activity, ChevronDown, ChevronUp, Trash2, RotateCcw, Clock, MousePointerClick, BarChart2, Megaphone } from "lucide-react";
 import { LoadingSpinner } from "../components/UIComponents";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-const fmt       = (n) => (n ?? 0).toLocaleString();
-const pct       = (n) => ((n ?? 0).toFixed(1)) + "%";
-const shortDate = (d) => (d ?? "").slice(5); // "2026-02-22" → "02-22"
-
-function lossColor(v) {
-  if (v > 10) return "#ef4444";
-  if (v > 2)  return "#f59e0b";
-  return "#22c55e";
-}
-function lossBg(v) {
-  if (v > 10) return { bg: "#2e0a0a", border: "#dc2626" };
-  if (v > 2)  return { bg: "#2e2008", border: "#d97706" };
-  return       { bg: "#0d2e1c", border: "#16a34a" };
-}
-
-const HEALTH_CONFIG = {
-  healthy:  { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "Healthy" },
-  degraded: { bg: "bg-amber-500/10",   text: "text-amber-400",   border: "border-amber-500/20",   label: "Degraded" },
-  critical: { bg: "bg-red-500/10",     text: "text-red-400",     border: "border-red-500/20",     label: "Critical" },
-  unknown:  { bg: "bg-slate-500/10",   text: "text-slate-400",   border: "border-slate-500/20",   label: "Unknown"  },
-};
-
-// ── sub-components ────────────────────────────────────────────────────────────
-
-function HealthBadge({ health }) {
-  const c = HEALTH_CONFIG[health] || HEALTH_CONFIG.unknown;
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${c.bg} ${c.text} ${c.border}`}>
-      {c.label}
-    </span>
-  );
-}
+const fmt = (n) => (n ?? 0).toLocaleString();
+const pct = (n) => ((n ?? 0).toFixed(1)) + "%";
+const shortDate = (d) => (d ?? "").slice(5);
+function lossColor(v) { return v > 10 ? "#ef4444" : v > 2 ? "#f59e0b" : "#22c55e"; }
+function lossBg(v) { return v > 10 ? { bg: "#1a0505", border: "#dc2626" } : v > 2 ? { bg: "#1a1505", border: "#d97706" } : { bg: "#051a0e", border: "#16a34a" }; }
 
 function MetricCard({ label, value, sub, warning, accent = "amber", icon: Icon }) {
-  const accentMap = {
-    amber:   { top: "border-t-amber-400",   val: "text-amber-400",   icon: "text-amber-400/40"   },
-    emerald: { top: "border-t-emerald-500", val: "text-emerald-400", icon: "text-emerald-400/40" },
-    red:     { top: "border-t-red-500",     val: "text-red-400",     icon: "text-red-400/40"     },
-    slate:   { top: "border-t-slate-600",   val: "text-slate-400",   icon: "text-slate-400/40"   },
-    cyan:    { top: "border-t-cyan-500",    val: "text-cyan-400",    icon: "text-cyan-400/40"    },
-  };
-  const colors = accentMap[warning ? "red" : accent] || accentMap.amber;
+  const am = { amber: "border-t-amber-400", emerald: "border-t-emerald-500", red: "border-t-red-500", slate: "border-t-slate-600", cyan: "border-t-cyan-500" };
+  const ic = { amber: "text-amber-400/30", emerald: "text-emerald-400/30", red: "text-red-400/30", slate: "text-slate-400/30", cyan: "text-cyan-400/30" };
+  const t = warning ? "red" : accent;
   return (
-    <div className={`bg-slate-900/50 border border-slate-800/50 rounded-2xl p-5 flex-1 min-w-[130px] border-t-2 ${colors.top} transition-all hover:border-slate-700/50 relative overflow-hidden`}>
-      {Icon && (
-        <Icon size={40} className={`absolute -bottom-2 -right-2 ${colors.icon}`} strokeWidth={1} />
-      )}
-      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</p>
-      <p className={`text-2xl font-extrabold font-mono leading-none ${warning ? "text-red-400" : "text-white"}`}>{value}</p>
-      {sub && <p className="text-xs text-slate-600 mt-1.5">{sub}</p>}
+    <div className={`bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5 flex-1 min-w-[120px] border-t-2 ${am[t] || am.amber} relative overflow-hidden`}>
+      {Icon && <Icon size={36} className={`absolute -bottom-1 -right-1 ${ic[t] || ic.amber}`} strokeWidth={1} />}
+      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">{label}</p>
+      <p className={`text-xl sm:text-2xl font-extrabold font-mono leading-none ${warning ? "text-red-400" : "text-white"}`}>{value}</p>
+      {sub && <p className="text-[10px] text-slate-600 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -71,11 +1312,11 @@ function MetricCard({ label, value, sub, warning, accent = "amber", icon: Icon }
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs shadow-2xl">
-      <p className="text-slate-400 font-semibold mb-2">{label}</p>
+    <div className="bg-[#111827] border border-white/[0.08] rounded-xl p-2.5 text-[11px] shadow-2xl">
+      <p className="text-slate-400 font-semibold mb-1.5">{label}</p>
       {payload.map(p => (
-        <div key={p.name} className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
+        <div key={p.name} className="flex items-center gap-1.5 mb-0.5">
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.color }} />
           <span className="text-slate-400">{p.name}:</span>
           <span className="text-white font-bold font-mono">{fmt(p.value)}</span>
         </div>
@@ -84,1198 +1325,324 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function DLQFlowStep({ step, label, desc }) {
-  return (
-    <div className="flex gap-3 items-start">
-      <div className="w-6 h-6 rounded-md bg-amber-400/20 border border-amber-400/30 text-amber-400 font-bold text-[11px] flex items-center justify-center flex-shrink-0">
-        {step}
-      </div>
-      <div>
-        <p className="text-sm font-medium text-white">{label}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-// Minimal sparkline for CTWA per-client
 function Sparkline({ data, dataKey, color }) {
   if (!data?.length) return <span className="text-slate-600 text-xs">—</span>;
   return (
-    <div className="w-24 h-8">
+    <div className="w-20 h-7">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id={`sg-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={color} stopOpacity={0}   />
-            </linearGradient>
-          </defs>
-          <Area
-            type="monotone" dataKey={dataKey}
-            stroke={color} strokeWidth={1.5}
-            fill={`url(#sg-${color.replace("#","")})`}
-            dot={false}
-          />
+          <defs><linearGradient id={`sg-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={color} stopOpacity={0.3} /><stop offset="95%" stopColor={color} stopOpacity={0} /></linearGradient></defs>
+          <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={1.5} fill={`url(#sg-${color.replace("#","")})`} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
-
 export default function WebhookDashboardPage() {
-  const [view, setView]             = useState("overview");
-  const [days, setDays]             = useState(7);
-  const [timeline, setTimeline]     = useState([]);
-  const [clients, setClients]       = useState([]);
+  const [view, setView] = useState("overview");
+  const [days, setDays] = useState(7);
+  const [timeline, setTimeline] = useState([]);
+  const [clients, setClients] = useState([]);
   const [ctwaClients, setCtwaClients] = useState([]);
-  const [totalCtwa, setTotalCtwa]   = useState(0);
-  const [dlq, setDlq]               = useState({ total: 0, items: [] });
-  const [selected, setSelected]     = useState(null);
-  const [loading, setLoading]       = useState(true);
+  const [totalCtwa, setTotalCtwa] = useState(0);
+  const [dlq, setDlq] = useState({ total: 0, items: [] });
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [ctwaLoading, setCtwaLoading] = useState(false);
-  const [actionMsg, setActionMsg]   = useState(null);
+  const [actionMsg, setActionMsg] = useState(null);
   const [replayLoading, setReplayLoading] = useState(false);
-  const [clearLoading, setClearLoading]   = useState(null);
+  const [clearLoading, setClearLoading] = useState(null);
+  const [hourlyDate, setHourlyDate] = useState(() => new Date().toISOString().slice(0,10));
+  const [hourlyFrom, setHourlyFrom] = useState(0);
+  const [hourlyTo, setHourlyTo] = useState(23);
+  const [hourlyClient, setHourlyClient] = useState("");
+  const [hourlyData, setHourlyData] = useState(null);
+  const [hourlyLoading, setHourlyLoading] = useState(false);
 
-  // ── Hourly filter state ──
-  const [hourlyDate,     setHourlyDate]     = useState(() => new Date().toISOString().slice(0,10));
-  const [hourlyFrom,     setHourlyFrom]     = useState(0);
-  const [hourlyTo,       setHourlyTo]       = useState(23);
-  const [hourlyClient,   setHourlyClient]   = useState("");   // "" = global
-  const [hourlyData,     setHourlyData]     = useState(null);
-  const [hourlyLoading,  setHourlyLoading]  = useState(false);
-
-  // ── fetch ────────────────────────────────────────────────────────────────
+  const flash = (type, text) => { setActionMsg({ type, text }); setTimeout(() => setActionMsg(null), 5000); };
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [analyticsRes, dlqRes] = await Promise.all([
-        adminApi.get(`/webhook-analytics/?days=${days}`),
-        adminApi.get("/webhook-analytics/dlq/"),
-      ]);
-      setTimeline(analyticsRes.data.timeline   ?? []);
-      setClients(analyticsRes.data.clients     ?? []);
-      setTotalCtwa(analyticsRes.data.total_ctwa ?? 0);
-      setDlq({
-        total: dlqRes.data.total ?? 0,
-        items: dlqRes.data.items ?? [],
-      });
-    } catch (err) {
-      console.error("Webhook analytics fetch failed:", err);
-      flash("error", "Failed to load webhook analytics.");
-    } finally {
-      setLoading(false);
-    }
+      const [a, d] = await Promise.all([adminApi.get(`/webhook-analytics/?days=${days}`), adminApi.get("/webhook-analytics/dlq/")]);
+      setTimeline(a.data.timeline ?? []); setClients(a.data.clients ?? []); setTotalCtwa(a.data.total_ctwa ?? 0);
+      setDlq({ total: d.data.total ?? 0, items: d.data.items ?? [] });
+    } catch { flash("error", "Failed to load analytics."); }
+    finally { setLoading(false); }
   }, [days]);
 
   const fetchCtwa = useCallback(async () => {
     setCtwaLoading(true);
-    try {
-      const res = await adminApi.get(`/webhook-analytics/ctwa/?days=${days}`);
-      setCtwaClients(res.data.clients ?? []);
-    } catch (err) {
-      console.error("CTWA fetch failed:", err);
-      flash("error", "Failed to load CTWA data.");
-    } finally {
-      setCtwaLoading(false);
-    }
+    try { const r = await adminApi.get(`/webhook-analytics/ctwa/?days=${days}`); setCtwaClients(r.data.clients ?? []); }
+    catch { flash("error", "Failed to load CTWA data."); }
+    finally { setCtwaLoading(false); }
   }, [days]);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const fetchHourly = useCallback(async () => {
     setHourlyLoading(true);
-    try {
-      const params = new URLSearchParams({
-        date: hourlyDate,
-        from_hour: hourlyFrom,
-        to_hour: hourlyTo,
-      });
-      if (hourlyClient) params.set("client_id", hourlyClient);
-      const res = await adminApi.get(`/webhook-analytics/hourly/?${params}`);
-      setHourlyData(res.data);
-    } catch (err) {
-      flash("error", "Failed to load hourly data.");
-    } finally {
-      setHourlyLoading(false);
-    }
+    try { const p = new URLSearchParams({ date: hourlyDate, from_hour: hourlyFrom, to_hour: hourlyTo }); if (hourlyClient) p.set("client_id", hourlyClient); const r = await adminApi.get(`/webhook-analytics/hourly/?${p}`); setHourlyData(r.data); }
+    catch { flash("error", "Failed to load hourly data."); }
+    finally { setHourlyLoading(false); }
   }, [hourlyDate, hourlyFrom, hourlyTo, hourlyClient]);
 
-  // Fetch CTWA data when user switches to that tab
-  useEffect(() => {
-    if (view === "ctwa") fetchCtwa();
-  }, [view, fetchCtwa]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { if (view === "ctwa") fetchCtwa(); }, [view, fetchCtwa]);
+  useEffect(() => { if (view === "hourly") fetchHourly(); }, [view]);
 
-  // Fetch hourly when switching to hourly tab
-  useEffect(() => {
-    if (view === "hourly") fetchHourly();
-  }, [view]);  // intentionally only trigger on tab switch, not on param change
-
-  // ── actions ──────────────────────────────────────────────────────────────
-
-  const flash = (type, text) => {
-    setActionMsg({ type, text });
-    setTimeout(() => setActionMsg(null), 5000);
-  };
-
-  const clearInactiveCache = async (clientId, phoneId) => {
-    setClearLoading(clientId);
-    try {
-      await adminApi.post("/webhook-analytics/clear-inactive-cache/", { phone_id: phoneId });
-      setClients(prev =>
-        prev.map(c =>
-          c.client_id === clientId
-            ? { ...c, inactive_phone_cached: false, health: "healthy" }
-            : c
-        )
-      );
-      flash("success", `✓ Cleared inactive_phone cache for phone_id ${phoneId}`);
-    } catch (err) {
-      flash("error", err.response?.data?.error || "Failed to clear cache.");
-    } finally {
-      setClearLoading(null);
-    }
+  const clearInactiveCache = async (cid, pid) => {
+    setClearLoading(cid);
+    try { await adminApi.post("/webhook-analytics/clear-inactive-cache/", { phone_id: pid }); setClients(p => p.map(c => c.client_id === cid ? { ...c, inactive_phone_cached: false, health: "healthy" } : c)); flash("success", `Cleared cache for phone_id ${pid}`); }
+    catch (e) { flash("error", e.response?.data?.error || "Failed."); }
+    finally { setClearLoading(null); }
   };
 
   const replayDLQ = async () => {
     setReplayLoading(true);
-    try {
-      const res = await adminApi.post("/webhook-analytics/replay-dlq/", { limit: 100 });
-      const replayed = res.data.replayed ?? dlq.total;
-      setDlq({ total: 0, items: [] });
-      flash("success", `✓ Replayed ${replayed} failed webhook(s) from DLQ`);
-    } catch (err) {
-      flash("error", err.response?.data?.error || "DLQ replay failed.");
-    } finally {
-      setReplayLoading(false);
-    }
+    try { const r = await adminApi.post("/webhook-analytics/replay-dlq/", { limit: 100 }); setDlq({ total: 0, items: [] }); flash("success", `Replayed ${r.data.replayed ?? dlq.total} webhook(s)`); }
+    catch (e) { flash("error", e.response?.data?.error || "DLQ replay failed."); }
+    finally { setReplayLoading(false); }
   };
 
-  // ── derived totals ────────────────────────────────────────────────────────
-
-  const totals = timeline.reduce(
-    (acc, r) => ({
-      received:        acc.received        + (r.received         ?? 0),
-      enqueued:        acc.enqueued        + (r.enqueued          ?? 0),
-      missed:          acc.missed          + (r.missed            ?? 0),
-      inactive:        acc.inactive        + (r.inactive_dropped  ?? 0),
-      failed:          acc.failed          + (r.failed            ?? 0),
-      dedup:           acc.dedup           + (r.dedup_dropped      ?? 0),
-      ctwa:            acc.ctwa            + (r.ctwa_received      ?? 0),
-      status_enqueued: acc.status_enqueued + (r.status_enqueued    ?? 0),
-    }),
-    { received: 0, enqueued: 0, missed: 0, inactive: 0, failed: 0, dedup: 0, ctwa: 0, status_enqueued: 0 }
-  );
-
-  const overallLoss = totals.received
-    ? parseFloat(((totals.missed / totals.received) * 100).toFixed(1))
-    : 0;
-
-  const inactiveCached  = clients.filter(c => c.inactive_phone_cached);
+  const totals = timeline.reduce((a, r) => ({ received: a.received + (r.received ?? 0), enqueued: a.enqueued + (r.enqueued ?? 0), missed: a.missed + (r.missed ?? 0), inactive: a.inactive + (r.inactive_dropped ?? 0), failed: a.failed + (r.failed ?? 0), dedup: a.dedup + (r.dedup_dropped ?? 0), ctwa: a.ctwa + (r.ctwa_received ?? 0), status_enqueued: a.status_enqueued + (r.status_enqueued ?? 0) }), { received: 0, enqueued: 0, missed: 0, inactive: 0, failed: 0, dedup: 0, ctwa: 0, status_enqueued: 0 });
+  const overallLoss = totals.received ? parseFloat(((totals.missed / totals.received) * 100).toFixed(1)) : 0;
+  const inactiveCached = clients.filter(c => c.inactive_phone_cached);
   const criticalClients = clients.filter(c => c.health === "critical");
-  const chartData       = timeline.map(r => ({ ...r, date: shortDate(r.date) }));
-
-  // Clients with CTWA activity (from health data)
   const ctwaActiveClients = clients.filter(c => (c.ctwa_total_7d ?? 0) > 0);
+  const chartData = timeline.map(r => ({ ...r, date: shortDate(r.date) }));
 
-  // ── render ────────────────────────────────────────────────────────────────
+  const selCls = "px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.06] text-slate-300 text-xs sm:text-sm focus:outline-none focus:border-amber-500/30";
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <LoadingSpinner />
-    </div>
-  );
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><LoadingSpinner /></div>;
 
   return (
-    <div className="space-y-6">
-
-      {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center">
-            <Radio size={20} className="text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white">Webhook Analytics</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Real-time pipeline health · loss tracking · CTWA monitoring</p>
-          </div>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center"><Radio size={17} className="text-amber-400" /></div>
+          <div><h1 className="text-lg sm:text-xl font-bold text-white">Webhook Analytics</h1><p className="text-[11px] text-slate-500">Pipeline health · loss tracking · CTWA</p></div>
         </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {inactiveCached.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
-              <ShieldAlert size={12} />
-              {inactiveCached.length} cache poisoned
-            </div>
-          )}
-          {dlq.total > 0 && (
-            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
-              <Inbox size={12} />
-              DLQ: {dlq.total} pending
-            </div>
-          )}
-          {totals.ctwa > 0 && (
-            <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold px-3 py-1.5 rounded-lg">
-              <MousePointerClick size={12} />
-              {fmt(totals.ctwa)} CTWA
-            </div>
-          )}
-
-          <select
-            value={days}
-            onChange={e => setDays(Number(e.target.value))}
-            className="bg-slate-900/50 border border-slate-800/50 text-slate-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
-          >
-            {[7, 14, 30].map(d => (
-              <option key={d} value={d}>Last {d} days</option>
-            ))}
-          </select>
-
-          <button
-            onClick={fetchAll}
-            className="flex items-center gap-1.5 bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white text-sm rounded-xl px-3 py-2 transition-all"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {inactiveCached.length > 0 && <span className="flex items-center gap-1 bg-red-500/10 border border-red-500/15 text-red-400 text-[10px] font-bold px-2.5 py-1 rounded-lg"><ShieldAlert size={11} />{inactiveCached.length} poisoned</span>}
+          {dlq.total > 0 && <span className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/15 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-lg"><Inbox size={11} />DLQ: {dlq.total}</span>}
+          <select value={days} onChange={e => setDays(Number(e.target.value))} className={selCls}>{[7,14,30].map(d => <option key={d} value={d}>Last {d}d</option>)}</select>
+          <button onClick={fetchAll} className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] text-slate-400 hover:text-white text-xs rounded-xl px-3 py-2 transition-all"><RefreshCw size={13} /> Refresh</button>
         </div>
       </div>
 
-      {/* ── Flash Message ── */}
-      {actionMsg && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border ${
-          actionMsg.type === "success"
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-            : "bg-red-500/10 border-red-500/20 text-red-400"
-        }`}>
-          {actionMsg.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-          {actionMsg.text}
-        </div>
-      )}
+      {actionMsg && <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold border ${actionMsg.type === "success" ? "bg-emerald-500/10 border-emerald-500/15 text-emerald-400" : "bg-red-500/10 border-red-500/15 text-red-400"}`}>{actionMsg.type === "success" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}{actionMsg.text}</div>}
 
-      {/* ── Tab Nav ── */}
-      <div className="flex gap-1 border-b border-slate-800/50 overflow-x-auto">
-        {[
-          { id: "overview", label: "Overview",          icon: Activity },
-          { id: "clients",  label: "Client Health",     icon: Zap },
-          { id: "ctwa",     label: "CTWA Ads",          icon: MousePointerClick },
-          { id: "dlq",      label: "Dead Letter Queue", icon: Inbox },
-          { id: "hourly",   label: "Time Filter",        icon: Clock },
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setView(id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
-              view === id
-                ? "text-amber-400 border-amber-400"
-                : "text-slate-500 border-transparent hover:text-slate-300"
-            }`}
-          >
-            <Icon size={14} />
-            {label}
-            {id === "dlq" && dlq.total > 0 && (
-              <span className="ml-1 bg-amber-400/20 text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {dlq.total}
-              </span>
-            )}
-            {id === "clients" && inactiveCached.length > 0 && (
-              <span className="ml-1 bg-red-400/20 text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {inactiveCached.length}
-              </span>
-            )}
-            {id === "ctwa" && totals.ctwa > 0 && (
-              <span className="ml-1 bg-cyan-400/20 text-cyan-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {fmt(totals.ctwa)}
-              </span>
-            )}
+      {/* Tabs */}
+      <div className="flex gap-0.5 border-b border-white/[0.04] overflow-x-auto">
+        {[{ id: "overview", label: "Overview", icon: Activity }, { id: "clients", label: "Health", icon: Zap }, { id: "ctwa", label: "CTWA", icon: MousePointerClick }, { id: "dlq", label: "DLQ", icon: Inbox }, { id: "hourly", label: "Time Filter", icon: Clock }].map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setView(id)}
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all border-b-2 whitespace-nowrap ${view === id ? "text-amber-400 border-amber-400" : "text-slate-500 border-transparent hover:text-slate-300"}`}>
+            <Icon size={13} />{label}
+            {id === "dlq" && dlq.total > 0 && <span className="ml-0.5 bg-amber-400/20 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{dlq.total}</span>}
           </button>
         ))}
       </div>
 
-      {/* ══════════════════════ OVERVIEW TAB ══════════════════════ */}
+      {/* ═══ OVERVIEW ═══ */}
       {view === "overview" && (
-        <div className="space-y-6">
-
-          {/* Stat cards — now 6 including CTWA */}
-          <div className="flex gap-4 flex-wrap">
-            <MetricCard
-              label="Messages Received"
-              value={fmt(totals.received)}
-              sub={`Inbound from customers · ${days}d`}
-              accent="amber"
-              icon={Activity}
-            />
-            <MetricCard
-              label="Messages Enqueued"
-              value={fmt(totals.enqueued)}
-              sub="Inbound msgs → Celery"
-              accent="emerald"
-              icon={CheckCircle2}
-            />
-            <MetricCard
-              label="Status Callbacks"
-              value={fmt(totals.status_enqueued)}
-              sub="sent/delivered/read (not missed)"
-              accent="slate"
-              icon={Activity}
-            />
-            <MetricCard
-              label="Missed Messages"
-              value={fmt(totals.missed)}
-              sub={`${pct(overallLoss)} loss rate`}
-              warning={overallLoss > 5}
-              icon={TrendingDown}
-            />
-            <MetricCard
-              label="CTWA Messages"
-              value={fmt(totals.ctwa)}
-              sub={`${ctwaActiveClients.length} active ad clients`}
-              accent="cyan"
-              icon={MousePointerClick}
-            />
-            <MetricCard
-              label="Inactive Cache Drops"
-              value={fmt(totals.inactive)}
-              sub="Bug #1 victims"
-              warning={totals.inactive > 0}
-              icon={ShieldAlert}
-            />
-            <MetricCard
-              label="Enqueue Failures"
-              value={fmt(totals.failed)}
-              sub="Broker errors → DLQ"
-              warning={totals.failed > 0}
-              icon={AlertTriangle}
-            />
+        <div className="space-y-5">
+          <div className="flex gap-3 flex-wrap">
+            <MetricCard label="Received" value={fmt(totals.received)} sub={`Inbound · ${days}d`} accent="amber" icon={Activity} />
+            <MetricCard label="Enqueued" value={fmt(totals.enqueued)} sub="→ Celery" accent="emerald" icon={CheckCircle2} />
+            <MetricCard label="Statuses" value={fmt(totals.status_enqueued)} sub="sent/delivered/read" accent="slate" icon={Activity} />
+            <MetricCard label="Missed" value={fmt(totals.missed)} sub={`${pct(overallLoss)} loss`} warning={overallLoss > 5} icon={TrendingDown} />
+            <MetricCard label="CTWA" value={fmt(totals.ctwa)} sub={`${ctwaActiveClients.length} ad clients`} accent="cyan" icon={MousePointerClick} />
+            <MetricCard label="Cache Drops" value={fmt(totals.inactive)} sub="Bug #1" warning={totals.inactive > 0} icon={ShieldAlert} />
+            <MetricCard label="Failures" value={fmt(totals.failed)} sub="→ DLQ" warning={totals.failed > 0} icon={AlertTriangle} />
           </div>
 
-          {/* Loss rate chart + CTWA overlay */}
-          <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-sm font-semibold text-white">Webhook Loss Rate + CTWA Volume</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Loss % left axis · CTWA count shown as teal area
-                </p>
-              </div>
-              <div
-                className="px-4 py-1.5 rounded-lg text-lg font-extrabold font-mono border"
-                style={{
-                  color: lossColor(overallLoss),
-                  background: lossBg(overallLoss).bg,
-                  borderColor: lossBg(overallLoss).border,
-                }}
-              >
-                {pct(overallLoss)}
-              </div>
+          {/* Loss chart */}
+          <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div><h3 className="text-xs font-bold text-white">Loss Rate + CTWA</h3><p className="text-[10px] text-slate-500 mt-0.5">Loss % left · CTWA teal area right</p></div>
+              <div className="px-3 py-1 rounded-lg text-base font-extrabold font-mono border" style={{ color: lossColor(overallLoss), background: lossBg(overallLoss).bg, borderColor: lossBg(overallLoss).border }}>{pct(overallLoss)}</div>
             </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="ctwaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#06b6d4" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                <YAxis
-                  yAxisId="loss"
-                  stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }}
-                  unit="%" domain={[0, "auto"]}
-                />
-                <YAxis
-                  yAxisId="ctwa"
-                  orientation="right"
-                  stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  yAxisId="ctwa"
-                  type="monotone" dataKey="ctwa_received" name="CTWA"
-                  stroke="#06b6d4" strokeWidth={1.5}
-                  fill="url(#ctwaGrad)"
-                  dot={false}
-                />
-                <Line
-                  yAxisId="loss"
-                  type="monotone" dataKey="loss_pct" name="Loss %"
-                  stroke="#ef4444" strokeWidth={2.5}
-                  dot={{ fill: "#ef4444", r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "#ef4444" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Volume + breakdown side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Received vs Enqueued</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                  <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="received" name="Msg Received" fill="#1d4ed8" radius={[3,3,0,0]} />
-                  <Bar dataKey="enqueued" name="Msg Enqueued" fill="#22c55e" radius={[3,3,0,0]} />
-                  <Bar dataKey="status_enqueued" name="Statuses" fill="#475569" radius={[3,3,0,0]} />
-                  <Bar dataKey="ctwa_received" name="CTWA" fill="#06b6d4" radius={[3,3,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Drop Breakdown by Cause</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                  <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="dedup_dropped"    name="Dedup (OK)"        fill="#475569" stackId="a" />
-                  <Bar dataKey="inactive_dropped" name="Inactive Cache"    fill="#ef4444" stackId="a" />
-                  <Bar dataKey="failed"           name="Enqueue Failed"    fill="#f59e0b" stackId="a" />
-                  <Bar dataKey="missed"           name="Unaccounted"       fill="#7c3aed" stackId="a" radius={[3,3,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Bug #1 alert */}
-          {(inactiveCached.length > 0 || totals.inactive > 0) && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
-              <div className="flex items-start gap-3">
-                <ShieldAlert size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-bold text-red-400 mb-1">
-                    Bug #1 Detected — inactive_phone cache poisoning
-                  </p>
-                  <p className="text-xs text-red-400/70 leading-relaxed">
-                    <strong>{fmt(totals.inactive)}</strong> webhook(s) were silently dropped because the{" "}
-                    <code className="bg-red-900/40 px-1.5 py-0.5 rounded text-red-300">
-                      inactive_phone:{"{phone_id}"}
-                    </code>{" "}
-                    Redis key was set with <code className="bg-red-900/40 px-1.5 py-0.5 rounded text-red-300">timeout=None</code>.
-                    Meta received 200 responses but nothing was processed.{" "}
-                    Switch to the <strong>Client Health</strong> tab to clear affected caches.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════ CLIENTS TAB ══════════════════════ */}
-      {view === "clients" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-white">Per-Client Webhook Health</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Sorted by loss rate · 🔴 = inactive_phone cache bug active · 🔵 = CTWA active
-              </p>
-            </div>
-            <div className="flex gap-3 text-xs text-slate-500">
-              <span>Total: <strong className="text-white">{clients.length}</strong></span>
-              <span>Critical: <strong className="text-red-400">{criticalClients.length}</strong></span>
-              <span>Cache issues: <strong className="text-red-400">{inactiveCached.length}</strong></span>
-              <span>CTWA active: <strong className="text-cyan-400">{ctwaActiveClients.length}</strong></span>
-            </div>
-          </div>
-
-          {clients.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
-              <Activity size={32} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">No client data available</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {clients.map(client => {
-                const isOpen  = selected?.client_id === client.client_id;
-                const hasCTWA = (client.ctwa_total_7d ?? 0) > 0;
-                return (
-                  <div
-                    key={client.client_id}
-                    className={`bg-slate-900/50 rounded-2xl border transition-all overflow-hidden ${
-                      client.inactive_phone_cached
-                        ? "border-red-500/30"
-                        : client.health === "degraded"
-                        ? "border-amber-500/20"
-                        : "border-slate-800/50"
-                    }`}
-                  >
-                    <div
-                      className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-800/30 transition-colors flex-wrap"
-                      onClick={() => setSelected(isOpen ? null : client)}
-                    >
-                      <div className="flex-1 min-w-[180px]">
-                        <p className="text-sm font-semibold text-white">
-                          {client.inactive_phone_cached && <span className="text-red-400 mr-1">🔴</span>}
-                          {hasCTWA && <span className="text-cyan-400 mr-1">🔵</span>}
-                          {client.username}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                          phone_id: {client.phone_id}
-                        </p>
-                      </div>
-
-                      <HealthBadge health={client.health} />
-
-                      <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">7d loss</p>
-                        <p className="text-xl font-extrabold font-mono" style={{ color: lossColor(client.loss_pct_7d) }}>
-                          {pct(client.loss_pct_7d)}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">Received</p>
-                        <p className="text-base font-bold text-white font-mono">{fmt(client.totals?.received)}</p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wide">Missed</p>
-                        <p className={`text-base font-bold font-mono ${(client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"}`}>
-                          {fmt(client.totals?.missed)}
-                        </p>
-                      </div>
-
-                      {hasCTWA && (
-                        <div className="text-right">
-                          <p className="text-[10px] text-cyan-500/70 uppercase tracking-wide">CTWA</p>
-                          <p className="text-base font-bold font-mono text-cyan-400">{fmt(client.ctwa_total_7d)}</p>
-                        </div>
-                      )}
-
-                      {client.inactive_phone_cached && (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            clearInactiveCache(client.client_id, client.phone_id);
-                          }}
-                          disabled={clearLoading === client.client_id}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 disabled:opacity-50 transition-all"
-                        >
-                          {clearLoading === client.client_id
-                            ? <RefreshCw size={12} className="animate-spin" />
-                            : <Trash2 size={12} />}
-                          Fix Cache
-                        </button>
-                      )}
-
-                      <div className="text-slate-600">
-                        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </div>
-                    </div>
-
-                    {/* Expanded drill-down */}
-                    {isOpen && (
-                      <div className="px-5 pb-5 pt-0 border-t border-slate-800/50">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                          {[
-                            ["Msg Received", client.totals?.received, "text-white"],
-                            ["Msg Enqueued", client.totals?.enqueued, "text-emerald-400"],
-                            ["Msg Missed",  client.totals?.missed,  (client.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"],
-                            ["CTWA",     client.totals?.ctwa,     "text-cyan-400"],
-                          ].map(([k, v, cls]) => (
-                            <div key={k} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/30">
-                              <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">{k}</p>
-                              <p className={`text-2xl font-extrabold font-mono ${cls}`}>{fmt(v)}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {client.inactive_phone_cached && (
-                          <div className="mt-3 text-xs text-red-400/70 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
-                            ℹ️ Click <strong>Fix Cache</strong> to delete the{" "}
-                            <code className="bg-red-900/30 px-1 rounded">inactive_phone:{client.phone_id}</code>{" "}
-                            Redis key. Confirm subscription is <strong>ACTIVE</strong> in DB before clearing.
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════ CTWA TAB ══════════════════════ */}
-      {view === "ctwa" && (
-        <div className="space-y-6">
-
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <MousePointerClick size={16} className="text-cyan-400" />
-                Click-To-WhatsApp Ads Monitoring
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                Tracks the <strong className="text-slate-300">first message</strong> sent by users who clicked a WhatsApp ad (CTWA).
-                Meta attaches a <code className="bg-slate-800 px-1.5 py-0.5 rounded text-cyan-300 text-[11px]">referral.ctwa_clid</code> field to these messages.
-                If a client's CTWA count is 0 but ads are running, the first message is being dropped — check their health tab.
-              </p>
-            </div>
-            <button
-              onClick={fetchCtwa}
-              className="flex items-center gap-1.5 bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white text-sm rounded-xl px-3 py-2 transition-all"
-            >
-              <RefreshCw size={14} className={ctwaLoading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-          </div>
-
-          {/* CTWA summary cards */}
-          <div className="flex gap-4 flex-wrap">
-            <MetricCard
-              label="Total CTWA Messages"
-              value={fmt(totals.ctwa)}
-              sub={`Last ${days} days`}
-              accent="cyan"
-              icon={MousePointerClick}
-            />
-            <MetricCard
-              label="Clients with CTWA"
-              value={fmt(ctwaActiveClients.length)}
-              sub="Running ad campaigns"
-              accent="amber"
-              icon={Megaphone}
-            />
-            <MetricCard
-              label="CTWA of Total Traffic"
-              value={totals.received > 0 ? pct((totals.ctwa / totals.received) * 100) : "0.0%"}
-              sub="Ads-driven share"
-              accent="emerald"
-              icon={BarChart2}
-            />
-          </div>
-
-          {/* CTWA volume chart */}
-          <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4">Daily CTWA Volume</h3>
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="ctwaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#06b6d4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}   />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
+                <defs><linearGradient id="ctwaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                <XAxis dataKey="date" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} />
+                <YAxis yAxisId="loss" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} unit="%" />
+                <YAxis yAxisId="ctwa" orientation="right" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone" dataKey="ctwa_received" name="CTWA Messages"
-                  stroke="#06b6d4" strokeWidth={2.5}
-                  fill="url(#ctwaFill)"
-                  dot={{ fill: "#06b6d4", r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "#06b6d4" }}
-                />
+                <Area yAxisId="ctwa" type="monotone" dataKey="ctwa_received" name="CTWA" stroke="#06b6d4" strokeWidth={1.5} fill="url(#ctwaGrad)" dot={false} />
+                <Line yAxisId="loss" type="monotone" dataKey="loss_pct" name="Loss %" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3, strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Per-client CTWA breakdown */}
-          {ctwaLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5">
+              <h3 className="text-xs font-bold text-white mb-3">Received vs Enqueued</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" /><XAxis dataKey="date" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><YAxis stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="received" name="Received" fill="#1d4ed8" radius={[3,3,0,0]} /><Bar dataKey="enqueued" name="Enqueued" fill="#22c55e" radius={[3,3,0,0]} /><Bar dataKey="status_enqueued" name="Statuses" fill="#334155" radius={[3,3,0,0]} /><Bar dataKey="ctwa_received" name="CTWA" fill="#06b6d4" radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          ) : ctwaClients.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
-              <MousePointerClick size={32} className="text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-400 font-semibold">No CTWA activity in the last {days} days</p>
-              <p className="text-slate-500 text-sm mt-1">
-                CTWA messages appear here when users click WhatsApp ads and send the first message.
-              </p>
+            <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5">
+              <h3 className="text-xs font-bold text-white mb-3">Drop Breakdown</h3>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" /><XAxis dataKey="date" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><YAxis stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="dedup_dropped" name="Dedup" fill="#334155" stackId="a" /><Bar dataKey="inactive_dropped" name="Inactive" fill="#ef4444" stackId="a" /><Bar dataKey="failed" name="Failed" fill="#f59e0b" stackId="a" /><Bar dataKey="missed" name="Unaccounted" fill="#7c3aed" stackId="a" radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">Per-Client Breakdown</h3>
-                <p className="text-xs text-slate-500">{ctwaClients.length} clients with ad traffic</p>
-              </div>
+          </div>
+        </div>
+      )}
 
-              {/* Table header */}
-              <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-2 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">
-                <div className="col-span-3">Client</div>
-                <div className="col-span-2 text-right">CTWA Total</div>
-                <div className="col-span-2 text-right">All Received</div>
-                <div className="col-span-2 text-right">CTWA Rate</div>
-                <div className="col-span-3">Daily Trend</div>
-              </div>
-
-              {ctwaClients.map(client => (
-                <div
-                  key={client.client_id}
-                  className="bg-slate-900/50 border border-cyan-500/10 rounded-2xl px-5 py-4 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center hover:border-cyan-500/20 transition-all"
-                >
-                  {/* Identity */}
-                  <div className="sm:col-span-3">
-                    <p className="text-sm font-semibold text-white">{client.username}</p>
-                    <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
-                      {client.phone_id}
-                    </p>
+      {/* ═══ CLIENT HEALTH ═══ */}
+      {view === "clients" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-white">Per-Client Health</h2>
+            <div className="flex gap-2 text-[10px] text-slate-500"><span>Total: <strong className="text-white">{clients.length}</strong></span><span>Critical: <strong className="text-red-400">{criticalClients.length}</strong></span><span>CTWA: <strong className="text-cyan-400">{ctwaActiveClients.length}</strong></span></div>
+          </div>
+          {clients.map(c => {
+            const isOpen = selected?.client_id === c.client_id;
+            const hasCTWA = (c.ctwa_total_7d ?? 0) > 0;
+            return (
+              <div key={c.client_id} className={`bg-[#0d1120] rounded-2xl border overflow-hidden transition-all ${c.inactive_phone_cached ? "border-red-500/20" : "border-white/[0.04]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.015] transition-colors flex-wrap" onClick={() => setSelected(isOpen ? null : c)}>
+                  <div className="flex-1 min-w-[140px]">
+                    <p className="text-xs font-bold text-white">{c.inactive_phone_cached && "🔴 "}{hasCTWA && "🔵 "}{c.username}</p>
+                    <p className="text-[10px] text-slate-600 font-mono">ph: {c.phone_id}</p>
                   </div>
-
-                  {/* CTWA total */}
-                  <div className="sm:col-span-2 sm:text-right">
-                    <p className="text-xl font-extrabold font-mono text-cyan-400">{fmt(client.ctwa_total)}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">CTWA msgs</p>
-                  </div>
-
-                  {/* Total received */}
-                  <div className="sm:col-span-2 sm:text-right">
-                    <p className="text-base font-bold font-mono text-white">{fmt(client.total_received)}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">all msgs</p>
-                  </div>
-
-                  {/* CTWA rate */}
-                  <div className="sm:col-span-2 sm:text-right">
-                    <p className="text-base font-bold font-mono text-amber-400">{pct(client.ctwa_rate)}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">of traffic</p>
-                  </div>
-
-                  {/* Sparkline */}
-                  <div className="sm:col-span-3 flex items-center gap-3">
-                    <Sparkline data={client.daily} dataKey="ctwa" color="#06b6d4" />
-                    <div className="text-[10px] text-slate-500 leading-relaxed hidden lg:block">
-                      {client.daily?.filter(d => d.ctwa > 0).length ?? 0} active days
+                  <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border ${c.health === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15" : c.health === "degraded" ? "bg-amber-500/10 text-amber-400 border-amber-500/15" : c.health === "critical" ? "bg-red-500/10 text-red-400 border-red-500/15" : "bg-slate-500/10 text-slate-400 border-slate-500/15"}`}>{c.health}</span>
+                  <div className="text-right"><p className="text-[9px] text-slate-500 uppercase">7d loss</p><p className="text-lg font-extrabold font-mono" style={{ color: lossColor(c.loss_pct_7d) }}>{pct(c.loss_pct_7d)}</p></div>
+                  <div className="text-right"><p className="text-[9px] text-slate-500 uppercase">Recv</p><p className="text-sm font-bold text-white font-mono">{fmt(c.totals?.received)}</p></div>
+                  <div className="text-right"><p className="text-[9px] text-slate-500 uppercase">Miss</p><p className={`text-sm font-bold font-mono ${(c.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"}`}>{fmt(c.totals?.missed)}</p></div>
+                  {c.inactive_phone_cached && <button onClick={e => { e.stopPropagation(); clearInactiveCache(c.client_id, c.phone_id); }} disabled={clearLoading === c.client_id} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 disabled:opacity-50 transition-all">{clearLoading === c.client_id ? <RefreshCw size={11} className="animate-spin" /> : <Trash2 size={11} />}Fix</button>}
+                  {isOpen ? <ChevronUp size={14} className="text-slate-600" /> : <ChevronDown size={14} className="text-slate-600" />}
+                </div>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-0 border-t border-white/[0.04]">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                      {[["Received", c.totals?.received, "text-white"], ["Enqueued", c.totals?.enqueued, "text-emerald-400"], ["Missed", c.totals?.missed, (c.totals?.missed ?? 0) > 0 ? "text-red-400" : "text-emerald-400"], ["CTWA", c.totals?.ctwa, "text-cyan-400"]].map(([k, v, cls]) => (
+                        <div key={k} className="bg-white/[0.02] rounded-xl p-3 border border-white/[0.04]"><p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">{k}</p><p className={`text-xl font-extrabold font-mono ${cls}`}>{fmt(v)}</p></div>
+                      ))}
                     </div>
                   </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ═══ CTWA ═══ */}
+      {view === "ctwa" && (
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div><h2 className="text-sm font-bold text-white flex items-center gap-1.5"><MousePointerClick size={14} className="text-cyan-400" />CTWA Ads Monitoring</h2><p className="text-[10px] text-slate-500 mt-1 max-w-xl leading-relaxed">Tracks first messages from WhatsApp ad clicks. Meta attaches <code className="bg-white/[0.04] px-1 py-0.5 rounded text-cyan-400 text-[9px]">referral.ctwa_clid</code>.</p></div>
+            <button onClick={fetchCtwa} className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] text-slate-400 hover:text-white text-xs rounded-xl px-3 py-2 transition-all"><RefreshCw size={13} className={ctwaLoading ? "animate-spin" : ""} />Refresh</button>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <MetricCard label="Total CTWA" value={fmt(totals.ctwa)} sub={`Last ${days}d`} accent="cyan" icon={MousePointerClick} />
+            <MetricCard label="CTWA Clients" value={fmt(ctwaActiveClients.length)} sub="Running ads" accent="amber" icon={Megaphone} />
+            <MetricCard label="CTWA Share" value={totals.received > 0 ? pct((totals.ctwa / totals.received) * 100) : "0.0%"} sub="Of total traffic" accent="emerald" icon={BarChart2} />
+          </div>
+          <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5">
+            <h3 className="text-xs font-bold text-white mb-3">Daily CTWA Volume</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={chartData}>
+                <defs><linearGradient id="ctwaFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" /><XAxis dataKey="date" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><YAxis stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="ctwa_received" name="CTWA" stroke="#06b6d4" strokeWidth={2} fill="url(#ctwaFill)" dot={{ fill: "#06b6d4", r: 3, strokeWidth: 0 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          {ctwaLoading ? <LoadingSpinner /> : ctwaClients.length === 0 ? (
+            <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-10 text-center"><MousePointerClick size={28} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-400 font-semibold text-sm">No CTWA activity</p></div>
+          ) : (
+            <div className="space-y-2">
+              {ctwaClients.map(c => (
+                <div key={c.client_id} className="bg-[#0d1120] border border-cyan-500/10 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-4 hover:border-cyan-500/20 transition-all">
+                  <div className="min-w-[120px]"><p className="text-xs font-bold text-white">{c.username}</p><p className="text-[10px] text-slate-600 font-mono truncate">{c.phone_id}</p></div>
+                  <div className="text-right"><p className="text-lg font-extrabold font-mono text-cyan-400">{fmt(c.ctwa_total)}</p><p className="text-[9px] text-slate-500 uppercase">CTWA</p></div>
+                  <div className="text-right"><p className="text-sm font-bold font-mono text-white">{fmt(c.total_received)}</p><p className="text-[9px] text-slate-500 uppercase">All msgs</p></div>
+                  <div className="text-right"><p className="text-sm font-bold font-mono text-amber-400">{pct(c.ctwa_rate)}</p><p className="text-[9px] text-slate-500 uppercase">Rate</p></div>
+                  <Sparkline data={c.daily} dataKey="ctwa" color="#06b6d4" />
                 </div>
               ))}
             </div>
           )}
-
-          {/* What is CTWA explainer */}
-          <div className="bg-cyan-500/5 border border-cyan-500/15 rounded-2xl p-5">
-            <div className="flex items-start gap-3">
-              <MousePointerClick size={18} className="text-cyan-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-cyan-400 mb-2">How CTWA detection works</p>
-                <div className="space-y-1.5 text-xs text-cyan-400/60 leading-relaxed">
-                  <p>
-                    When a user clicks a <strong className="text-cyan-400/80">WhatsApp Ad</strong> on Facebook or Instagram, Meta opens
-                    WhatsApp and pre-populates a message. The first message they send includes a{" "}
-                    <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">referral</code> object with
-                    a unique <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">ctwa_clid</code> per click.
-                  </p>
-                  <p>
-                    The webhook service calls <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">
-                    _detect_and_track_ctwa()</code> <strong className="text-cyan-400/80">before</strong> the dedup check,
-                    so every CTWA attempt is counted — including Meta retries.
-                  </p>
-                  <p>
-                    If a client's CTWA count here is <strong className="text-cyan-400/80">0</strong> but they're running ads,
-                    their WABA subscription may be broken. Check <strong>Client Health</strong> tab and verify
-                    with <code className="bg-cyan-900/30 px-1.5 py-0.5 rounded text-cyan-300">
-                    get_waba_subscription_status(waba_id, token)</code>.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ══════════════════════ DLQ TAB ══════════════════════ */}
+      {/* ═══ DLQ ═══ */}
       {view === "dlq" && (
-        <div className="space-y-6">
-
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-white">Dead Letter Queue</h2>
-              <p className="text-xs text-slate-500 mt-0.5 max-w-lg leading-relaxed">
-                Webhook payloads that failed to enqueue. Stored in Redis, auto-replayed every 60 seconds.
-              </p>
-            </div>
-            <button
-              onClick={replayDLQ}
-              disabled={replayLoading || dlq.total === 0}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-            >
-              {replayLoading
-                ? <><RefreshCw size={14} className="animate-spin" /> Replaying…</>
-                : <><RotateCcw size={14} /> Replay All ({dlq.total})</>
-              }
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div><h2 className="text-sm font-bold text-white">Dead Letter Queue</h2><p className="text-[10px] text-slate-500 mt-0.5 max-w-md">Failed webhook enqueues. Auto-replayed every 60s.</p></div>
+            <button onClick={replayDLQ} disabled={replayLoading || dlq.total === 0}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-40 transition-all whitespace-nowrap">
+              {replayLoading ? <><RefreshCw size={13} className="animate-spin" /> Replaying…</> : <><RotateCcw size={13} /> Replay ({dlq.total})</>}
             </button>
           </div>
-
-          <div className="flex gap-4 flex-wrap">
-            <MetricCard label="DLQ Depth"    value={fmt(dlq.total)}  sub="Failed enqueues"      warning={dlq.total > 0} icon={Inbox} />
-            <MetricCard label="Auto-Replay"  value="Every 60s"       sub="Celery beat task"      accent="emerald" icon={RotateCcw} />
-            <MetricCard label="Max TTL"      value="24h"             sub="Older items discarded" accent="slate"   icon={Clock} />
+          <div className="flex gap-3 flex-wrap">
+            <MetricCard label="DLQ Depth" value={fmt(dlq.total)} sub="Failed" warning={dlq.total > 0} icon={Inbox} />
+            <MetricCard label="Auto-Replay" value="60s" sub="Celery beat" accent="emerald" icon={RotateCcw} />
+            <MetricCard label="Max TTL" value="24h" sub="Discard after" accent="slate" icon={Clock} />
           </div>
-
           {dlq.total === 0 ? (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-12 text-center">
-              <CheckCircle2 size={36} className="text-emerald-400 mx-auto mb-3" />
-              <p className="text-emerald-400 font-bold text-base">Dead Letter Queue is empty</p>
-              <p className="text-slate-500 text-sm mt-1">All webhook enqueues are succeeding.</p>
-            </div>
+            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-10 text-center"><CheckCircle2 size={28} className="text-emerald-400 mx-auto mb-2" /><p className="text-emerald-400 font-bold">DLQ is empty</p><p className="text-slate-500 text-xs mt-1">All enqueues succeeding.</p></div>
           ) : (
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-3">
-                <AlertTriangle size={16} />
-                {dlq.total} message(s) waiting for replay
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                These messages were received but Celery enqueue failed. The{" "}
-                <code className="bg-slate-800 px-1.5 rounded text-slate-300">replay_dlq_task</code> Celery beat
-                task runs every 60 seconds. Click <strong className="text-amber-400">Replay All</strong> to process immediately.
-              </p>
-
-              {dlq.items?.length > 0 && (
-                <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                  {dlq.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/30 text-xs">
-                      <div>
-                        <span className="font-mono text-slate-300">{item.message_id ?? `item-${i}`}</span>
-                        {item.client_id && <span className="text-slate-500 ml-2">client #{item.client_id}</span>}
-                      </div>
-                      {item.timestamp && (
-                        <div className="flex items-center gap-1 text-slate-500">
-                          <Clock size={10} />
-                          {new Date(item.timestamp * 1000).toLocaleTimeString()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-amber-500/5 border border-amber-500/15 rounded-2xl p-4">
+              <p className="flex items-center gap-1.5 text-amber-400 font-bold text-xs mb-2"><AlertTriangle size={13} />{dlq.total} waiting</p>
+              {dlq.items?.length > 0 && <div className="space-y-1.5 max-h-52 overflow-y-auto">{dlq.items.map((it, i) => (<div key={i} className="flex items-center justify-between px-3 py-2 bg-white/[0.02] rounded-lg border border-white/[0.04] text-[11px]"><span className="font-mono text-slate-300">{it.message_id ?? `item-${i}`}</span>{it.timestamp && <span className="text-slate-500 flex items-center gap-1"><Clock size={10} />{new Date(it.timestamp * 1000).toLocaleTimeString()}</span>}</div>))}</div>}
             </div>
           )}
-
-          <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-5">How the DLQ works</h3>
-            <div className="space-y-4">
-              <DLQFlowStep step="1" label="Webhook arrives"          desc="Meta POSTs to /api/whatsapp/webhook/. WebhookAuditMiddleware logs raw payload before any business logic." />
-              <DLQFlowStep step="2" label="Atomic dedup check"       desc="cache.add(msg_lock:{id}) — atomic Redis SET NX. If already seen, returns 200 immediately. No duplicates." />
-              <DLQFlowStep step="3" label="Celery enqueue attempt"   desc="process_inbound_message.delay(). If broker healthy → task queued → HTTP 200 back to Meta." />
-              <DLQFlowStep step="4" label="Enqueue fails"            desc="Broker saturated or Redis pool exhausted. Dedup lock is CLEARED so Meta's retry can succeed." />
-              <DLQFlowStep step="5" label="DLQ storage"              desc="Failed payload saved to dlq:failed_webhooks Redis list with timestamp and client context." />
-              <DLQFlowStep step="6" label="Returns HTTP 500"         desc="Meta receives 500 → schedules retry ~20s. Auto-replay task also handles it every 60s." />
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ══════════════════════ HOURLY FILTER TAB ══════════════════════ */}
+      {/* ═══ HOURLY ═══ */}
       {view === "hourly" && (
-        <div className="space-y-6">
-
-          {/* Header */}
-          <div>
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <Clock size={16} className="text-amber-400" />
-              Time Range Filter
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Query message volume for any time window within a single day.
-              Powered by hourly Redis buckets — data available from deploy date onwards.
-            </p>
-          </div>
-
-          {/* Filter Controls */}
-          <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-5">
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mb-4">Filter</p>
-            <div className="flex flex-wrap gap-4 items-end">
-
-              {/* Date */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Date</label>
-                <input
-                  type="date"
-                  value={hourlyDate}
-                  max={new Date().toISOString().slice(0,10)}
-                  onChange={e => setHourlyDate(e.target.value)}
-                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
-                />
-              </div>
-
-              {/* From hour */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">From</label>
-                <select
-                  value={hourlyFrom}
-                  onChange={e => {
-                    const v = Number(e.target.value);
-                    setHourlyFrom(v);
-                    if (v > hourlyTo) setHourlyTo(v);
-                  }}
-                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
-                >
-                  {Array.from({length: 24}, (_, i) => (
-                    <option key={i} value={i}>{String(i).padStart(2,"0")}:00</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* To hour */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">To</label>
-                <select
-                  value={hourlyTo}
-                  onChange={e => setHourlyTo(Number(e.target.value))}
-                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
-                >
-                  {Array.from({length: 24}, (_, i) => i).filter(i => i >= hourlyFrom).map(i => (
-                    <option key={i} value={i}>{String(i).padStart(2,"0")}:59</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Client filter */}
-              <div className="flex flex-col gap-1.5 min-w-[160px]">
-                <label className="text-[11px] text-slate-500 font-medium uppercase tracking-wide">Client</label>
-                <select
-                  value={hourlyClient}
-                  onChange={e => setHourlyClient(e.target.value)}
-                  className="bg-slate-800/60 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500/50"
-                >
-                  <option value="">All clients (global)</option>
-                  {clients.map(c => (
-                    <option key={c.client_id} value={c.client_id}>{c.username}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Apply button */}
-              <button
-                onClick={fetchHourly}
-                disabled={hourlyLoading}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-50 transition-all"
-              >
-                {hourlyLoading
-                  ? <><RefreshCw size={14} className="animate-spin" /> Loading…</>
-                  : <><Zap size={14} /> Apply</>
-                }
-              </button>
+        <div className="space-y-5">
+          <h2 className="text-sm font-bold text-white flex items-center gap-1.5"><Clock size={14} className="text-amber-400" />Time Range Filter</h2>
+          <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4">
+            <div className="flex flex-wrap gap-3 items-end">
+              <div><label className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">Date</label><input type="date" value={hourlyDate} max={new Date().toISOString().slice(0,10)} onChange={e => setHourlyDate(e.target.value)} className={selCls} /></div>
+              <div><label className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">From</label><select value={hourlyFrom} onChange={e => { const v=Number(e.target.value); setHourlyFrom(v); if (v>hourlyTo) setHourlyTo(v); }} className={selCls}>{Array.from({length:24},(_,i)=><option key={i} value={i}>{String(i).padStart(2,"0")}:00</option>)}</select></div>
+              <div><label className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">To</label><select value={hourlyTo} onChange={e => setHourlyTo(Number(e.target.value))} className={selCls}>{Array.from({length:24},(_,i)=>i).filter(i=>i>=hourlyFrom).map(i=><option key={i} value={i}>{String(i).padStart(2,"0")}:59</option>)}</select></div>
+              <div className="min-w-[140px]"><label className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">Client</label><select value={hourlyClient} onChange={e => setHourlyClient(e.target.value)} className={selCls}><option value="">All (global)</option>{clients.map(c=><option key={c.client_id} value={c.client_id}>{c.username}</option>)}</select></div>
+              <button onClick={fetchHourly} disabled={hourlyLoading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 hover:bg-amber-300 disabled:opacity-50 transition-all">{hourlyLoading ? <><RefreshCw size={12} className="animate-spin" />...</> : <><Zap size={12} />Apply</>}</button>
             </div>
           </div>
 
-          {/* Results */}
-          {hourlyLoading && (
-            <div className="flex items-center justify-center py-16">
-              <LoadingSpinner />
-            </div>
-          )}
-
+          {hourlyLoading && <LoadingSpinner />}
           {!hourlyLoading && hourlyData && (
-            <div className="space-y-5">
-
-              {/* Window label */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-lg">
-                  <Clock size={12} />
-                  {hourlyData.date} · {hourlyData.window}
-                  {hourlyData.client_id && (
-                    <span className="text-amber-300/70 ml-1">
-                      · {clients.find(c => String(c.client_id) === String(hourlyData.client_id))?.username ?? `Client #${hourlyData.client_id}`}
-                    </span>
-                  )}
-                </div>
+            <div className="space-y-4">
+              <div className="flex gap-3 flex-wrap">
+                <MetricCard label="Received" value={fmt(hourlyData.summary?.inbound_message_received)} accent="amber" icon={Activity} />
+                <MetricCard label="Enqueued" value={fmt(hourlyData.summary?.message_enqueued)} accent="emerald" icon={CheckCircle2} />
+                <MetricCard label="Missed" value={fmt(hourlyData.summary?.missed)} sub={`${hourlyData.summary?.loss_pct ?? 0}% loss`} warning={(hourlyData.summary?.missed ?? 0) > 0} icon={TrendingDown} />
               </div>
-
-              {/* Summary cards */}
-              <div className="flex gap-4 flex-wrap">
-                <MetricCard
-                  label="Messages Received"
-                  value={fmt(hourlyData.summary?.inbound_message_received)}
-                  sub="Inbound customer msgs"
-                  accent="amber"
-                  icon={Activity}
-                />
-                <MetricCard
-                  label="Enqueued"
-                  value={fmt(hourlyData.summary?.message_enqueued)}
-                  sub="Reached Celery"
-                  accent="emerald"
-                  icon={CheckCircle2}
-                />
-                <MetricCard
-                  label="Status Callbacks"
-                  value={fmt(hourlyData.summary?.status_enqueued)}
-                  sub="sent/delivered/read"
-                  accent="slate"
-                  icon={Activity}
-                />
-                <MetricCard
-                  label="Missed"
-                  value={fmt(hourlyData.summary?.missed)}
-                  sub={`${hourlyData.summary?.loss_pct ?? 0}% loss`}
-                  warning={(hourlyData.summary?.missed ?? 0) > 0}
-                  icon={TrendingDown}
-                />
-                {(hourlyData.summary?.ctwa_message_received ?? 0) > 0 && (
-                  <MetricCard
-                    label="CTWA Messages"
-                    value={fmt(hourlyData.summary?.ctwa_message_received)}
-                    sub="Ad-driven first msgs"
-                    accent="cyan"
-                    icon={MousePointerClick}
-                  />
-                )}
-              </div>
-
-              {/* Hourly bar chart */}
               {hourlyData.per_hour?.length > 0 && (
-                <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6">
-                  <h3 className="text-sm font-semibold text-white mb-4">
-                    Messages per Hour
-                    <span className="text-slate-500 font-normal ml-2 text-xs">
-                      {String(hourlyData.from_hour).padStart(2,"0")}:00 – {String(hourlyData.to_hour).padStart(2,"0")}:59
-                    </span>
-                  </h3>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={hourlyData.per_hour} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis
-                        dataKey="label"
-                        stroke="#475569"
-                        tick={{ fill: "#64748b", fontSize: 11 }}
-                      />
-                      <YAxis stroke="#475569" tick={{ fill: "#64748b", fontSize: 11 }} />
-                      <Tooltip content={<ChartTooltip />} />
-                      <Bar dataKey="inbound_message_received" name="Received" fill="#1d4ed8" radius={[4,4,0,0]} />
-                      <Bar dataKey="message_enqueued"         name="Enqueued" fill="#22c55e" radius={[4,4,0,0]} />
-                      <Bar dataKey="status_enqueued"          name="Statuses" fill="#334155" radius={[4,4,0,0]} />
-                      {hourlyData.per_hour.some(r => r.ctwa_message_received > 0) && (
-                        <Bar dataKey="ctwa_message_received" name="CTWA" fill="#06b6d4" radius={[4,4,0,0]} />
-                      )}
+                <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-4 sm:p-5">
+                  <h3 className="text-xs font-bold text-white mb-3">Per Hour</h3>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={hourlyData.per_hour}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" /><XAxis dataKey="label" stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><YAxis stroke="#1e293b" tick={{ fill: "#475569", fontSize: 10 }} /><Tooltip content={<ChartTooltip />} />
+                      <Bar dataKey="inbound_message_received" name="Received" fill="#1d4ed8" radius={[3,3,0,0]} /><Bar dataKey="message_enqueued" name="Enqueued" fill="#22c55e" radius={[3,3,0,0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
-
-              {/* Per-hour table */}
-              <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-800/50">
-                  <h3 className="text-sm font-semibold text-white">Hourly Breakdown</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800/50">
-                        {["Hour", "Received", "Enqueued", "Statuses", "CTWA", "Missed", "Loss %"].map(h => (
-                          <th key={h} className="px-4 py-2.5 text-left text-[10px] text-slate-500 font-semibold uppercase tracking-widest">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hourlyData.per_hour.map((row, i) => (
-                        <tr
-                          key={row.hour}
-                          className={`border-b border-slate-800/30 hover:bg-slate-800/20 transition-colors ${
-                            row.missed > 0 ? "bg-red-500/5" : ""
-                          }`}
-                        >
-                          <td className="px-4 py-2.5 font-mono text-slate-300 font-semibold">{row.label}</td>
-                          <td className="px-4 py-2.5 font-mono text-white">{fmt(row.inbound_message_received)}</td>
-                          <td className="px-4 py-2.5 font-mono text-emerald-400">{fmt(row.message_enqueued)}</td>
-                          <td className="px-4 py-2.5 font-mono text-slate-500">{fmt(row.status_enqueued)}</td>
-                          <td className="px-4 py-2.5 font-mono text-cyan-400">
-                            {row.ctwa_message_received > 0 ? fmt(row.ctwa_message_received) : <span className="text-slate-700">—</span>}
-                          </td>
-                          <td className="px-4 py-2.5 font-mono">
-                            <span className={row.missed > 0 ? "text-red-400 font-bold" : "text-slate-600"}>
-                              {fmt(row.missed)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            {row.inbound_message_received > 0 ? (
-                              <span
-                                className="text-xs font-bold font-mono px-2 py-0.5 rounded-md"
-                                style={{
-                                  color: lossColor(row.missed / row.inbound_message_received * 100),
-                                  background: lossBg(row.missed / row.inbound_message_received * 100).bg,
-                                }}
-                              >
-                                {(row.missed / row.inbound_message_received * 100).toFixed(1)}%
-                              </span>
-                            ) : (
-                              <span className="text-slate-700 text-xs">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    {/* Totals row */}
-                    <tfoot>
-                      <tr className="border-t-2 border-slate-700/50 bg-slate-800/30">
-                        <td className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</td>
-                        <td className="px-4 py-3 font-mono font-bold text-white">{fmt(hourlyData.summary?.inbound_message_received)}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-emerald-400">{fmt(hourlyData.summary?.message_enqueued)}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-slate-400">{fmt(hourlyData.summary?.status_enqueued)}</td>
-                        <td className="px-4 py-3 font-mono font-bold text-cyan-400">
-                          {(hourlyData.summary?.ctwa_message_received ?? 0) > 0
-                            ? fmt(hourlyData.summary.ctwa_message_received)
-                            : <span className="text-slate-700">—</span>}
-                        </td>
-                        <td className="px-4 py-3 font-mono font-bold">
-                          <span className={(hourlyData.summary?.missed ?? 0) > 0 ? "text-red-400" : "text-slate-600"}>
-                            {fmt(hourlyData.summary?.missed)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="text-sm font-extrabold font-mono px-2 py-1 rounded-lg"
-                            style={{
-                              color: lossColor(hourlyData.summary?.loss_pct ?? 0),
-                              background: lossBg(hourlyData.summary?.loss_pct ?? 0).bg,
-                            }}
-                          >
-                            {hourlyData.summary?.loss_pct ?? 0}%
-                          </span>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-
-              {/* Zero state within results */}
-              {hourlyData.summary?.inbound_message_received === 0 && (
-                <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 text-center">
-                  <Clock size={28} className="text-slate-600 mx-auto mb-2" />
-                  <p className="text-slate-400 font-semibold text-sm">No messages in this window</p>
-                  <p className="text-slate-600 text-xs mt-1">
-                    {hourlyData.date === new Date().toISOString().slice(0,10)
-                      ? "Hourly data only available from when this version was deployed."
-                      : "No customer messages arrived during this time range."}
-                  </p>
-                </div>
-              )}
             </div>
           )}
-
-          {/* Null state — before first fetch */}
-          {!hourlyLoading && !hourlyData && (
-            <div className="bg-slate-900/50 border border-slate-800/50 rounded-2xl p-12 text-center">
-              <Clock size={36} className="text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-400 font-semibold">Set a time range and click Apply</p>
-              <p className="text-slate-600 text-xs mt-1 max-w-sm mx-auto">
-                Select a date, from/to hours, and optionally a specific client. Hourly buckets are stored
-                separately from daily counters — data starts from when this version was deployed.
-              </p>
-            </div>
-          )}
+          {!hourlyLoading && !hourlyData && <div className="bg-[#0d1120] border border-white/[0.04] rounded-2xl p-10 text-center"><Clock size={28} className="text-slate-700 mx-auto mb-2" /><p className="text-slate-400 font-semibold text-sm">Set a range and click Apply</p></div>}
         </div>
       )}
-
     </div>
   );
 }

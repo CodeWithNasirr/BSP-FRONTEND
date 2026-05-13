@@ -4,13 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>WhatsappGptx - WhatsApp Marketing Sass for Indian Businesses</title>
+  <title>Gptx</title>
   
   <!-- SEO Meta Tags -->
   <meta name="description" content="Grow your business with WhatsappGptx, the most powerful WhatsApp marketing tool for India shop owners. Send bulk messages, automate replies & boost sales!" />
   <meta name="keywords" content="WhatsApp Marketing India, India business tools, WhatsApp automation, WhatsappGptx, shop marketing WhatsApp, send bulk WhatsApp messages, India business growth" />
   <meta name="author" content="WhatsappGptx Team" />
-
+  <!-- Dynamic Title -->
+  <script>
+      if (window.location.hostname.startsWith("admin.")) {
+        document.title = "GPTX Admin";
+      } else {
+        document.title = "GPTX";
+      }
+  </script>
   <!-- Open Graph (for Facebook Sharing) -->
   <meta property="og:title" content="WhatsappGptx - WhatsApp Marketing for India Businesses" />
   <meta property="og:description" content="Send bulk WhatsApp messages, auto replies, and grow your local shop fast!" />
@@ -18,8 +25,26 @@
   <meta property="og:url" content="https://whatsgptx.netlify.app/assets/logo-DsoQUQB_.png" />
   <meta property="og:type" content="website" />
 
+  <script>
+    if (window.location.hostname.startsWith("admin.")) {
+      document.title = "Gptx Admin";
+    } else {
+      document.title = "Gptx";
+    }
+  </script>
+
   <!-- Icons and Fonts -->
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" id="dynamic-manifest" href="/manifest.json" />
+
+  <script>
+    const manifest = document.getElementById("dynamic-manifest");
+
+    if (window.location.hostname.startsWith("admin.")) {
+      manifest.setAttribute("href", "/admin-manifest.json");
+    } else {
+      manifest.setAttribute("href", "/manifest.json");
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="/logo.png"  />
   <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
 
