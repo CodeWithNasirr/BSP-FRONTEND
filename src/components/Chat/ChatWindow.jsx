@@ -1603,8 +1603,29 @@ const ChatWindow = ({ recipient }) => {
               });
             }
             if (action === "update_status") {
-              setMessages((prev) => prev.map((m) => m.message_id === payload.message_id ? { ...m, status: payload.status } : m));
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        (
+                            m.message_id === payload.message_id ||
+                            String(m.id) === String(payload.message_id)
+                        )
+                            ? {
+                                ...m,
+                                ...(payload.status && { status: payload.status }),
+                                ...(payload.media_url && {
+                                    media_url: payload.media_url,
+                                }),
+                                ...(payload.media_type && {
+                                    media_type: payload.media_type,
+                                }),
+                            }
+                            : m
+                    )
+                );
             }
+            // if (action === "update_status") {
+            //   setMessages((prev) => prev.map((m) => m.message_id === payload.message_id ? { ...m, status: payload.status } : m));
+            // }
           });
         } catch (error) { console.error("WS parse error:", error); }
       };
