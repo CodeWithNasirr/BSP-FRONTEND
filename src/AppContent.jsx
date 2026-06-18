@@ -60,7 +60,7 @@ const validRoutes = [
   "/campaigns", "/campaigns/create", "/campaigns/:id", "/contacts", "/bulk-upload",
   "/connect-form", "/whatsapp-setting", "/chats", "/chats/:id", "/subscriptions",
   "/my-usage-panel", "/Credits", "/orders", "/products", "/products/create-pr",
-  "/meta-catalog-setup", "/Segment", "/advanced", "/rfm-preview","/smart-contacts"
+  "/meta-catalog-setup", "/Segment", "/advanced", "/rfm-preview","/smart-contacts","/chat-flow"
 ];
 
 // ── PAGE LOADER ───────────────────────────────────────────────────────────────
@@ -74,6 +74,7 @@ function PageLoader() {
     </div>
   );
 }
+
 
 // ── APP CONTENT ───────────────────────────────────────────────────────────────
 function AppContent() {
@@ -102,8 +103,12 @@ function AppContent() {
     (location.pathname.startsWith("/chats/") && location.pathname.split("/").length === 3) ||
     (location.pathname === "/chats" && new URLSearchParams(location.search).has("recipient"));
 
-  const dynamicRoutes = [...validRoutes, ...(enableChatFlow ? ["/chat-flow"] : [])];
-  const match = matchRoutes(dynamicRoutes.map((path) => ({ path })), location);
+  // const dynamicRoutes = [...validRoutes, ...(enableChatFlow ? ["/chat-flow"] : [])];
+  // const match = matchRoutes(dynamicRoutes.map((path) => ({ path })), location);
+  const match = matchRoutes(
+  validRoutes.map((path) => ({ path })),
+  location
+);
   const isValidRoute = !!match;
   const notFoundPage = !isLoginPage && !isRegisterPage && !isValidRoute;
   const isBasicPlan = subscriptionStatus?.is_active && subscriptionStatus?.plan === "BASIC";
@@ -112,6 +117,8 @@ function AppContent() {
   const isAuthPage = isLoginPage || isRegisterPage || isLandingPage || isResetPasswordPage || isForgotPage || notFoundPage;
   const hideSidebar = isAuthPage || (isMobile && isChatWindow);
   const showMobileNav = !isAuthPage && !(isMobile && isChatWindow);
+
+
 
   return (
     // ── Dark mode root class — add 'dark' class to enable ──────────────────
@@ -179,7 +186,11 @@ function AppContent() {
           <Route path="/chats/:id" element={<FullProtectedRoute element={ChatWindow} />} />
           <Route path="/subscriptions" element={<FullProtectedRoute element={Subscription} />} />
           <Route path="/my-usage-panel" element={<FullProtectedRoute element={MyUsagePanel} />} />
-          <Route path="/chat-flow" element={<FullProtectedRoute element={ () => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} />
+          {/* <Route path="/chat-flow" element={<FullProtectedRoute element={ () => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} /> */}
+          <Route
+            path="/chat-flow"
+            element={<FullProtectedRoute element={FlowBuilder} />}
+          />
           <Route path="/Credits" element={<FullProtectedRoute element={Wallet} />} />
           <Route path="/orders" element={<FullProtectedRoute element={Order} />} />
           <Route path="/products" element={<FullProtectedRoute element={ProductView} />} />

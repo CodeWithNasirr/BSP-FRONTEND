@@ -539,7 +539,7 @@ import RequireSubscription from '../Subscriptions/RequireSubscription';
 import { useTouchDrag } from './useTouchDrag';
 import TriggerPanel from './TriggerPanel';
 
-const FlowBuilder = ({ setEnableChatFlow }) => {
+const FlowBuilder = () => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -567,8 +567,7 @@ const FlowBuilder = ({ setEnableChatFlow }) => {
 
   useEffect(() => {
     localStorage.setItem('chatFlowEnabled', isChatFlowEnabled);
-    setEnableChatFlow(isChatFlowEnabled);
-  }, [isChatFlowEnabled, setEnableChatFlow]);
+  }, [isChatFlowEnabled]);
 
   useEffect(() => {
     const loadFlows = async () => {
