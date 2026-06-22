@@ -121,7 +121,7 @@ function AppContent() {
 
 
   return (
-    // ── Dark mode root class — add 'dark' class to enable ──────────────────
+    // ── Dark mode root class — add 'dark' class to enable ─────────────────
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
 
       {/* ── SIDEBAR (desktop) ── */}
