@@ -469,7 +469,7 @@ export default function MarkAsPaidModal({ client, open, onClose, onSuccess, suba
                 className="w-full mt-1 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg text-white focus:border-emerald-500 outline-none"
               />
             </div>
-              {/* <div><span className="text-slate-500 block text-[10px]">Price</span><span className="font-bold text-emerald-400">{fmt(planPrice)}</span></div> */}
+             {/* <div><span className="text-slate-500 block text-[10px]">Price</span><span className="font-bold text-emerald-400">{fmt(planPrice)}</span></div> */}
             </div>
           </div>
 
