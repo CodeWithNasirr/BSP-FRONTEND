@@ -414,7 +414,14 @@ export default function MarkAsPaidModal({ client, open, onClose, onSuccess, suba
   const handleSubmit = async (e) => {
     e.preventDefault(); setLoading(true); setError(""); setSuccessMessage("");
     try {
-      await adminApi.post("/workflow/mark-paid/", { client_id: client.id, commission_percent: isFreePayment ? 0 : commissionPercent, note: note.trim(), is_free_payment: isFreePayment });
+      // await adminApi.post("/workflow/mark-paid/", { client_id: client.id, commission_percent: isFreePayment ? 0 : commissionPercent, note: note.trim(), is_free_payment: isFreePayment });
+      await adminApi.post("/workflow/mark-paid/", {
+        client_id: client.id,
+        amount_paid: planPrice,
+        commission_percent: isFreePayment ? 0 : commissionPercent,
+        note: note.trim(),
+        is_free_payment: isFreePayment,
+      });
       setSuccessMessage(isFreePayment ? "Marked as FREE." : `Payment confirmed! ${subadmin?.name || "SubAdmin"} earns ${fmt(commissionAmount)}.`);
       onSuccess?.(); setTimeout(() => onClose(), 2000);
     } catch (err) { setError(err.response?.data?.error?.client_id?.[0] || err.response?.data?.error || err.response?.data?.detail || "Failed."); }
@@ -452,7 +459,17 @@ export default function MarkAsPaidModal({ client, open, onClose, onSuccess, suba
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div><span className="text-slate-500 block text-[10px]">Plan</span><span className="font-semibold text-white">{client.subscription_plan || "BASIC"}</span></div>
-              <div><span className="text-slate-500 block text-[10px]">Price</span><span className="font-bold text-emerald-400">{fmt(planPrice)}</span></div>
+              <div>
+              <label className="text-slate-500 block text-[10px]">Amount Paid</label>
+              <input
+                type="number"
+                min="0"
+                value={planPrice}
+                onChange={(e) => setPlanPrice(Number(e.target.value))}
+                className="w-full mt-1 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg text-white focus:border-emerald-500 outline-none"
+              />
+            </div>
+              {/* <div><span className="text-slate-500 block text-[10px]">Price</span><span className="font-bold text-emerald-400">{fmt(planPrice)}</span></div> */}
             </div>
           </div>
 
