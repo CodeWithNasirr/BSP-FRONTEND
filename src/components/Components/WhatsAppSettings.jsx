@@ -13,6 +13,58 @@ const WhatsAppSettings = () => {
   const [wp_Details, setWp_Details] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // Maintenance actions
+  const [busy, setBusy] = useState(null);              // "register" | "subscribe" | "status" | null
+  const [webhookStatus, setWebhookStatus] = useState(null);
+  const [showStatus, setShowStatus] = useState(false);
+
+  const authHeaders = {
+    headers: {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  // Register phone number
+  const handleRegisterPhone = async () => {
+    setBusy("register");
+    try {
+      await axios.post(`${API_BASE_URL}/api/whatsapp/register-phone/`, {}, authHeaders);
+      toast.success("Phone registered successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to register phone");
+      console.error(error.response?.data || error.message);
+    }
+    setBusy(null);
+  };
+
+  // Subscribe webhooks
+  const handleSubscribeWebhooks = async () => {
+    setBusy("subscribe");
+    try {
+      await axios.post(`${API_BASE_URL}/api/whatsapp/subscribe-webhooks/`, {}, authHeaders);
+      toast.success("Webhooks subscribed successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to subscribe webhooks");
+      console.error(error.response?.data || error.message);
+    }
+    setBusy(null);
+  };
+
+  // Refresh subscription status (diagnostics)
+  const handleRefreshStatus = async () => {
+    setBusy("status");
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/whatsapp/webhook-status/`, authHeaders);
+      setWebhookStatus(res.data);
+      setShowStatus(true);
+    } catch (error) {
+      toast.error("Failed to fetch subscription status");
+      console.error(error.response?.data || error.message);
+    }
+    setBusy(null);
+  };
+
   // Fetch WhatsApp Details
   useEffect(() => {
     if (!isConnected) return;
@@ -236,6 +288,72 @@ return (
             </div>
 
           </div>
+        </div>
+
+        {/* MAINTENANCE CARD */}
+        <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
+
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Maintenance
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Re-run Meta setup actions for your connected account. Safe to run anytime.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+
+            <button
+              onClick={handleRegisterPhone}
+              disabled={busy !== null}
+              className="rounded-2xl bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 text-sm font-medium transition-all duration-200"
+            >
+              {busy === "register" ? "Registering..." : "Register Phone"}
+            </button>
+
+            <button
+              onClick={handleSubscribeWebhooks}
+              disabled={busy !== null}
+              className="rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 text-sm font-medium transition-all duration-200"
+            >
+              {busy === "subscribe" ? "Subscribing..." : "Subscribe Webhooks"}
+            </button>
+
+            <button
+              onClick={handleRefreshStatus}
+              disabled={busy !== null}
+              className="rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/50 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 dark:text-gray-200 px-5 py-2.5 text-sm font-medium transition-all duration-200"
+            >
+              {busy === "status" ? "Refreshing..." : "Refresh Subscription Status"}
+            </button>
+
+          </div>
+
+          {/* SUBSCRIPTION STATUS (diagnostics) */}
+          {webhookStatus && (
+            <div className="mt-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 overflow-hidden">
+
+              <button
+                onClick={() => setShowStatus((s) => !s)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left"
+              >
+                <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-medium">
+                  Subscription Status (Meta response)
+                </span>
+                <span className="text-gray-400 text-sm">
+                  {showStatus ? "Hide" : "Show"}
+                </span>
+              </button>
+
+              {showStatus && (
+                <pre className="px-4 pb-4 text-xs text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap break-all">
+{JSON.stringify(webhookStatus, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* ACTIONS */}
