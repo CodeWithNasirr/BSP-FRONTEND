@@ -7,7 +7,7 @@ import { LoadingSpinner, ConfirmModal } from "../components/UIComponents";
 import { toast } from "react-toastify";
 import {
   Megaphone, Plus, Pencil, Trash2, Power, X, Info, AlertTriangle,
-  CheckCircle2, AlertOctagon,
+  CheckCircle2, AlertOctagon, Users, UserCog, UserX,
 } from "lucide-react";
 
 const VARIANTS = [
@@ -18,8 +18,16 @@ const VARIANTS = [
 ];
 const variantMeta = (v) => VARIANTS.find((x) => x.value === v) || VARIANTS[0];
 
+const AUDIENCES = [
+  { value: "all",        label: "All clients",       icon: Users,   hint: "Everyone sees this banner" },
+  { value: "subadmin",   label: "A SubAdmin's clients", icon: UserCog, hint: "Only clients assigned to the chosen SubAdmin" },
+  { value: "unassigned", label: "Unassigned clients", icon: UserX,   hint: "Only clients with no SubAdmin assigned" },
+];
+const audienceMeta = (v) => AUDIENCES.find((x) => x.value === v) || AUDIENCES[0];
+
 const emptyForm = {
   title: "", message: "", variant: "info",
+  audience: "all", target_subadmin: "",
   is_active: true, dismissible: true, starts_at: "", ends_at: "",
 };
 
@@ -30,6 +38,7 @@ const toPayload = (v) => (v ? new Date(v).toISOString() : null);
 
 export default function AnnouncementsPage() {
   const [items, setItems] = useState([]);
+  const [subadmins, setSubadmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);   // form object or null
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -43,6 +52,12 @@ export default function AnnouncementsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    adminApi.get("/subadmins/")
+      .then((r) => setSubadmins(r.data.results || r.data || []))
+      .catch(() => { /* non-fatal — subadmin targeting just won't have options */ });
+  }, []);
 
   const toggle = (a) => {
     adminApi.patch(`/announcements/${a.id}/`, { is_active: !a.is_active })
@@ -115,7 +130,19 @@ export default function AnnouncementsPage() {
                 </div>
                 {a.title && <h3 className="text-sm font-bold text-white mt-2.5">{a.title}</h3>}
                 <p className="text-[13px] text-slate-300 mt-1 leading-snug whitespace-pre-wrap">{a.message}</p>
-                <p className="text-[10px] text-slate-600 mt-2.5">
+                <div className="flex items-center gap-1.5 mt-2.5">
+                  {(() => {
+                    const am = audienceMeta(a.audience);
+                    const AIcon = am.icon;
+                    return (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-white/[0.06] text-slate-400">
+                        <AIcon size={11} />
+                        {a.audience === "subadmin" ? (a.target_subadmin_name || "SubAdmin") : am.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <p className="text-[10px] text-slate-600 mt-2">
                   {a.dismissible ? "Dismissible" : "Persistent"}
                   {a.starts_at && ` · from ${new Date(a.starts_at).toLocaleString()}`}
                   {a.ends_at && ` · until ${new Date(a.ends_at).toLocaleString()}`}
@@ -126,7 +153,7 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      {editing && <AnnouncementModal form={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+      {editing && <AnnouncementModal form={editing} subadmins={subadmins} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
 
       <ConfirmModal
         open={!!confirmDelete}
@@ -141,19 +168,27 @@ export default function AnnouncementsPage() {
   );
 }
 
-function AnnouncementModal({ form, onClose, onSaved }) {
-  const [f, setF] = useState({ ...emptyForm, ...form });
+function AnnouncementModal({ form, subadmins = [], onClose, onSaved }) {
+  const [f, setF] = useState({
+    ...emptyForm, ...form,
+    target_subadmin: form.target_subadmin ?? "",
+  });
   const [saving, setSaving] = useState(false);
   const isEdit = !!form.id;
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
 
   const save = () => {
     if (!f.message.trim()) return toast.warn("Message is required.");
+    if (f.audience === "subadmin" && !f.target_subadmin) {
+      return toast.warn("Select a SubAdmin for this audience.");
+    }
     setSaving(true);
     const payload = {
       title: f.title.trim(),
       message: f.message.trim(),
       variant: f.variant,
+      audience: f.audience,
+      target_subadmin: f.audience === "subadmin" ? Number(f.target_subadmin) : null,
       is_active: f.is_active,
       dismissible: f.dismissible,
       starts_at: toPayload(f.starts_at),
@@ -207,6 +242,38 @@ function AnnouncementModal({ form, onClose, onSaved }) {
               })}
             </div>
           </div>
+          <div>
+            <label className={lbl}>Audience</label>
+            <div className="space-y-1.5">
+              {AUDIENCES.map((a) => {
+                const AIcon = a.icon;
+                const active = f.audience === a.value;
+                return (
+                  <button key={a.value} type="button" onClick={() => set("audience", a.value)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-colors ${
+                      active ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/[0.06] hover:border-white/[0.12]"
+                    }`}>
+                    <AIcon size={15} className={active ? "text-amber-400" : "text-slate-500"} />
+                    <div className="min-w-0">
+                      <p className={`text-[13px] font-medium ${active ? "text-white" : "text-slate-300"}`}>{a.label}</p>
+                      <p className="text-[11px] text-slate-500">{a.hint}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {f.audience === "subadmin" && (
+              <select value={f.target_subadmin} onChange={(e) => set("target_subadmin", e.target.value)} className={field + " mt-2"}>
+                <option value="">Select a SubAdmin…</option>
+                {subadmins.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.username}{s.assigned_client_count != null ? ` (${s.assigned_client_count} clients)` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={lbl}>Starts at (optional)</label>
