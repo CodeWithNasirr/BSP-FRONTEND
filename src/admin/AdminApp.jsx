@@ -127,6 +127,8 @@
 // }
 // src/admin/AdminApp.jsx — Premium responsive layout
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useAdminAuth } from "./context/AdminAuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
@@ -143,6 +145,15 @@ import SubAdminActivityPage from "./pages/SubAdminActivityPage";
 import WebhookDashboardPage from "./pages/WebhookDashboardPage";
 import NotificationTimeline from "../components/Notifications/NotificationTimeline";
 
+// Compliance Center
+import ComplianceLayout from "./pages/Compliance/ComplianceLayout";
+import ComplianceDashboard from "./pages/Compliance/ComplianceDashboard";
+import RiskProfilesPage from "./pages/Compliance/RiskProfilesPage";
+import CustomerInvestigation from "./pages/Compliance/CustomerInvestigation";
+import GuardConsole from "./pages/Compliance/GuardConsole";
+import PlatformRulesPage from "./pages/Compliance/PlatformRulesPage";
+import AnalyticsPage from "./pages/Compliance/AnalyticsPage";
+
 function DashboardRouter() {
   const { isSuperAdmin } = useAdminAuth();
   return isSuperAdmin ? <SuperAdminDashboard /> : <SubAdminDashboard />;
@@ -153,6 +164,7 @@ export default function AdminApp() {
 
   return (
     <div className="flex min-h-screen bg-[#0a0e17]">
+      <ToastContainer position="top-right" theme="dark" toastClassName="!rounded-xl !text-sm !shadow-lg" closeButton={false} />
       {isAuthenticated && <Sidebar />}
 
       {/* 
@@ -242,6 +254,23 @@ export default function AdminApp() {
                   : <Navigate to="/login" replace />
               }
             />
+
+            {/* Compliance Center — Platform Admin only */}
+            <Route
+              path="compliance"
+              element={
+                isAuthenticated
+                  ? <ProtectedRoute requiredRole="SUPER_ADMIN"><ComplianceLayout /></ProtectedRoute>
+                  : <Navigate to="/login" replace />
+              }
+            >
+              <Route index element={<ComplianceDashboard />} />
+              <Route path="customers" element={<RiskProfilesPage />} />
+              <Route path="customers/:id" element={<CustomerInvestigation />} />
+              <Route path="guard" element={<GuardConsole />} />
+              <Route path="rules" element={<PlatformRulesPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+            </Route>
 
            <Route
             path="*"

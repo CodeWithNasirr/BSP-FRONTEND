@@ -4,7 +4,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import {
   LayoutDashboard, Users, UserCog, BarChart3, ScrollText,
-  LogOut, Shield, History, Radio, Bell, Menu, X, ChevronLeft, ChevronRight,
+  LogOut, Shield, ShieldHalf, History, Radio, Bell, Menu, X, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 const superAdminLinks = [
@@ -16,6 +16,7 @@ const superAdminLinks = [
   { to: "/logs",              icon: ScrollText,      label: "Logs",           mobile: false },
   { to: "/notifications",     icon: Bell,            label: "Notifications",  mobile: false },
   { to: "/webhook-analytics", icon: Radio,           label: "Webhooks",       mobile: false, badge: true },
+  { to: "/compliance",        icon: ShieldHalf,      label: "Compliance",     mobile: false, badge: true },
 ];
 
 const subAdminLinks = [
