@@ -12,6 +12,7 @@ import { Context } from "../context/Context";
 import { toast } from "react-toastify";
 import API_BASE_URL from "../../config";
 import { Card, StatsCard, Button, Badge, Avatar, EmptyState } from "../ui";
+import AnnouncementBanner from "./AnnouncementBanner";
 import {
   Users, Megaphone, FileText, MessageCircle, Wallet, Bell,
   BellOff, Zap, ExternalLink, TrendingUp, ChevronRight,
@@ -172,6 +173,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 lg:pb-6">
+
+      {/* ── ANNOUNCEMENT BANNERS (set by SuperAdmin) ── */}
+      <AnnouncementBanner />
 
       {/* ── PAGE HEADER ── */}
       <div className="px-4 lg:px-6 pt-4 pb-2 flex items-center justify-between">

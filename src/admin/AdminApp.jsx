@@ -154,6 +154,8 @@ import GuardConsole from "./pages/Compliance/GuardConsole";
 import PlatformRulesPage from "./pages/Compliance/PlatformRulesPage";
 import AnalyticsPage from "./pages/Compliance/AnalyticsPage";
 
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+
 function DashboardRouter() {
   const { isSuperAdmin } = useAdminAuth();
   return isSuperAdmin ? <SuperAdminDashboard /> : <SubAdminDashboard />;
@@ -271,6 +273,16 @@ export default function AdminApp() {
               <Route path="rules" element={<PlatformRulesPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
+
+            {/* Announcements — Platform Admin only */}
+            <Route
+              path="announcements"
+              element={
+                isAuthenticated
+                  ? <ProtectedRoute requiredRole="SUPER_ADMIN"><AnnouncementsPage /></ProtectedRoute>
+                  : <Navigate to="/login" replace />
+              }
+            />
 
            <Route
             path="*"
