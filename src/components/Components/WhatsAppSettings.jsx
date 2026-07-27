@@ -51,6 +51,19 @@ const WhatsAppSettings = () => {
     setBusy(null);
   };
 
+  // Unsubscribe webhooks
+  const handleUnsubscribeWebhooks = async () => {
+    setBusy("unsubscribe");
+    try {
+      await axios.post(`${API_BASE_URL}/api/whatsapp/unsubscribe-webhooks/`, {}, authHeaders);
+      toast.success("Webhooks unsubscribed successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to unsubscribe webhooks");
+      console.error(error.response?.data || error.message);
+    }
+    setBusy(null);
+  };
+
   // Refresh subscription status (diagnostics)
   const handleRefreshStatus = async () => {
     setBusy("status");
@@ -318,6 +331,14 @@ return (
               className="rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 text-sm font-medium transition-all duration-200"
             >
               {busy === "subscribe" ? "Subscribing..." : "Subscribe Webhooks"}
+            </button>
+
+            <button
+              onClick={handleUnsubscribeWebhooks}
+              disabled={busy !== null}
+              className="rounded-2xl border border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed text-amber-700 dark:text-amber-400 px-5 py-2.5 text-sm font-medium transition-all duration-200"
+            >
+              {busy === "unsubscribe" ? "Unsubscribing..." : "Unsubscribe Webhooks"}
             </button>
 
             <button
