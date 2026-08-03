@@ -5,28 +5,28 @@ import API_BASE_URL from '../../config';
 import { Context } from '../context/Context';
 
 const plans = [
-  {
-    name: 'BASIC',
-    monthly: 499,
-    yearly: 4999,
-    included_messages: 1000,
-    gradient: 'from-green-500 to-green-600',
-    disabled: false,
-    features: [
-      'Client Dashboard Access',
-      'Up to 1,000 messages/month',
-      'Unlimited Contacts & Groups',
-      'Limited Campaigns (Text Only)',
-      'No Media Support',
-      'No Chatbot or Automation',
-      'Basic Delivery Reports',
-      'Basic Support',
-    ],
-  },
+  // {
+  //   name: 'BASIC',
+  //   monthly: 499,
+  //   yearly: 4999,
+  //   included_messages: 1000,
+  //   gradient: 'from-green-500 to-green-600',
+  //   disabled: false,
+  //   features: [
+  //     'Client Dashboard Access',
+  //     'Up to 1,000 messages/month', 
+  //     'Unlimited Contacts & Groups',
+  //     'Limited Campaigns (Text Only)',
+  //     'No Media Support',
+  //     'No Chatbot or Automation',
+  //     'Basic Delivery Reports',
+  //     'Basic Support',
+  //   ],
+  // },
   {
     name: 'GROWTH',
-    monthly: 999,
-    yearly: 6999,
+    monthly: 1999,
+    yearly: 19999,
     included_messages: 5000,
     gradient: 'from-blue-500 to-blue-600',
     disabled: false,
@@ -46,8 +46,8 @@ const plans = [
   },
   {
     name: 'BUSINESS PRO',
-    monthly: 1999,
-    yearly: 19999,
+    monthly: 4999,
+    yearly: 49999,
     included_messages: 12000,
     gradient: 'from-purple-500 to-purple-600',
     disabled: false,
@@ -62,7 +62,7 @@ const plans = [
       'Webhook-Based Triggers',
       'Priority Messaging Queue',
       'Live Support via WhatsApp',
-      'Custom Domain & Branding (on request)',
+      // 'Custom Domain & Branding (on request)',
     ],
   },
 ];
