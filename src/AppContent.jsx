@@ -11,7 +11,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   MessagesSquare, ContactRound, MessageSquareMore, MessageCircleMore,
-  Workflow, CreditCard, House,
+  Workflow, CreditCard, House, Activity,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { MdViewCarousel } from "react-icons/md";
@@ -54,6 +54,7 @@ import MainChat from "./components/Chat/MainChat";
 import WhatsAppRedirect from "./components/Components/WhatsAppRedirect";
 import Order from "./components/Orders/Order";
 import SmartContactManagement from './components/Contact/SmartContactManagement';
+import AutomationDashboard from "./components/Automation/AutomationDashboard";
 import useUnreadChats from "./hooks/useUnreadChats";
 const validRoutes = [
   "/", "/login", "/register", "/dashboard", "/templates", "/templates/create",
@@ -132,6 +133,7 @@ function AppContent() {
           <SidebarItem icon={<ContactRound size={20} />} text="Smart Contacts" to="/smart-contacts" />
 
           <SidebarItem icon={<MessagesSquare />} text="Campaigns" to="/campaigns" />
+          <SidebarItem icon={<Activity />} text="Automation" to="/automation" />
           <SidebarItem icon={<MessageSquareMore />} text="Templates" to="/templates" />
           <SidebarItem icon={<MessageCircleMore />} text="Chats" to="/chats" badge={unreadChats}/>
           {!isBasicPlan && (
@@ -177,6 +179,7 @@ function AppContent() {
           <Route path="/campaigns" element={<FullProtectedRoute element={Campaigns} />} />
           <Route path="/campaigns/create" element={<FullProtectedRoute element={CreateCampaigns} />} />
           <Route path="/campaigns/:id" element={<FullProtectedRoute element={Campaigns_Details} />} />
+          <Route path="/automation" element={<FullProtectedRoute element={AutomationDashboard} />} />
           <Route path="/contacts" element={<FullProtectedRoute element={ContactManagement} />} />
           <Route path="/smart-contacts" element={<FullProtectedRoute element={SmartContactManagement} />} />
           <Route path="/bulk-upload" element={<FullProtectedRoute element={BulkImportContacts} />} />

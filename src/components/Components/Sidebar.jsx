@@ -22,6 +22,7 @@ import {
   Bell,
   Zap,
   User,
+  Activity,
 } from "lucide-react";
 import { SiWhatsapp as SiWA } from "react-icons/si";
 import { Avatar } from "../ui";
@@ -278,6 +279,12 @@ export function MobileBottomNav() {
       to: "/campaigns",
       icon: <MessagesSquare size={22} />,
       label: "Campaigns",
+    },
+
+    {
+      to: "/automation",
+      icon: <Activity size={22} />,
+      label: "Auto",
     },
 
     {
