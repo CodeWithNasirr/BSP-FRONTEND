@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Activity, Gauge, Users, ShieldCheck, TrendingUp, Bell, RefreshCw,
-  Play, Pause, Settings2, AlertTriangle, CheckCircle2, PauseCircle,
+  Play, Pause, Settings2, AlertTriangle, CheckCircle2, PauseCircle, Plus,
 } from "lucide-react";
 import automationApi from "./api";
 import CampaignControlPanel from "./CampaignControlPanel";
@@ -32,6 +33,7 @@ export default function AutomationDashboard() {
   const [panel, setPanel] = useState(null); // {id, name}
   const [busyId, setBusyId] = useState(null);
   const timer = useRef(null);
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     try {
@@ -107,10 +109,16 @@ export default function AutomationDashboard() {
             Live automation status · {t.running || 0} running · {t.paused || 0} paused
           </p>
         </div>
-        <button onClick={load}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-          <RefreshCw size={15} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={load}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <RefreshCw size={15} /> Refresh
+          </button>
+          <button onClick={() => navigate("/automation/create")}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700">
+            <Plus size={16} /> New automated campaign
+          </button>
+        </div>
       </div>
 
       {/* Alerts banner */}

@@ -36,9 +36,19 @@ export const automationApi = {
       headers: authHeader(),
     }),
 
+  // Create + start an automated campaign from a contact pool
+  createCampaign: (body) =>
+    axios.post(`${base}/api/automation/campaigns/`, body, { headers: authHeader() }),
+  poolPreview: (params) =>
+    axios.get(`${base}/api/automation/pool-preview/`, { params, headers: authHeader() }),
+
   // Supporting data
   templates: () =>
     axios.get(`${base}/api/whatsapp/templates/`, { headers: authHeader() }),
+  segments: () =>
+    axios.get(`${base}/api/segments/`, { headers: authHeader() }),
+  groups: () =>
+    axios.get(`${base}/api/add-group/`, { headers: authHeader() }),
   overrideContact: (contactId, override, reason = "") =>
     axios.post(
       `${base}/api/contacts/${contactId}/intelligence/override/`,

@@ -55,6 +55,7 @@ import WhatsAppRedirect from "./components/Components/WhatsAppRedirect";
 import Order from "./components/Orders/Order";
 import SmartContactManagement from './components/Contact/SmartContactManagement';
 import AutomationDashboard from "./components/Automation/AutomationDashboard";
+import CreateAutomatedCampaign from "./components/Automation/CreateAutomatedCampaign";
 import useUnreadChats from "./hooks/useUnreadChats";
 const validRoutes = [
   "/", "/login", "/register", "/dashboard", "/templates", "/templates/create",
@@ -180,6 +181,7 @@ function AppContent() {
           <Route path="/campaigns/create" element={<FullProtectedRoute element={CreateCampaigns} />} />
           <Route path="/campaigns/:id" element={<FullProtectedRoute element={Campaigns_Details} />} />
           <Route path="/automation" element={<FullProtectedRoute element={AutomationDashboard} />} />
+          <Route path="/automation/create" element={<FullProtectedRoute element={CreateAutomatedCampaign} />} />
           <Route path="/contacts" element={<FullProtectedRoute element={ContactManagement} />} />
           <Route path="/smart-contacts" element={<FullProtectedRoute element={SmartContactManagement} />} />
           <Route path="/bulk-upload" element={<FullProtectedRoute element={BulkImportContacts} />} />

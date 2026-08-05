@@ -9,7 +9,7 @@ import axios from "axios";
 import API_BASE_URL from "../../config";
 import { toast } from 'react-toastify';
 import RequireSubscription from "../Subscriptions/RequireSubscription";
-import { Megaphone, Plus, ChevronLeft, ChevronRight, TrendingUp, CheckCircle, Clock, Search } from "lucide-react";
+import { Megaphone, Plus, ChevronLeft, ChevronRight, TrendingUp, CheckCircle, Clock, Search, Zap } from "lucide-react";
 import { Card, Button, Badge, EmptyState, Skeleton } from "../ui";
 
 function Campaigns() {
@@ -65,6 +65,12 @@ function Campaigns() {
                   className="pl-8 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 w-48"
                 />
               </div>
+              <button
+                onClick={() => navigate("/automation/create")}
+                title="Send to a large pool automatically, at a safe daily volume"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl border border-green-500/40 text-green-600 dark:text-green-400 hover:bg-green-500/10">
+                <Zap size={15} /> Automate
+              </button>
               <Button variant="primary" size="sm" icon={<Plus size={15} />} onClick={() => navigate("/campaigns/create")}>
                 New Campaign
               </Button>
