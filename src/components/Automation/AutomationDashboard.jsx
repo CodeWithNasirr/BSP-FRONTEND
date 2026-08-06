@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Activity, Gauge, Users, ShieldCheck, TrendingUp, Bell, RefreshCw,
-  Play, Pause, Settings2, AlertTriangle, CheckCircle2, PauseCircle, Plus,
+  Play, Pause, Settings2, AlertTriangle, CheckCircle2, PauseCircle, Plus, BookOpen,
 } from "lucide-react";
 import automationApi from "./api";
 import CampaignControlPanel from "./CampaignControlPanel";
+import LimitGrowthGuide from "./LimitGrowthGuide";
 
 const healthColor = (v) => ({
   HEALTHY: "text-green-500", WARNING: "text-amber-500",
@@ -31,6 +32,7 @@ export default function AutomationDashboard() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [panel, setPanel] = useState(null); // {id, name}
+  const [guideOpen, setGuideOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const timer = useRef(null);
   const navigate = useNavigate();
@@ -110,6 +112,10 @@ export default function AutomationDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setGuideOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-green-500/40 text-green-600 dark:text-green-400 hover:bg-green-500/10">
+            <BookOpen size={15} /> Limit Growth Guide
+          </button>
           <button onClick={load}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
             <RefreshCw size={15} /> Refresh
@@ -308,6 +314,8 @@ export default function AutomationDashboard() {
           onChanged={load}
         />
       )}
+
+      {guideOpen && <LimitGrowthGuide onClose={() => setGuideOpen(false)} />}
     </div>
   );
 }
