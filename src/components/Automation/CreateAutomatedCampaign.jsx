@@ -30,6 +30,8 @@ export default function CreateAutomatedCampaign() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaType, setMediaType] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [phone, setPhone] = useState("");
+
   const [dailyTarget, setDailyTarget] = useState(100);
   const [progressive, setProgressive] = useState(false);
   const [progressiveDays, setProgressiveDays] = useState(7);
@@ -93,6 +95,7 @@ export default function CreateAutomatedCampaign() {
       if (!name.trim()) return false;
       if (poolType === "segment") return !!segmentId;
       if (poolType === "group") return !!groupName;
+      if (poolType === "single") return !!phone;
       return true;
     }
     if (step === 1) return !!templateId && (!needsMedia || !!mediaUrl);
@@ -109,6 +112,7 @@ export default function CreateAutomatedCampaign() {
         pool_type: poolType,
         segment_id: segmentId || undefined,
         group_name: groupName || undefined,
+        phone: phone || undefined,
         daily_target: parseInt(dailyTarget, 10),
         media_url: mediaUrl || undefined,
         media_type: mediaType || undefined,
@@ -198,6 +202,18 @@ export default function CreateAutomatedCampaign() {
                       <option key={i} value={g.group_name || g.name}>{g.group_name || g.name}</option>
                     ))}
                   </select>
+                </Field>
+              )}
+
+              {poolType === "single" && (
+                <Field label="Phone Number">
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+919876543210"
+                    className={inputCls}
+                  />
                 </Field>
               )}
 
