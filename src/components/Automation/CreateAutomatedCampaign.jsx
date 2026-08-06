@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Users, FileText, Gauge, Rocket, ChevronRight, ChevronLeft, Check, Layers,
+  Upload, Image as ImageIcon,
 } from "lucide-react";
 import automationApi from "./api";
 
@@ -26,6 +27,9 @@ export default function CreateAutomatedCampaign() {
   const [segmentId, setSegmentId] = useState(params.get("segment_id") || "");
   const [groupName, setGroupName] = useState("");
   const [templateId, setTemplateId] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaType, setMediaType] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [dailyTarget, setDailyTarget] = useState(100);
   const [progressive, setProgressive] = useState(false);
   const [progressiveDays, setProgressiveDays] = useState(7);
@@ -59,6 +63,31 @@ export default function CreateAutomatedCampaign() {
     [templates, templateId]
   );
 
+  const headerType = (selectedTemplate?.header_type || "").toUpperCase();
+  const needsMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType);
+
+  // Reset any chosen media when the template changes.
+  useEffect(() => {
+    setMediaUrl("");
+    setMediaType("");
+  }, [templateId]);
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await automationApi.uploadMedia(file);
+      setMediaUrl(res.data?.media_url || "");
+      setMediaType(res.data?.media_type || "");
+      toast.success("Media uploaded");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const canNext = () => {
     if (step === 0) {
       if (!name.trim()) return false;
@@ -66,7 +95,7 @@ export default function CreateAutomatedCampaign() {
       if (poolType === "group") return !!groupName;
       return true;
     }
-    if (step === 1) return !!templateId;
+    if (step === 1) return !!templateId && (!needsMedia || !!mediaUrl);
     if (step === 2) return dailyTarget >= 1;
     return true;
   };
@@ -81,6 +110,8 @@ export default function CreateAutomatedCampaign() {
         segment_id: segmentId || undefined,
         group_name: groupName || undefined,
         daily_target: parseInt(dailyTarget, 10),
+        media_url: mediaUrl || undefined,
+        media_type: mediaType || undefined,
         progressive_enabled: progressive,
         progressive_days: progressiveDays,
       };
@@ -198,6 +229,43 @@ export default function CreateAutomatedCampaign() {
                   {selectedTemplate.body_text || selectedTemplate.template_name}
                 </div>
               )}
+
+              {/* Media upload for image/video/document header templates */}
+              {needsMedia && (
+                <Field label={`${headerType.charAt(0) + headerType.slice(1).toLowerCase()} for this template`}>
+                  {mediaUrl ? (
+                    <div className="flex items-center gap-3">
+                      {mediaType === "image" ? (
+                        <img src={mediaUrl} alt="header"
+                          className="h-16 w-16 rounded-lg object-cover border border-gray-200 dark:border-gray-700" />
+                      ) : (
+                        <div className="h-16 w-16 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ImageIcon size={20} className="text-green-500" />
+                        </div>
+                      )}
+                      <div className="text-sm">
+                        <p className="text-green-600 dark:text-green-400 font-medium">Media ready</p>
+                        <button onClick={() => { setMediaUrl(""); setMediaType(""); }}
+                          className="text-xs text-gray-400 hover:text-gray-600">Replace</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className={`flex items-center justify-center gap-2 px-3 py-4 rounded-lg border border-dashed cursor-pointer text-sm
+                      ${uploading ? "opacity-60" : "hover:border-green-500"} border-gray-300 dark:border-gray-700 text-gray-500`}>
+                      <Upload size={16} />
+                      {uploading ? "Uploading…" : `Upload ${headerType.toLowerCase()}`}
+                      <input type="file" className="hidden" disabled={uploading}
+                        accept={headerType === "IMAGE" ? "image/*" : headerType === "VIDEO" ? "video/*" : ".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"}
+                        onChange={handleMediaUpload} />
+                    </label>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    This template has a {headerType.toLowerCase()} header — the file is required and
+                    will be sent with every message.
+                  </p>
+                </Field>
+              )}
+
               <p className="text-xs text-gray-400">
                 Only approved templates can be delivered by WhatsApp. You can change the template
                 later without stopping the campaign.
@@ -252,6 +320,7 @@ export default function CreateAutomatedCampaign() {
                   : poolType === "all" ? "All contacts" : "Single number"
               } extra={poolSize !== null && poolType !== "single" ? `${poolSize} contacts` : null} />
               <Review label="Template" value={selectedTemplate?.template_name || "—"} />
+              {needsMedia && <Review label="Header media" value={mediaUrl ? "Attached" : "Missing"} />}
               <Review label="Daily target" value={`${dailyTarget} / day`} />
               <Review label="Warm-up" value={progressive ? `Ramp over ${progressiveDays} days` : "Off (fixed)"} />
               <div className="text-xs text-gray-400 pt-2">

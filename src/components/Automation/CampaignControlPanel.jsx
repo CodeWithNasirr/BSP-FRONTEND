@@ -2,8 +2,12 @@ import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import {
   X, Play, Pause, Save, Clock, ListChecks, UserCog, ScrollText, RefreshCw,
+  Upload, Image as ImageIcon, Info,
 } from "lucide-react";
 import automationApi from "./api";
+
+const fmtTime = (iso) =>
+  iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
 
 const stateBadge = (s) => {
   const map = {
@@ -33,6 +37,9 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
 
   const [dailyVolume, setDailyVolume] = useState("");
   const [templateId, setTemplateId] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaType, setMediaType] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [overrideContactId, setOverrideContactId] = useState("");
   const [overrideMode, setOverrideMode] = useState("FORCE_ELIGIBLE");
   const [overrideReason, setOverrideReason] = useState("");
@@ -51,6 +58,8 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
       setConfig(cfg);
       setDailyVolume(cfg ? String(cfg.daily_max_messages) : "");
       setTemplateId(cfg?.template ? String(cfg.template) : "");
+      setMediaUrl(cfg?.media_url || "");
+      setMediaType(cfg?.media_type || "");
       setBatch(b.data?.data || null);
       setAudit(a.data?.data || []);
       setTemplates(t.data?.Data || t.data?.data || []);
@@ -97,10 +106,35 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
     }
   };
 
+  const selectedTemplate = templates.find((t) => String(t.id) === String(templateId));
+  const headerType = (selectedTemplate?.header_type || "").toUpperCase();
+  const needsMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType);
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await automationApi.uploadMedia(file);
+      setMediaUrl(res.data?.media_url || "");
+      setMediaType(res.data?.media_type || "");
+      toast.success("Media uploaded");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const saveTemplate = async () => {
+    if (needsMedia && !mediaUrl) {
+      return toast.error(`This template needs a ${headerType.toLowerCase()} — please upload it first`);
+    }
     setSaving(true);
     try {
-      await automationApi.updateConfig(campaignId, { template: templateId || null });
+      const body = { template: templateId || null };
+      if (needsMedia) { body.media_url = mediaUrl; body.media_type = mediaType; }
+      await automationApi.updateConfig(campaignId, body);
       toast.success("Template updated");
       await load();
     } catch (e) {
@@ -156,6 +190,25 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
           <div className="p-10 text-center text-gray-400">Loading…</div>
         ) : (
           <div className="p-5 space-y-6">
+            {/* When will it send? — clear status */}
+            {status?.schedule_status && (
+              <div className="rounded-xl border border-blue-300/30 bg-blue-50 dark:bg-blue-500/10 p-3">
+                <div className="flex items-start gap-2">
+                  <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                      {status.schedule_status.headline}
+                    </p>
+                    {status.schedule_status.detail && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {status.schedule_status.detail}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* State + controls */}
             <div className="flex items-center justify-between">
               <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${stateBadge(runState)}`}>
@@ -204,7 +257,7 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
             {/* Template */}
             <Section icon={<ListChecks size={15} />} title="Template">
               <div className="flex gap-2">
-                <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
+                <select value={templateId} onChange={(e) => { setTemplateId(e.target.value); setMediaUrl(""); setMediaType(""); }}
                   className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white">
                   <option value="">(Use campaign default)</option>
                   {templates.map((t) => (
@@ -218,25 +271,69 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
                   Save
                 </button>
               </div>
+
+              {/* Media for image/video/document header templates */}
+              {needsMedia && (
+                <div className="mt-2">
+                  {mediaUrl ? (
+                    <div className="flex items-center gap-3">
+                      {mediaType === "image" ? (
+                        <img src={mediaUrl} alt="header"
+                          className="h-14 w-14 rounded-lg object-cover border border-gray-200 dark:border-gray-700" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <ImageIcon size={18} className="text-green-500" />
+                        </div>
+                      )}
+                      <button onClick={() => { setMediaUrl(""); setMediaType(""); }}
+                        className="text-xs text-gray-400 hover:text-gray-600">Replace {headerType.toLowerCase()}</button>
+                    </div>
+                  ) : (
+                    <label className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border border-dashed cursor-pointer text-sm
+                      ${uploading ? "opacity-60" : "hover:border-green-500"} border-gray-300 dark:border-gray-700 text-gray-500`}>
+                      <Upload size={15} /> {uploading ? "Uploading…" : `Upload ${headerType.toLowerCase()} (required)`}
+                      <input type="file" className="hidden" disabled={uploading}
+                        accept={headerType === "IMAGE" ? "image/*" : headerType === "VIDEO" ? "video/*" : ".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"}
+                        onChange={handleMediaUpload} />
+                    </label>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    This template has a {headerType.toLowerCase()} header — it's sent with every message.
+                  </p>
+                </div>
+              )}
             </Section>
 
             {/* Next scheduled batches */}
             <Section icon={<Clock size={15} />} title={`Next scheduled (${scheduled.length})`}>
               {scheduled.length === 0 ? (
-                <p className="text-xs text-gray-400">No messages scheduled right now.</p>
+                <p className="text-xs text-gray-400">
+                  {status?.schedule_status?.detail ||
+                    "Nothing scheduled yet — the batch will be generated at the next planner run."}
+                </p>
               ) : (
-                <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
-                  {scheduled.slice(0, 50).map((r) => (
-                    <div key={r.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                      <span className="text-gray-700 dark:text-gray-300 truncate">
-                        {r.full_name || r.phone_number}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {r.scheduled_for ? new Date(r.scheduled_for).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+                    {[...scheduled]
+                      .sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for))
+                      .slice(0, 10)
+                      .map((r) => (
+                        <div key={r.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                          <span className="text-gray-700 dark:text-gray-300 truncate">
+                            {r.full_name || r.phone_number}
+                          </span>
+                          <span className="text-xs text-gray-400">{fmtTime(r.scheduled_for)}</span>
+                        </div>
+                      ))}
+                  </div>
+                  {status?.schedule_status?.next_scheduled_at && (
+                    <p className="text-xs text-gray-400 mt-1.5">
+                      Next message ~{fmtTime(status.schedule_status.next_scheduled_at)} · window{" "}
+                      {fmtTime(status.schedule_status.window_start_at)}–{fmtTime(status.schedule_status.window_end_at)}
+                      {scheduled.length > 10 ? ` · +${scheduled.length - 10} more` : ""}
+                    </p>
+                  )}
+                </>
               )}
             </Section>
 

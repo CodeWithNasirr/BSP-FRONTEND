@@ -210,8 +210,13 @@ export default function AutomationDashboard() {
                 {campaigns.map((c) => (
                   <tr key={c.campaign_id}
                     className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                    <td className="px-5 py-3 font-medium text-gray-900 dark:text-white truncate max-w-[180px]">
-                      {c.name || c.campaign_id}
+                    <td className="px-5 py-3 max-w-[220px]">
+                      <div className="font-medium text-gray-900 dark:text-white truncate">
+                        {c.name || c.campaign_id}
+                      </div>
+                      {c.status_line && (
+                        <div className="text-[11px] text-gray-400 truncate mt-0.5">{c.status_line}</div>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${stateBadge(c.state)}`}>

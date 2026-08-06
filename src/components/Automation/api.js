@@ -42,6 +42,13 @@ export const automationApi = {
   poolPreview: (params) =>
     axios.get(`${base}/api/automation/pool-preview/`, { params, headers: authHeader() }),
 
+  // Upload header media (image/video/document) for a media template → returns a URL
+  uploadMedia: (file) => {
+    const fd = new FormData();
+    fd.append("media_file", file);
+    return axios.post(`${base}/api/automation/upload-media/`, fd, { headers: authHeader() });
+  },
+
   // Supporting data
   templates: () =>
     axios.get(`${base}/api/whatsapp/templates/`, { headers: authHeader() }),
