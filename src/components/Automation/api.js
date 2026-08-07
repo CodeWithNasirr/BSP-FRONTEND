@@ -64,4 +64,20 @@ export const automationApi = {
     ),
 };
 
+// ── Progression Plans (Quality Conversation Planner) ──────────────────────────
+// Honest framing: plans a controlled number of genuine quality conversations
+// (delivered / read / replied) over N days toward a growth goal. Never exceeds
+// current_limit, never calls Meta, never promises a tier change.
+export const progressionApi = {
+  list: () => axios.get(`${base}/api/progression-plans/`, { headers: authHeader() }),
+  create: (body) => axios.post(`${base}/api/progression-plans/`, body, { headers: authHeader() }),
+  detail: (id) => axios.get(`${base}/api/progression-plans/${id}/`, { headers: authHeader() }),
+  control: (id, action) =>
+    axios.post(`${base}/api/progression-plans/${id}/control/`, { action }, { headers: authHeader() }),
+  updateTargets: (id, targets) =>
+    axios.patch(`${base}/api/progression-plans/${id}/targets/`, { targets }, { headers: authHeader() }),
+  recalculate: (id) =>
+    axios.post(`${base}/api/progression-plans/${id}/recalculate/`, {}, { headers: authHeader() }),
+};
+
 export default automationApi;
