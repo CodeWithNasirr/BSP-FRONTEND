@@ -1,10 +1,13 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
 import {
   X, Play, Pause, Save, Clock, ListChecks, UserCog, ScrollText, RefreshCw,
   Upload, Image as ImageIcon, Info,
 } from "lucide-react";
 import automationApi from "./api";
+import VariableSubstitutionSection from "../Campaigns/VariableSubstitutionSection";
+
+const extractVariables = (body) => [...new Set((body || "").match(/{{\d+}}/g) || [])];
 
 const fmtTime = (iso) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -40,6 +43,7 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaType, setMediaType] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [varData, setVarData] = useState({ variable_values: {}, variable_methods: {} });
   const [overrideContactId, setOverrideContactId] = useState("");
   const [overrideMode, setOverrideMode] = useState("FORCE_ELIGIBLE");
   const [overrideReason, setOverrideReason] = useState("");
@@ -60,6 +64,10 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
       setTemplateId(cfg?.template ? String(cfg.template) : "");
       setMediaUrl(cfg?.media_url || "");
       setMediaType(cfg?.media_type || "");
+      setVarData({
+        variable_values: cfg?.variable_values || {},
+        variable_methods: cfg?.variable_methods || {},
+      });
       setBatch(b.data?.data || null);
       setAudit(a.data?.data || []);
       setTemplates(t.data?.Data || t.data?.data || []);
@@ -109,6 +117,8 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
   const selectedTemplate = templates.find((t) => String(t.id) === String(templateId));
   const headerType = (selectedTemplate?.header_type || "").toUpperCase();
   const needsMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType);
+  // Memoized so VariableSubstitutionSection's effect doesn't re-run every render.
+  const variables = useMemo(() => extractVariables(selectedTemplate?.body_text), [selectedTemplate]);
 
   const handleMediaUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -132,7 +142,11 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
     }
     setSaving(true);
     try {
-      const body = { template: templateId || null };
+      const body = {
+        template: templateId || null,
+        variable_values: varData.variable_values || {},
+        variable_methods: varData.variable_methods || {},
+      };
       if (needsMedia) { body.media_url = mediaUrl; body.media_type = mediaType; }
       await automationApi.updateConfig(campaignId, body);
       toast.success("Template updated");
@@ -257,7 +271,8 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
             {/* Template */}
             <Section icon={<ListChecks size={15} />} title="Template">
               <div className="flex gap-2">
-                <select value={templateId} onChange={(e) => { setTemplateId(e.target.value); setMediaUrl(""); setMediaType(""); }}
+                <select value={templateId}
+                  onChange={(e) => { setTemplateId(e.target.value); setMediaUrl(""); setMediaType(""); setVarData({ variable_values: {}, variable_methods: {} }); }}
                   className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white">
                   <option value="">(Use campaign default)</option>
                   {templates.map((t) => (
@@ -271,6 +286,21 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
                   Save
                 </button>
               </div>
+
+              {/* Variable mapping for the chosen template */}
+              {variables.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-400 mb-1">
+                    Map the {variables.length} variable{variables.length > 1 ? "s" : ""} for this template, then Save.
+                  </p>
+                  <VariableSubstitutionSection
+                    variables={variables}
+                    formData={varData}
+                    setFormData={setVarData}
+                    template={selectedTemplate}
+                  />
+                </div>
+              )}
 
               {/* Media for image/video/document header templates */}
               {needsMedia && (
