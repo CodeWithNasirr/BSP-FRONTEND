@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Users, FileText, Gauge, Rocket, ChevronRight, ChevronLeft, Check, Layers,
-  Upload, Image as ImageIcon,
+  Upload, Image as ImageIcon, TrendingUp,
 } from "lucide-react";
 import automationApi from "./api";
 import VariableSubstitutionSection from "../Campaigns/VariableSubstitutionSection";
@@ -356,6 +356,20 @@ export default function CreateAutomatedCampaign() {
                   </div>
                 </Field>
               )}
+
+              {/* Optional: link to the multi-day quality-conversation planner */}
+              <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3 flex items-start gap-2">
+                <TrendingUp size={15} className="text-green-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Trying to grow your messaging limit over several days?{" "}
+                  <button type="button" onClick={() => navigate("/automation/progression")}
+                    className="text-green-600 dark:text-green-400 font-medium hover:underline">
+                    Create a Growth (Progression) Plan
+                  </button>{" "}
+                  — it targets a set number of quality conversations across days while staying
+                  within your current limit.
+                </p>
+              </div>
             </div>
           )}
 

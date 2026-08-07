@@ -116,6 +116,10 @@ export default function AutomationDashboard() {
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-green-500/40 text-green-600 dark:text-green-400 hover:bg-green-500/10">
             <BookOpen size={15} /> Limit Growth Guide
           </button> */}
+          <button onClick={() => navigate("/automation/progression")}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <TrendingUp size={15} /> Growth plans
+          </button>
           <button onClick={load}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
             <RefreshCw size={15} /> Refresh
@@ -168,14 +172,21 @@ export default function AutomationDashboard() {
       {/* Progression (limit capacity) */}
       {(data?.progression || []).length > 0 && (
         <div className="mb-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
-            <TrendingUp size={16} className="text-green-500" /> Messaging capacity progress
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+              <TrendingUp size={16} className="text-green-500" /> Messaging capacity progress
+            </h2>
+            <button onClick={() => navigate("/automation/progression")}
+              className="text-xs font-medium text-green-600 dark:text-green-400 hover:underline">
+              Manage plans →
+            </button>
+          </div>
           <div className="space-y-4">
             {data.progression.map((p) => (
-              <div key={p.id}>
+              <button key={p.id} onClick={() => navigate(`/automation/progression/${p.id}`)}
+                className="w-full text-left group">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-300">
+                  <span className="text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400">
                     {p.current_limit.toLocaleString()} → {p.target_limit.toLocaleString()}
                     <span className="ml-2 text-xs text-gray-400">({p.state})</span>
                   </span>
@@ -184,7 +195,7 @@ export default function AutomationDashboard() {
                   </span>
                 </div>
                 <Progress value={p.pct / 100} accent="green" />
-              </div>
+              </button>
             ))}
           </div>
         </div>
