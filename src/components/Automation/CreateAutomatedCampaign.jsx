@@ -6,8 +6,12 @@ import {
   Upload, Image as ImageIcon,
 } from "lucide-react";
 import automationApi from "./api";
+import VariableSubstitutionSection from "../Campaigns/VariableSubstitutionSection";
 
 const STEPS = ["Audience", "Template", "Volume", "Review"];
+
+// Extract unique {{1}}, {{2}}… placeholders from a template body.
+const extractVariables = (body) => [...new Set((body || "").match(/{{\d+}}/g) || [])];
 
 /**
  * Guided "Create Automated Campaign" flow for non-technical users.
@@ -32,6 +36,8 @@ export default function CreateAutomatedCampaign() {
   const [uploading, setUploading] = useState(false);
   const [phone, setPhone] = useState("");
 
+  // Variable mapping ({{1}} → static value or dynamic contact field)
+  const [varData, setVarData] = useState({ variable_values: {}, variable_methods: {} });
   const [dailyTarget, setDailyTarget] = useState(100);
   const [progressive, setProgressive] = useState(false);
   const [progressiveDays, setProgressiveDays] = useState(7);
@@ -68,10 +74,17 @@ export default function CreateAutomatedCampaign() {
   const headerType = (selectedTemplate?.header_type || "").toUpperCase();
   const needsMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType);
 
-  // Reset any chosen media when the template changes.
+  // Placeholders in the selected template's body, e.g. ["{{1}}", "{{2}}"].
+  const variables = useMemo(
+    () => extractVariables(selectedTemplate?.body_text),
+    [selectedTemplate]
+  );
+
+  // Reset media + variable mapping whenever the template changes.
   useEffect(() => {
     setMediaUrl("");
     setMediaType("");
+    setVarData({ variable_values: {}, variable_methods: {} });
   }, [templateId]);
 
   const handleMediaUpload = async (e) => {
@@ -116,6 +129,8 @@ export default function CreateAutomatedCampaign() {
         daily_target: parseInt(dailyTarget, 10),
         media_url: mediaUrl || undefined,
         media_type: mediaType || undefined,
+        variable_values: varData.variable_values || {},
+        variable_methods: varData.variable_methods || {},
         progressive_enabled: progressive,
         progressive_days: progressiveDays,
       };
@@ -243,6 +258,24 @@ export default function CreateAutomatedCampaign() {
                 <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 text-sm text-gray-600 dark:text-gray-300">
                   <FileText size={14} className="inline mr-1 text-green-500" />
                   {selectedTemplate.body_text || selectedTemplate.template_name}
+                </div>
+              )}
+
+              {/* Variable mapping — appears as soon as a template with {{n}} is picked */}
+              {selectedTemplate && variables.length > 0 && (
+                <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Map the {variables.length} variable{variables.length > 1 ? "s" : ""} in this template
+                  </p>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Choose a contact field (dynamic) or type a fixed value (static) for each placeholder.
+                  </p>
+                  <VariableSubstitutionSection
+                    variables={variables}
+                    formData={varData}
+                    setFormData={setVarData}
+                    template={selectedTemplate}
+                  />
                 </div>
               )}
 
