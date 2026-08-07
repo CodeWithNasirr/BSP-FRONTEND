@@ -174,7 +174,13 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
     }
   };
 
-  const scheduled = (batch?.recipients || []).filter((r) => r.status === "SCHEDULED");
+  const recipients = batch?.recipients || [];
+  const scheduled = recipients.filter((r) => r.status === "SCHEDULED");
+  const batchCounts = recipients.reduce((acc, r) => {
+    acc[r.status] = (acc[r.status] || 0) + 1;
+    return acc;
+  }, {});
+  const todayBatch = status?.today_batch;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -250,6 +256,21 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
               <Mini label="Success" value={`${Math.round((status?.today_stats?.success_rate || 0) * 100)}%`} />
               <Mini label="Today's cap" value={status?.limit_progress?.todays_cap ?? "—"} />
             </div>
+
+            {/* Today's batch breakdown */}
+            {todayBatch && (
+              <Section icon={<ListChecks size={15} />}
+                title={`Today's batch · ${todayBatch.state || "—"}`}>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <Mini label="Target" value={todayBatch.target_count ?? "—"} />
+                  <Mini label="Selected" value={todayBatch.selected_count ?? 0} />
+                  <Mini label="Scheduled" value={batchCounts.SCHEDULED || 0} />
+                  <Mini label="Sent" value={batchCounts.SENT || 0} />
+                  <Mini label="Failed" value={batchCounts.FAILED || 0} />
+                  <Mini label="Skipped" value={batchCounts.SKIPPED || 0} />
+                </div>
+              </Section>
+            )}
 
             {/* Daily volume */}
             <Section icon={<Save size={15} />} title="Daily volume target">
