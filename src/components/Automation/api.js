@@ -27,8 +27,8 @@ export const automationApi = {
     axios.get(`${base}/api/campaigns/${cid}/automation/config/`, { headers: authHeader() }),
   updateConfig: (cid, body) =>
     axios.put(`${base}/api/campaigns/${cid}/automation/config/`, body, { headers: authHeader() }),
-  control: (cid, action) =>
-    axios.post(`${base}/api/campaigns/${cid}/automation/control/`, { action }, { headers: authHeader() }),
+  control: (cid, action, extra = {}) =>
+    axios.post(`${base}/api/campaigns/${cid}/automation/control/`, { action, ...extra }, { headers: authHeader() }),
   batch: (cid) =>
     axios.get(`${base}/api/campaigns/${cid}/automation/batch/`, { headers: authHeader() }),
   audit: (cid, limit = 100) =>
