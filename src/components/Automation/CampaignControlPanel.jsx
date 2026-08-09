@@ -48,6 +48,7 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
   const [overrideMode, setOverrideMode] = useState("FORCE_ELIGIBLE");
   const [overrideReason, setOverrideReason] = useState("");
   const [resumeVolume, setResumeVolume] = useState("");
+  const [overrideHours, setOverrideHours] = useState("6");
 
   const load = useCallback(async () => {
     try {
@@ -106,6 +107,25 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
     const v = parseInt(resumeVolume, 10);
     doControl("resume", v && v > 0 ? { resume_volume: v } : { resume_volume: 0 });
   };
+
+  // Force resume: keep running with auto-pause disabled for a limited window.
+  const doForceResume = () => {
+    const v = parseInt(resumeVolume, 10);
+    const vol = v && v > 0 ? v : 80; // safe default — never force-resume at full volume
+    const hours = parseInt(overrideHours, 10) || 6;
+    if (
+      !window.confirm(
+        `Force resume will disable auto-pause for ${hours} hour(s) and send at ${vol}/day. ` +
+          `The campaign keeps sending even if health is CRITICAL — account risk is on you. Continue?`
+      )
+    )
+      return;
+    doControl("force_resume", { override_hours: hours, resume_volume: vol });
+  };
+
+  const overrideState = status?.limit_progress?.auto_pause_override;
+  const overrideActive = overrideState?.active;
+  const fmtDateTime = (iso) => (iso ? new Date(iso).toLocaleString() : "—");
 
   const saveVolume = async () => {
     const v = parseInt(dailyVolume, 10);
@@ -259,6 +279,35 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
               </div>
             </div>
 
+            {/* Auto-pause OVERRIDE active — visible risk warning */}
+            {overrideActive && (
+              <div className="rounded-xl border border-red-400/50 bg-red-50 dark:bg-red-500/10 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+                      Auto-pause temporarily disabled — account risk is on the operator
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                      This campaign will keep sending even if health is CRITICAL, until{" "}
+                      <b>{fmtDateTime(overrideState?.until)}</b>. Protection then returns
+                      automatically.
+                      {overrideState?.latest_verdict && (
+                        <> Latest health reading: <b>{overrideState.latest_verdict}</b>.</>
+                      )}
+                    </p>
+                    <button
+                      disabled={saving}
+                      onClick={() => doControl("clear_override")}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700"
+                    >
+                      Turn protection back on now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Health auto-pause — why, and how to resume safely */}
             {status?.health_pause && (
               <div className="rounded-xl border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 p-3">
@@ -311,6 +360,38 @@ export default function CampaignControlPanel({ campaignId, campaignName, onClose
                       <p className="text-[10px] text-gray-400 mt-1">
                         Leave the box empty to resume at your normal target. A number sets a temporary
                         daily ceiling until you clear it.
+                      </p>
+                    </div>
+
+                    {/* Force resume — last resort, disables auto-pause for a window */}
+                    <div className="mt-2 rounded-lg border border-red-300/40 bg-red-50/60 dark:bg-red-500/10 p-2">
+                      <p className="text-[11px] font-semibold text-red-700 dark:text-red-300 mb-1">
+                        Still re-pausing? Force resume (last resort)
+                      </p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-1.5">
+                        Disables auto-pause for this campaign for a limited time. It keeps sending even
+                        if health stays CRITICAL — account risk is on you. Use a low daily volume.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-500">Disable for</span>
+                        <select
+                          value={overrideHours}
+                          onChange={(e) => setOverrideHours(e.target.value)}
+                          className="px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white"
+                        >
+                          <option value="6">6 hours</option>
+                          <option value="12">12 hours</option>
+                          <option value="1">1 hour</option>
+                          <option value="3">3 hours</option>
+                        </select>
+                        <button disabled={saving} onClick={doForceResume}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700">
+                          <AlertTriangle size={14} /> Force resume
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        Uses the daily volume in the box above (recommended 50–80). Manual pause still
+                        works, and protection returns automatically when the window ends.
                       </p>
                     </div>
                   </div>
