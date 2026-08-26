@@ -1485,21 +1485,38 @@ const ChatWindow = ({ recipient }) => {
   // Composer-only lock: disable sending only when the backend says we cannot send.
   const billingLocked = billingStatus ? billingStatus.can_send === false : false;
 
-  // Turn a 402 billing_required send rejection into the composer lock + banner.
+  // Map a send rejection to the composer lock + banner. TWO distinct cases:
+  //  • 402 PAYMENT_METHOD_REQUIRED — a REAL Meta payment/billing error. Show the
+  //    "Add Payment Method" lock (→ Meta billing setup).
+  //  • 403 template_required — the 24h window is closed; an approved template is
+  //    required. This is a MESSAGING-eligibility fact, NOT a payment demand.
+  //  • anything else — a normal error toast, never a billing lock.
   const handleSendError = useCallback((error, fallback) => {
-    if (error?.response?.status === 402) {
-      const d = error.response.data || {};
+    const status = error?.response?.status;
+    const d = error?.response?.data || {};
+    if (status === 402 && (d.billing_state === "PAYMENT_METHOD_REQUIRED" || d.requires_payment)) {
       setBillingStatus((prev) => ({
         ...(prev || {}),
         can_send: false,
-        billing_state: d.billing_state || "PAYMENT_REQUIRED",
-        requires_payment: d.requires_payment ?? true,
-        requires_template: d.requires_template ?? false,
+        billing_state: "PAYMENT_METHOD_REQUIRED",
+        requires_payment: true,
+        requires_template: false,
       }));
-      toast.error(d.message || "Payment required to continue messaging");
+      toast.error(d.message || "Payment method required to continue messaging");
       return;
     }
-    toast.error(error?.response?.data?.error || fallback);
+    if (status === 403 && (d.requires_template || d.billing_state === "TEMPLATE_REQUIRED")) {
+      setBillingStatus((prev) => ({
+        ...(prev || {}),
+        can_send: false,
+        billing_state: "TEMPLATE_REQUIRED",
+        requires_payment: false,
+        requires_template: true,
+      }));
+      toast.error(d.message || "Send an approved template to reopen this conversation");
+      return;
+    }
+    toast.error(d.error || d.message || fallback);
   }, []);
 
   const groupedMessages = useMemo(() => {
@@ -2075,14 +2092,23 @@ const ChatWindow = ({ recipient }) => {
           if (st === "SERVICE_WINDOW" && svcH && svcH <= 3) {
             return (
               <div className="px-4 py-1.5 text-xs border-t bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-300">
-                Free window expires soon{svcH ? ` · ~${svcH}h left` : ""}
+                Service window expires soon{svcH ? ` · ~${svcH}h left` : ""}
               </div>
             );
           }
-          if (st === "BILLING_ACTIVE") {
+          // CASE A — Meta says this conversation is free (pricing.billable == false).
+          if (billingStatus.pricing_status === "FREE") {
+            return (
+              <div className="px-4 py-1 text-[11px] border-t bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                Free service conversation
+              </div>
+            );
+          }
+          // CASE B — billable and Meta billing is handled on the customer's Meta account.
+          if (st === "BILLABLE" || st === "BILLING_ACTIVE" || billingStatus.pricing_status === "BILLABLE") {
             return (
               <div className="px-4 py-1 text-[11px] border-t bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-300">
-                Billing active
+                Meta billing active
               </div>
             );
           }
@@ -2104,7 +2130,10 @@ const ChatWindow = ({ recipient }) => {
             onCancelReply={cancelReply}
             onScrollToReply={scrollToMessage}
             billingStatus={billingStatus}
-            onEnableBilling={() => navigate("/Credits")}
+            // "Add Payment Method" → Meta WhatsApp Business billing setup, NOT the
+            // GPTX wallet (/Credits). Meta charges are settled on the customer's own
+            // Meta account in the current Tech Provider model.
+            onEnableBilling={() => navigate("/whatsapp-setting")}
           />
         )}
       </div>
