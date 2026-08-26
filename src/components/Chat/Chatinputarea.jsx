@@ -405,32 +405,38 @@ const ChatInputArea = ({
     );
   }
 
-  // ── Billing composer-lock (Phase 4): disable ONLY the composer; the chat above
-  // stays fully readable. Backend is authoritative — this appears only when the
-  // backend says the message cannot be sent (enforcement on + blocked).
+  // ── Composer-lock: disable ONLY the composer; the chat above stays fully
+  // readable. Backend is authoritative — this appears only when the backend says
+  // the message cannot be sent. TWO distinct reasons, never conflated:
+  //   • PAYMENT_METHOD_REQUIRED (CASE C) — a REAL Meta payment/billing error was
+  //     returned on send. Show "Add Payment Method" (→ Meta billing setup).
+  //   • TEMPLATE_REQUIRED / any other block — a WhatsApp MESSAGING-eligibility
+  //     fact (24h window closed). NOT a payment issue: no card / no payment copy.
   if (billingStatus && billingStatus.can_send === false) {
-    const isTemplate = billingStatus.billing_state === "TEMPLATE_REQUIRED";
+    const isPayment =
+      billingStatus.billing_state === "PAYMENT_METHOD_REQUIRED" ||
+      billingStatus.requires_payment === true;
     return (
       <div className="sticky bottom-0 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 px-4 py-4 transition-colors duration-300">
         <div className="flex items-center gap-3 justify-center flex-wrap">
           <ClockIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
           <div className="text-center">
             <p className="text-sm font-bold text-red-800 dark:text-red-300">
-              {isTemplate ? "Customer service window closed — approved template required"
-                          : "Payment required to continue messaging"}
+              {isPayment ? "Payment method required to continue messaging"
+                         : "Customer service window closed — approved template required"}
             </p>
             <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-              {isTemplate
-                ? "An approved template message is required to re-engage this contact."
-                : "Your free messaging window has ended. Add balance / payment method to continue sending billable WhatsApp messages."}
+              {isPayment
+                ? "Add a payment method to your Meta WhatsApp Business account to continue sending billable messages."
+                : "An approved template message is required to re-engage this contact."}
             </p>
           </div>
-          {!isTemplate && onEnableBilling && (
+          {isPayment && onEnableBilling && (
             <button
               onClick={onEnableBilling}
               className="shrink-0 px-3 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 active:scale-95 transition-all"
             >
-              Enable Billing
+              Add Payment Method
             </button>
           )}
         </div>
