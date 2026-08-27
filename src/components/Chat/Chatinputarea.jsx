@@ -274,7 +274,10 @@ const ChatInputArea = ({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // ── VOICE_DIAG (temporary): what the browser actually supports/negotiates.
+      // ── VOICE_DIAG (temporary): what the browser actually supports. Logged BEFORE
+      //    the MediaRecorder constructor, because on iOS Safari `new MediaRecorder(
+      //    ..., {mimeType:"audio/webm;codecs=opus"})` THROWS (webm unsupported) — this
+      //    ensures we still capture the userAgent + support map in that case.
       const _requestedMime = "audio/webm;codecs=opus";
       const _support = {};
       try {
@@ -284,14 +287,16 @@ const ChatInputArea = ({
             MediaRecorder.isTypeSupported) ? MediaRecorder.isTypeSupported(t) : "n/a";
         });
       } catch (e) { /* ignore */ }
+      console.info("[VOICE_DIAG] pre-record", {
+        userAgent: navigator.userAgent,
+        requestedMime: _requestedMime,
+        isTypeSupported: _support,
+      });
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm;codecs=opus",
       });
-      console.info("[VOICE_DIAG] start", {
-        userAgent: navigator.userAgent,
-        requestedMime: _requestedMime,
+      console.info("[VOICE_DIAG] recorder-created", {
         recorderMimeType: mediaRecorder.mimeType,   // actual negotiated type
-        isTypeSupported: _support,
       });
 
       audioChunksRef.current = [];
