@@ -153,10 +153,11 @@ const VoiceRecorder = ({ onSend, onCancel, disabled = false }) => {
       // Setup MediaRecorder
       // Try to use webm/opus for better compression, fallback to other formats
       const mimeTypes = [
-            'audio/ogg;codecs=opus', // 👈 WhatsApp compatible
-            'audio/ogg',
-            'audio/webm;codecs=opus',
-            ];
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+      ];
 
 
       let selectedMimeType = '';
@@ -185,7 +186,21 @@ const VoiceRecorder = ({ onSend, onCancel, disabled = false }) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: selectedMimeType });
+        const actualType =
+          chunksRef.current[0]?.type ||
+          mediaRecorderRef.current?.mimeType ||
+          selectedMimeType;
+
+        const blob = new Blob(chunksRef.current, {
+          type: actualType,
+        });
+
+        // console.log("Recorded audio:", {
+        //   requestedMimeType: selectedMimeType,
+        //   actualMimeType: actualType,
+        //   size: blob.size,
+        // });
+
         setAudioBlob(blob);
 
         const url = URL.createObjectURL(blob);
