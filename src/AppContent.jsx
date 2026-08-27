@@ -48,6 +48,7 @@ import ContactUs from "./components/LandingPage/ContactUs";
 import ShippingAndDelivery from "./components/LandingPage/ShippingAndDelivery";
 import TermsAndConditions from "./components/LandingPage/TermsAndConditions";
 import MyUsagePanel from "./components/Components/MyUsagePanel";
+import MetaUsageReport from "./components/Usage/MetaUsageReport";
 import FlowBuilder from "./components/Flows/FlowBuilder";
 import Wallet from "./components/Wallet/Wallet";
 import MainChat from "./components/Chat/MainChat";
@@ -195,6 +196,7 @@ function AppContent() {
           <Route path="/chats/:id" element={<FullProtectedRoute element={ChatWindow} />} />
           <Route path="/subscriptions" element={<FullProtectedRoute element={Subscription} />} />
           <Route path="/my-usage-panel" element={<FullProtectedRoute element={MyUsagePanel} />} />
+          <Route path="/meta-usage" element={<FullProtectedRoute element={MetaUsageReport} />} />
           {/* <Route path="/chat-flow" element={<FullProtectedRoute element={ () => <FlowBuilder setEnableChatFlow={setEnableChatFlow} />} />} /> */}
           <Route
             path="/chat-flow"
