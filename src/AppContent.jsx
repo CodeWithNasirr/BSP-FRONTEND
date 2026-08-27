@@ -11,7 +11,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   MessagesSquare, ContactRound, MessageSquareMore, MessageCircleMore,
-  Workflow, CreditCard, House, Activity,
+  Workflow, CreditCard, House, Activity,BarChart3,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { MdViewCarousel } from "react-icons/md";
@@ -139,6 +139,8 @@ function AppContent() {
           <SidebarItem icon={<MessagesSquare />} text="Campaigns" to="/campaigns" />
           <SidebarItem icon={<Activity />} text="Automation" to="/automation" />
           <SidebarItem icon={<MessageSquareMore />} text="Templates" to="/templates" />
+          <SidebarItem icon={<BarChart3 />} text="Usage" to="/meta-usage" />
+
           <SidebarItem icon={<MessageCircleMore />} text="Chats" to="/chats" badge={unreadChats}/>
           {!isBasicPlan && (
             <SidebarItem icon={<Workflow />} text="Flows" to="/chat-flow" />
