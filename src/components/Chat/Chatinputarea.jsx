@@ -274,19 +274,60 @@ const ChatInputArea = ({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // ── VOICE_DIAG (temporary): what the browser actually supports. Logged BEFORE
+      //    the MediaRecorder constructor, because on iOS Safari `new MediaRecorder(
+      //    ..., {mimeType:"audio/webm;codecs=opus"})` THROWS (webm unsupported) — this
+      //    ensures we still capture the userAgent + support map in that case.
+      const _requestedMime = "audio/webm;codecs=opus";
+      const _support = {};
+      try {
+        ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus",
+         "audio/ogg", "audio/mp4", "audio/mp4;codecs=opus"].forEach((t) => {
+          _support[t] = (typeof MediaRecorder !== "undefined" &&
+            MediaRecorder.isTypeSupported) ? MediaRecorder.isTypeSupported(t) : "n/a";
+        });
+      } catch (e) { /* ignore */ }
+      console.info("[VOICE_DIAG] pre-record", {
+        userAgent: navigator.userAgent,
+        requestedMime: _requestedMime,
+        isTypeSupported: _support,
+      });
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm;codecs=opus",
+      });
+      console.info("[VOICE_DIAG] recorder-created", {
+        recorderMimeType: mediaRecorder.mimeType,   // actual negotiated type
       });
 
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
+        console.info("[VOICE_DIAG] dataavailable", {
+          chunkIndex: audioChunksRef.current.length,
+          chunkSize: e.data && e.data.size,
+          chunkType: e.data && e.data.type,
+        });
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const audioFile = new File([audioBlob], "voice_message.webm", { type: "audio/webm" });
+
+        // ── VOICE_DIAG (temporary): Blob/File actually produced vs the hardcoded
+        //    "audio/webm" label. Note: recorderMimeType (logged at start) is the
+        //    truth; the Blob/File type here are HARDCODED, so a mismatch here is
+        //    expected and is exactly what we are trying to detect on mobile.
+        console.info("[VOICE_DIAG] onstop", {
+          chunks: audioChunksRef.current.length,
+          recorderMimeType: mediaRecorder.mimeType,
+          blobType: audioBlob.type,
+          blobSize: audioBlob.size,
+          fileName: audioFile.name,
+          fileType: audioFile.type,
+          fileSize: audioFile.size,
+          durationSec: recordingDuration,
+        });
 
         const scheduleAt =
           showScheduler && scheduleDate && scheduleTime
