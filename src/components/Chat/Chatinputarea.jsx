@@ -278,24 +278,63 @@ const ChatInputArea = ({
       //    the MediaRecorder constructor, because on iOS Safari `new MediaRecorder(
       //    ..., {mimeType:"audio/webm;codecs=opus"})` THROWS (webm unsupported) — this
       //    ensures we still capture the userAgent + support map in that case.
-      const _requestedMime = "audio/webm;codecs=opus";
+      // Choose a recorder MIME type the browser actually supports (do NOT force
+      // webm). Order: Opus-in-WebM (Android/desktop Chrome) → WebM → MP4/AAC
+      // (iOS WebKit) → Opus-in-OGG (Firefox). The backend transcodes any of these
+      // to OGG/Opus, so the goal here is only to record reliably per browser.
+      const MIME_CANDIDATES = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/mp4;codecs=opus",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+      ];
+      const _supported = (t) => {
+        try {
+          return (typeof MediaRecorder !== "undefined" &&
+            MediaRecorder.isTypeSupported) ? MediaRecorder.isTypeSupported(t) : false;
+        } catch (e) { return false; }
+      };
       const _support = {};
+      MIME_CANDIDATES.forEach((t) => { _support[t] = _supported(t); });
+      const chosenMime = MIME_CANDIDATES.find((t) => _supported(t)) || null;
+      let _standalone = false;
       try {
-        ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus",
-         "audio/ogg", "audio/mp4", "audio/mp4;codecs=opus"].forEach((t) => {
-          _support[t] = (typeof MediaRecorder !== "undefined" &&
-            MediaRecorder.isTypeSupported) ? MediaRecorder.isTypeSupported(t) : "n/a";
-        });
+        _standalone = (window.matchMedia &&
+          window.matchMedia("(display-mode: standalone)").matches) ||
+          window.navigator.standalone === true; // iOS home-screen app
       } catch (e) { /* ignore */ }
       console.info("[VOICE_DIAG] pre-record", {
         userAgent: navigator.userAgent,
-        requestedMime: _requestedMime,
+        platform: navigator.platform,
+        uaDataPlatform: navigator.userAgentData && navigator.userAgentData.platform,
+        standalonePWA: _standalone,
+        chosenMime,
         isTypeSupported: _support,
       });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm;codecs=opus",
-      });
+
+      if (typeof MediaRecorder === "undefined") {
+        // Accurate message: this is NOT a microphone-permission problem.
+        toast.error("Voice recording is not supported in this browser");
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      let mediaRecorder;
+      try {
+        mediaRecorder = chosenMime
+          ? new MediaRecorder(stream, { mimeType: chosenMime })
+          : new MediaRecorder(stream); // last resort: browser default container
+      } catch (recErr) {
+        console.warn("[VOICE_DIAG] MediaRecorder ctor failed",
+          recErr && recErr.name, recErr && recErr.message);
+        toast.error("Voice recording is not supported in this browser");
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       console.info("[VOICE_DIAG] recorder-created", {
+        chosenMime,
         recorderMimeType: mediaRecorder.mimeType,   // actual negotiated type
       });
 
@@ -311,13 +350,24 @@ const ChatInputArea = ({
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const audioFile = new File([audioBlob], "voice_message.webm", { type: "audio/webm" });
+        // Source of truth = the ACTUAL recorder MIME (fall back to the first chunk's
+        // type, then the chosen candidate, then a safe default). Derive the file
+        // extension from it so we never mislabel MP4/OGG as .webm.
+        const actualType =
+          mediaRecorder.mimeType ||
+          (audioChunksRef.current[0] && audioChunksRef.current[0].type) ||
+          chosenMime ||
+          "audio/webm";
+        const _mt = actualType.toLowerCase();
+        const ext = _mt.includes("ogg") ? "ogg"
+          : (_mt.includes("mp4") || _mt.includes("m4a") || _mt.includes("aac") || _mt.includes("mpeg")) ? "m4a"
+          : _mt.includes("webm") ? "webm"
+          : "webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: actualType });
+        const audioFile = new File([audioBlob], `voice_message.${ext}`, { type: actualType });
 
-        // ── VOICE_DIAG (temporary): Blob/File actually produced vs the hardcoded
-        //    "audio/webm" label. Note: recorderMimeType (logged at start) is the
-        //    truth; the Blob/File type here are HARDCODED, so a mismatch here is
-        //    expected and is exactly what we are trying to detect on mobile.
+        // ── VOICE_DIAG (temporary): confirm Blob/File now match the actual recorder
+        //    MIME (no longer hardcoded), and the derived extension.
         console.info("[VOICE_DIAG] onstop", {
           chunks: audioChunksRef.current.length,
           recorderMimeType: mediaRecorder.mimeType,
@@ -327,7 +377,38 @@ const ChatInputArea = ({
           fileType: audioFile.type,
           fileSize: audioFile.size,
           durationSec: recordingDuration,
+          bytesPerSec: recordingDuration ? Math.round(audioBlob.size / recordingDuration) : null,
         });
+
+        // ── VOICE_DIAG (temporary): identify the ACTUAL container from the first
+        //    bytes (magic numbers) — not the declared MIME label — and whether they
+        //    agree. OggS=4f676753, WebM/EBML=1a45dfa3, MP4/ISO-BMFF has "ftyp" at
+        //    offset 4. Async read; does not block/alter the send.
+        try {
+          audioBlob.slice(0, 32).arrayBuffer().then((buf) => {
+            const b = new Uint8Array(buf);
+            const hex = Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(" ");
+            const isEbml = b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3;
+            const isOgg = b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53;
+            const isFtyp = b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70;
+            const container = isEbml ? "webm/matroska(EBML)"
+              : isOgg ? "ogg"
+              : isFtyp ? "mp4/iso-bmff"
+              : "UNKNOWN(octet-stream)";
+            const mt = mediaRecorder.mimeType || "";
+            const agrees =
+              (container.startsWith("webm") && /webm|matroska/i.test(mt)) ||
+              (container === "ogg" && /ogg/i.test(mt)) ||
+              (container === "mp4/iso-bmff" && /mp4/i.test(mt));
+            console.info("[VOICE_DIAG] container", {
+              first32Hex: hex,
+              detectedContainer: container,
+              declaredBlobType: audioBlob.type,
+              recorderMimeType: mt,
+              declaredVsActualAgree: !!agrees,
+            });
+          });
+        } catch (e) { /* ignore */ }
 
         const scheduleAt =
           showScheduler && scheduleDate && scheduleTime
@@ -342,7 +423,9 @@ const ChatInputArea = ({
       };
 
       mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
+      // Timeslice (1s): flush data periodically so the final container is finalized
+      // reliably on mobile (Android in particular) instead of a single blob at stop.
+      mediaRecorder.start(1000);
       setIsRecording(true);
       setRecordingDuration(0);
 
