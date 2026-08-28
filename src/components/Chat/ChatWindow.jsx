@@ -1834,9 +1834,18 @@ const ChatWindow = ({ recipient }) => {
     } finally { setIsSending(false); }
   }, [recipient, token, isFileTypeAllowed, allowedFiles, subscriptionStatus, fetchScheduledMessages, handleSendError]);
 
-  const handleSendVoice = useCallback(async (audioFile, duration, scheduleAt = null) => {
+  const handleSendVoice = useCallback(async (audioFile, duration, scheduleAt = null, diagMeta = null) => {
+    // TEMP: forward the voice diagnostics so the whole trace is searchable in the
+    // backend logs by voice_diag_id. Does not send any audio bytes separately.
+    const appendDiag = (fd) => {
+      if (diagMeta && diagMeta.voice_diag_id) {
+        fd.append("voice_diag_id", diagMeta.voice_diag_id);
+        try { fd.append("voice_diag", JSON.stringify(diagMeta)); } catch (e) { /* ignore */ }
+      }
+    };
     if (scheduleAt) {
       const formData = new FormData(); formData.append("recipient", recipient); formData.append("url", audioFile); formData.append("voice_duration", duration); formData.append("send_at", scheduleAt);
+      appendDiag(formData);
       await axios.post(`${API_BASE_URL}/api/chat/schedule-message/`, formData, { headers: { Authorization: `Token ${token}` } });
       toast.success("Voice message scheduled"); await fetchScheduledMessages(); return;
     }
@@ -1844,6 +1853,7 @@ const ChatWindow = ({ recipient }) => {
     setMessages((prev) => [...prev, { id: tempId, temp_id: tempId, message_id: null, text_content: "", media_type: "audio", media_url: URL.createObjectURL(audioFile), voice_duration: duration, direction: "OUTBOUND", status: "sending", timestamp: new Date().toISOString() }]);
     try {
       const formData = new FormData(); formData.append("recipient", recipient); formData.append("message_text", ""); formData.append("url", audioFile);
+      appendDiag(formData);
       await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, formData, { headers: { Authorization: `Token ${token}`, "Content-Type": "multipart/form-data" } });
       setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "sent" } : m)));
     } catch (error) {

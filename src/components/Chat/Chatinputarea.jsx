@@ -305,7 +305,13 @@ const ChatInputArea = ({
           window.matchMedia("(display-mode: standalone)").matches) ||
           window.navigator.standalone === true; // iOS home-screen app
       } catch (e) { /* ignore */ }
+      // TEMP: unique id to correlate this recording end-to-end in the backend logs.
+      const voiceDiagId =
+        (window.crypto && window.crypto.randomUUID)
+          ? window.crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       console.info("[VOICE_DIAG] pre-record", {
+        voiceDiagId,
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         uaDataPlatform: navigator.userAgentData && navigator.userAgentData.platform,
@@ -349,7 +355,7 @@ const ChatInputArea = ({
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         // Source of truth = the ACTUAL recorder MIME (fall back to the first chunk's
         // type, then the chosen candidate, then a safe default). Derive the file
         // extension from it so we never mislabel MP4/OGG as .webm.
@@ -366,56 +372,56 @@ const ChatInputArea = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: actualType });
         const audioFile = new File([audioBlob], `voice_message.${ext}`, { type: actualType });
 
-        // ── VOICE_DIAG (temporary): confirm Blob/File now match the actual recorder
-        //    MIME (no longer hardcoded), and the derived extension.
-        console.info("[VOICE_DIAG] onstop", {
-          chunks: audioChunksRef.current.length,
-          recorderMimeType: mediaRecorder.mimeType,
-          blobType: audioBlob.type,
-          blobSize: audioBlob.size,
-          fileName: audioFile.name,
-          fileType: audioFile.type,
-          fileSize: audioFile.size,
-          durationSec: recordingDuration,
-          bytesPerSec: recordingDuration ? Math.round(audioBlob.size / recordingDuration) : null,
-        });
-
-        // ── VOICE_DIAG (temporary): identify the ACTUAL container from the first
-        //    bytes (magic numbers) — not the declared MIME label — and whether they
-        //    agree. OggS=4f676753, WebM/EBML=1a45dfa3, MP4/ISO-BMFF has "ftyp" at
-        //    offset 4. Async read; does not block/alter the send.
+        // Read the first 32 bytes to detect the real container (magic numbers).
+        let first32Hex = "";
+        let detectedContainer = "unknown";
         try {
-          audioBlob.slice(0, 32).arrayBuffer().then((buf) => {
-            const b = new Uint8Array(buf);
-            const hex = Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(" ");
-            const isEbml = b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3;
-            const isOgg = b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53;
-            const isFtyp = b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70;
-            const container = isEbml ? "webm/matroska(EBML)"
-              : isOgg ? "ogg"
-              : isFtyp ? "mp4/iso-bmff"
-              : "UNKNOWN(octet-stream)";
-            const mt = mediaRecorder.mimeType || "";
-            const agrees =
-              (container.startsWith("webm") && /webm|matroska/i.test(mt)) ||
-              (container === "ogg" && /ogg/i.test(mt)) ||
-              (container === "mp4/iso-bmff" && /mp4/i.test(mt));
-            console.info("[VOICE_DIAG] container", {
-              first32Hex: hex,
-              detectedContainer: container,
-              declaredBlobType: audioBlob.type,
-              recorderMimeType: mt,
-              declaredVsActualAgree: !!agrees,
-            });
-          });
+          const buf = await audioBlob.slice(0, 32).arrayBuffer();
+          const b = new Uint8Array(buf);
+          first32Hex = Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(" ");
+          const isEbml = b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3;
+          const isOgg = b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53;
+          const isFtyp = b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70;
+          detectedContainer = isEbml ? "webm/matroska(EBML)"
+            : isOgg ? "ogg"
+            : isFtyp ? "mp4/iso-bmff"
+            : "UNKNOWN(octet-stream)";
         } catch (e) { /* ignore */ }
+
+        const mt = mediaRecorder.mimeType || "";
+        const declaredVsActualAgree =
+          (detectedContainer.startsWith("webm") && /webm|matroska/i.test(mt)) ||
+          (detectedContainer === "ogg" && /ogg/i.test(mt)) ||
+          (detectedContainer === "mp4/iso-bmff" && /mp4/i.test(mt));
+
+        // TEMP: metadata sent to the backend (as FormData) so the whole trace is in
+        // the server logs, correlated by voiceDiagId. No audio bytes are sent here.
+        const diagMeta = {
+          voice_diag_id: voiceDiagId,
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          standalonePWA: _standalone,
+          chosenMime,
+          recorderMimeType: mt,
+          blobType: audioBlob.type,
+          fileType: audioFile.type,
+          fileName: audioFile.name,
+          fileSize: audioFile.size,
+          chunkCount: audioChunksRef.current.length,
+          chunkSizes: audioChunksRef.current.map((c) => c.size),
+          durationSec: recordingDuration,
+          first32Hex,
+          detectedContainer,
+          declaredVsActualAgree: !!declaredVsActualAgree,
+        };
+        console.info("[VOICE_DIAG] onstop", diagMeta);
 
         const scheduleAt =
           showScheduler && scheduleDate && scheduleTime
             ? `${scheduleDate}T${scheduleTime}`
             : null;
 
-        onSendVoice(audioFile, recordingDuration, scheduleAt);
+        onSendVoice(audioFile, recordingDuration, scheduleAt, diagMeta);
         setIsRecording(false);
         setRecordingDuration(0);
 
