@@ -236,7 +236,7 @@ export default function LandingPage() {
   const { client, refCode, isReferred, isLoading: refLoading } = useReferralContext();
   const brandName   = client?.name || "WhatsappGptx";
   const brandLogo   = client?.logo || assest.logo;
-  const brandPhone  = client?.phone || "";
+  const brandPhone  = client?.phone || ""; 
   const brandColor  = client?.theme_color || "";
   const whatsappLink = brandPhone ? `https://wa.me/${brandPhone}` : "https://alvo.chat/84jA";
   const demoLink = whatsappLink;
