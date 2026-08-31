@@ -238,7 +238,7 @@ export default function LandingPage() {
   const brandLogo   = client?.logo || assest.logo;
   const brandPhone  = client?.phone || "";
   const brandColor  = client?.theme_color || "";
-  const whatsappLink = brandPhone ? `https://wa.me/${brandPhone}` : "https://alvo.chat/6l4J";
+  const whatsappLink = brandPhone ? `https://wa.me/${brandPhone}` : "https://alvo.chat/84jA";
   const demoLink = whatsappLink;
   const signupLink = refCode ? `/register?ref=${refCode}` : "/register";
   const loginLink  = refCode ? `/login?ref=${refCode}` : "/login";
