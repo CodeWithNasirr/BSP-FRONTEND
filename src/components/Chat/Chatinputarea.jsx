@@ -215,7 +215,19 @@ const ChatInputArea = ({
         }
 
         try {
-          const response = await fetch(mediaUrl);
+          const response = await fetch(mediaUrl, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to load clipboard media: ${response.status} ${response.statusText}`
+            );
+          }
+
           const blob = await response.blob();
 
           const mimeTypeMap = {

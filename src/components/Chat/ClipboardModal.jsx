@@ -482,27 +482,36 @@ const ClipboardModal = ({ isOpen, onClose, onSelect }) => {
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
   // ═══════════════════════════════════════════════════════════════════════════
+const handleSelect = useCallback(
+  async (item) => {
+    try {
+      // Mark as used
+      await axios.post(
+        `${API_BASE_URL}/api/clipboard/${item.id}/use/`,
+        {},
+        {
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      // Non-critical
+      console.error("Failed to mark item as used:", error);
+    }
 
-  const handleSelect = useCallback(
-    async (item) => {
-      try {
-        // Mark as used
-        await axios.post(
-          `${API_BASE_URL}/api/clipboard/${item.id}/use/`,
-          {},
-          { headers: { Authorization: `Token ${token}` } }
-        );
-      } catch (error) {
-        // Non-critical, just log
-        console.error("Failed to mark item as used:", error);
-      }
+    // IMPORTANT:
+    // Do not fetch/download the R2 media here.
+    // Just pass the clipboard item to the parent.
+    onSelect({
+      ...item,
+      mediaUrl: item.file_url || item.media_url || null,
+    });
 
-      // Call the onSelect callback
-      onSelect(item);
-      onClose();
-    },
-    [token, onSelect, onClose]
-  );
+    onClose();
+  },
+  [token, onSelect, onClose]
+);
 
   const handleDelete = useCallback(
     async (itemId) => {
