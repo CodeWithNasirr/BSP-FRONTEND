@@ -786,6 +786,24 @@ const ChatWindow = ({ recipient }) => {
     } finally { setIsSending(false); }
   }, [recipient, token, isFileTypeAllowed, allowedFiles, subscriptionStatus, fetchScheduledMessages, handleSendError]);
 
+  // Image template: the backend renders the exact text onto a PNG and sends it as a
+  // normal image message with the text as its caption (same send-message endpoint).
+  const imageSendInFlightRef = useRef(false);
+  const handleSendImageTemplate = useCallback(async ({ message_text, buttons = [] }) => {
+    if (!message_text.trim() || imageSendInFlightRef.current) return;
+    imageSendInFlightRef.current = true;
+    const tempId = "temp_" + Date.now();
+    setMessages((prev) => [...prev, { id: tempId, temp_id: tempId, message_id: null, text_content: message_text, media_url: null, media_type: "image", buttons, direction: "OUTBOUND", status: "generating", timestamp: new Date().toISOString(), reply_to_message_id: replyTo?.message_id || null, reply_to_preview: replyTo?.preview_text || null, reply_to_sender: replyTo?.sender || null }]);
+    setIsSending(true); const currentReply = replyTo; setReplyTo(null);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/whatsapp/send-message/`, { recipient, message_text, template_type: "image", buttons: buttons.length > 0 ? buttons : undefined, reply_to: currentReply ? { message_id: currentReply.message_id, preview_text: currentReply.preview_text, sender: currentReply.sender } : undefined }, { headers: { Authorization: `Token ${token}`, "Content-Type": "application/json" } });
+      setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "sent", media_url: res.data?.media_url || m.media_url } : m)));
+    } catch (error) {
+      setMessages((prev) => prev.map((m) => (m.temp_id === tempId ? { ...m, status: "failed" } : m)));
+      handleSendError(error, "Failed to generate image.");
+    } finally { imageSendInFlightRef.current = false; setIsSending(false); }
+  }, [recipient, token, replyTo, handleSendError]);
+
   const handleSendVoice = useCallback(async (audioFile, duration, scheduleAt = null, diagMeta = null) => {
     // TEMP: forward the voice diagnostics so the whole trace is searchable in the
     // backend logs by voice_diag_id. Does not send any audio bytes separately.
@@ -1084,6 +1102,7 @@ const ChatWindow = ({ recipient }) => {
             onSendText={handleSendText}
             onSendFile={handleSendFile}
             onSendVoice={handleSendVoice}
+            onSendImageTemplate={handleSendImageTemplate}
             isConversationExpired={isConversationExpired}
             isSending={isSending}
             allowedFiles={allowedFiles}

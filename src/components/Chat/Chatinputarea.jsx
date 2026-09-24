@@ -16,11 +16,19 @@ import { ReplyInputPreview } from "./ReplyPreview";
 import ClipboardModal from "./ClipboardModal";
 import { toast } from "react-toastify";
 
+// "Image" renders the typed text onto a PNG (server-side) and sends it as an image.
+const TEMPLATE_OPTIONS = [
+  { value: "text", label: "Text" },
+  { value: "image", label: "Image" },
+];
+const IMAGE_TEMPLATE_MAX_CHARS = 1024; // WhatsApp image caption limit
+
 const ChatInputArea = ({
   recipient,
   onSendText,
   onSendFile,
   onSendVoice,
+  onSendImageTemplate,
   isConversationExpired,
   isSending,
   allowedFiles,
@@ -46,6 +54,8 @@ const ChatInputArea = ({
   const [showButtonInput, setShowButtonInput] = useState(false);
   const [buttonText, setButtonText] = useState("");
   const [showClipboard, setShowClipboard] = useState(false);
+  const [templateType, setTemplateType] = useState("text");
+  const isImageTemplate = templateType === "image";
 
   // Refs
   const textareaRef = useRef(null);
@@ -88,7 +98,25 @@ const ChatInputArea = ({
         ? `${scheduleDate}T${scheduleTime}`
         : null;
 
-    if (selectedFile) {
+    if (isImageTemplate) {
+      if (selectedFile) {
+        toast.error("Remove the attachment to send as an Image template");
+        return;
+      }
+      if (scheduleAt) {
+        toast.error("Image template can only be sent immediately");
+        return;
+      }
+      if (messageText.length > IMAGE_TEMPLATE_MAX_CHARS) {
+        toast.error(`Image template text is limited to ${IMAGE_TEMPLATE_MAX_CHARS} characters`);
+        return;
+      }
+      // Sent exactly as typed (not trimmed) — the image must show the original text.
+      onSendImageTemplate({
+        message_text: messageText,
+        buttons: buttons.length > 0 ? buttons : [],
+      });
+    } else if (selectedFile) {
       onSendFile({
         file: selectedFile,
         caption: messageText.trim(),
@@ -121,8 +149,10 @@ const ChatInputArea = ({
     scheduleDate,
     scheduleTime,
     buttons,
+    isImageTemplate,
     onSendText,
     onSendFile,
+    onSendImageTemplate,
   ]);
 
   const handleKeyDown = useCallback(
@@ -757,14 +787,42 @@ const ChatInputArea = ({
           </div>
         )}
 
+        {/* Template selector: Text / Image */}
+        <div className="flex items-center gap-2 px-4 pt-2">
+          <div className="inline-flex flex-shrink-0 rounded-full p-0.5 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            {TEMPLATE_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTemplateType(value)}
+                disabled={isSending}
+                aria-pressed={templateType === value}
+                className={`px-3 py-0.5 rounded-full text-xs font-bold transition-all disabled:cursor-not-allowed
+                  ${templateType === value
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {isImageTemplate && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {isSending ? "Generating image..." : "Image mode — your text will be rendered as an image"}
+            </span>
+          )}
+        </div>
+
         {/* Main Input Row */}
         <div className="flex items-end gap-2 px-3 py-2.5">
           {/* Attachment */}
           <button
             onClick={() => fileInputRef.current?.click()}
+            disabled={isImageTemplate}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center 
-                       rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
-            title="Attach file"
+                       rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95
+                       disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            title={isImageTemplate ? "Attachments aren't used in Image mode" : "Attach file"}
           >
             <PaperClipIcon className="w-5 h-5" />
           </button>
@@ -794,7 +852,7 @@ const ChatInputArea = ({
               value={messageText}
               onChange={handleTextChange}
               onKeyDown={handleKeyDown}
-              placeholder={replyTo ? `Reply to ${replyTo.sender}...` : "Type a message..."}
+              placeholder={replyTo ? `Reply to ${replyTo.sender}...` : isImageTemplate ? "Type text for the image..." : "Type a message..."}
               rows={1}
               className={inputBaseClass}
               style={{ fontSize: "16px" }}
