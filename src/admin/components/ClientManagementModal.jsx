@@ -543,9 +543,9 @@ import { adminApi } from "../utils/api";
 import { Zap, X, Settings, AlertCircle, CheckCircle2, Smartphone, Globe, Key, Building2, ToggleLeft, CreditCard } from "lucide-react";
 
 const PLANS = [
-  { value: "BASIC", label: "Basic", price: "₹499/mo" },
-  { value: "GROWTH", label: "Growth", price: "₹799/mo" },
-  { value: "BUSINESS PRO", label: "Business Pro", price: "₹1999/mo" },
+  // { value: "BASIC", label: "Basic", price: "₹499/mo" },
+  { value: "GROWTH", label: "Growth", price: "₹999/mo" },
+  { value: "BUSINESS PRO", label: "Business Pro", price: "₹4999/mo" },
 ];
 const TABS = [
   { id: "subscription", label: "Subscription", icon: Zap, short: "Sub" },
