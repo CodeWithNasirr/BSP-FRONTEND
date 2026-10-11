@@ -95,9 +95,13 @@ export default function AutomationDashboard() {
   const campaigns = data?.campaigns || [];
   const elig = data?.eligibility || {};
   const totalCap = campaigns.reduce((s, c) => s + (c.todays_cap || 0), 0);
+
   const eligible = elig.ELIGIBLE || 0;
+  const availableNow = elig.available_now ?? eligible;
+  const coolingDown = elig.cooling_down ?? elig.COOLDOWN ?? 0;
   const suppressed = elig.SUPPRESSED || 0;
   const contactsTotal = data?.contacts_total || 0;
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1120] p-4 sm:p-6 lg:p-8">
@@ -164,9 +168,15 @@ export default function AutomationDashboard() {
           value={pct(t.success_rate)} accent="blue" bar={t.success_rate} />
         <StatCard icon={<AlertTriangle size={18} />} label="Failure rate (today)"
           value={pct(t.failure_rate)} accent="red" bar={t.failure_rate} />
-        <StatCard icon={<Users size={18} />} label="Eligible contacts"
-          value={`${eligible} / ${contactsTotal}`} accent="emerald"
-          bar={contactsTotal ? eligible / contactsTotal : 0} />
+  
+        <StatCard
+          icon={<Users size={18} />}
+          label="Available to send"
+          value={`${availableNow} / ${contactsTotal}`}
+          accent="emerald"
+          bar={contactsTotal ? availableNow / contactsTotal : 0}
+        />
+
       </div>
 
       {/* Progression (limit capacity) */}
@@ -283,14 +293,37 @@ export default function AutomationDashboard() {
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
             <ShieldCheck size={16} className="text-green-500" /> Contact safety
           </h2>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <SafetyStat label="Eligible" value={eligible} tone="green" />
-            <SafetyStat label="Cooldown" value={elig.COOLDOWN || 0} tone="amber" />
-            <SafetyStat label="Suppressed / opted-out" value={suppressed} tone="red" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+            <SafetyStat
+              label="Eligible"
+              value={eligible}
+              tone="green"
+            />
+            <SafetyStat
+              label="Available now"
+              value={availableNow}
+              tone="green"
+            />
+            <SafetyStat
+              label="Cooling down (7 days)"
+              value={coolingDown}
+              tone="amber"
+            />
+            <SafetyStat
+              label="Suppressed / opted-out"
+              value={suppressed}
+              tone="red"
+            />
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          {/* <p className="text-xs text-gray-400 mt-3">
             {elig.total_scored || 0} contacts scored · {contactsTotal} total. Non-opted-in
             contacts are never messaged.
+          </p> */}
+          <p className="text-xs text-gray-400 mt-3">
+            {elig.total_scored || 0} contacts scored · {contactsTotal} total.
+            Contacts messaged by any automation in this client account during
+            the previous 7 days are excluded from the available pool.
+            Opted-out contacts must never be messaged.
           </p>
         </div>
 
